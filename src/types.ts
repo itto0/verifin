@@ -243,3 +243,5 @@ export interface MasterDocumentRule {
   description: string;
 }
 
+export type CaseSubPage = 'overview' | 'ektp' | 'geo' | 'voice' | 'icr';
+

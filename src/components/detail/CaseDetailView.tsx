@@ -5,52 +5,85 @@ import {
   MapPin,
   Headphones,
   SlidersHorizontal,
-  Bike,
-  Building,
-  User,
-  CreditCard,
   FileCheck,
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  Clock,
   Sparkles,
   ChevronRight,
-  Send,
-  History,
+  ChevronLeft,
+  ChevronDown,
   Copy,
-  Check
+  Check,
+  Send,
+  ScanLine
 } from 'lucide-react';
-import { FinancingCase, CaseStatus } from '../../types';
-import { ExecutiveSummaryTab } from './ExecutiveSummaryTab';
-import { EktpDocumentTab } from './EktpDocumentTab';
-import { GeoSurveyTab } from './GeoSurveyTab';
-import { VoiceVerificationTab } from './VoiceVerificationTab';
-import { RiskEngineDecisionTab } from './RiskEngineDecisionTab';
+import { FinancingCase, CaseStatus, CaseSubPage } from '../../types';
+import { CaseOverviewPage } from './subpages/CaseOverviewPage';
+import { CaseEktpPage } from './subpages/CaseEktpPage';
+import { CaseGeoPage } from './subpages/CaseGeoPage';
+import { CaseVoicePage } from './subpages/CaseVoicePage';
+import { CaseIcrPage } from './subpages/CaseIcrPage';
+import { QuickDecisionModal } from './subpages/QuickDecisionModal';
 
 interface CaseDetailViewProps {
   caseData: FinancingCase;
+  allCases?: FinancingCase[];
+  onSelectCase?: (caseId: string) => void;
   onBackToQueue: () => void;
   onUpdateStatus: (caseId: string, newStatus: CaseStatus, note: string) => void;
+  activeSubPage?: CaseSubPage;
+  onSubPageChange?: (subPage: CaseSubPage) => void;
 }
 
-export type DetailPillarTab = 'summary' | 'ektp' | 'geo' | 'voice' | 'decision';
+interface PageDef {
+  id: CaseSubPage;
+  pageNumber: number;
+  label: string;
+  shortLabel: string;
+  icon: React.ElementType;
+}
+
+const PAGES: PageDef[] = [
+  { id: 'overview', pageNumber: 1, label: 'Overview & Underwriting Decision', shortLabel: 'Overview & Decision', icon: Sparkles },
+  { id: 'ektp', pageNumber: 2, label: 'e-KTP & Biometric Verification', shortLabel: 'e-KTP & Biometrics', icon: ShieldCheck },
+  { id: 'geo', pageNumber: 3, label: 'Geospatial & Field Survey Forensics', shortLabel: 'Geotag & Survey', icon: MapPin },
+  { id: 'voice', pageNumber: 4, label: 'Tele-Verification Audio QA & Compliance', shortLabel: 'Audio QA & Call', icon: Headphones },
+  { id: 'icr', pageNumber: 5, label: 'ICR Form Reader & Collateral Verification', shortLabel: 'ICR & Collateral', icon: ScanLine },
+];
 
 export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
   caseData,
+  allCases = [],
+  onSelectCase,
   onBackToQueue,
   onUpdateStatus,
+  activeSubPage: controlledSubPage,
+  onSubPageChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<DetailPillarTab>('summary');
-  const [decisionChoice, setDecisionChoice] = useState<CaseStatus>(caseData.status);
-  const [decisionNotes, setDecisionNotes] = useState(caseData.decisionNotes || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [internalSubPage, setInternalSubPage] = useState<CaseSubPage>('overview');
+  const activeSubPage = controlledSubPage !== undefined ? controlledSubPage : internalSubPage;
+
+  const setSubPage = (subPage: CaseSubPage) => {
+    if (onSubPageChange) {
+      onSubPageChange(subPage);
+    } else {
+      setInternalSubPage(subPage);
+    }
+  };
+
+  const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
   const [copiedNik, setCopiedNik] = useState(false);
+  const [isCaseSelectorOpen, setIsCaseSelectorOpen] = useState(false);
 
   const { riskScore } = caseData;
   const isHigh = riskScore.level === 'high';
   const isMedium = riskScore.level === 'medium';
+
+  const currentIndex = PAGES.findIndex((p) => p.id === activeSubPage);
+  const currentPage = PAGES[currentIndex] || PAGES[0];
+  const prevPage = currentIndex > 0 ? PAGES[currentIndex - 1] : null;
+  const nextPage = currentIndex < PAGES.length - 1 ? PAGES[currentIndex + 1] : null;
 
   const handleCopyNik = () => {
     navigator.clipboard.writeText(caseData.customerNik);
@@ -58,88 +91,108 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
     setTimeout(() => setCopiedNik(false), 2000);
   };
 
-  const handleInsertTag = (tag: string) => {
-    setDecisionNotes((prev) => (prev ? `${prev}. ${tag}` : tag));
-  };
-
-  const handleSaveDecision = () => {
-    setIsSubmitting(true);
-    const finalNote = decisionNotes.trim() || `Decision ${decisionChoice} confirmed by manual verifier.`;
-    setTimeout(() => {
-      onUpdateStatus(caseData.id, decisionChoice, finalNote);
-      setIsSubmitting(false);
-      setActionSuccess(
-        decisionChoice === 'approved'
-          ? 'Application successfully approved and transferred to LOS.'
-          : decisionChoice === 'resurvey'
-          ? 'Re-survey instruction dispatched to branch CMO.'
-          : 'Application rejected due to fraud indicators & logged in OJK audit trail.'
-      );
-      setTimeout(() => setActionSuccess(null), 4000);
-    }, 400);
-  };
-
   return (
     <div className="space-y-5">
-      {/* Top Header: Navigation Breadcrumb & Quick Case Meta Strip */}
+      {/* Top Header: Breadcrumbs, Case Quick Switcher & Case Meta */}
       <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBackToQueue}
             className="p-2 rounded-lg border border-[#E5E5E3] text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors"
-            title="Back to review queue"
+            title="Back to Review Queue"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
+
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Breadcrumb line */}
+            <div className="flex items-center gap-1.5 text-xs text-[#6B6B6B] mb-1">
+              <button
+                onClick={onBackToQueue}
+                className="hover:text-[#1A1A1A] transition-colors underline-offset-2 hover:underline"
+              >
+                Review Queue
+              </button>
+              <ChevronRight className="w-3 h-3 text-[#6B6B6B]" />
+              <span className="font-mono text-[#1A1A1A] font-medium">{caseData.id}</span>
+              <ChevronRight className="w-3 h-3 text-[#6B6B6B]" />
+              <span className="text-[#2563EB] font-medium">Page {currentPage.pageNumber}: {currentPage.shortLabel}</span>
+            </div>
+
+            {/* Title & Quick Switcher */}
+            <div className="flex items-center gap-2 flex-wrap relative">
               <h2 className="text-lg font-semibold text-[#1A1A1A]">
                 {caseData.customerName}
               </h2>
+
               <span className="font-mono text-xs bg-[#F7F7F5] border border-[#E5E5E3] px-2 py-0.5 rounded text-[#1A1A1A] font-medium">
                 {caseData.applicationNumber}
               </span>
+
               <button
                 onClick={handleCopyNik}
-                className="text-xs text-[#6B6B6B] hover:text-[#1A1A1A] flex items-center gap-1 font-mono bg-[#F7F7F5] px-1.5 py-0.5 rounded border border-[#E5E5E3]"
+                className="text-xs text-[#6B6B6B] hover:text-[#1A1A1A] flex items-center gap-1 font-mono bg-[#F7F7F5] px-2 py-0.5 rounded border border-[#E5E5E3]"
                 title="Copy NIK"
               >
                 <span>NIK: {caseData.customerNik}</span>
                 {copiedNik ? <Check className="w-3 h-3 text-[#16A34A]" /> : <Copy className="w-3 h-3" />}
               </button>
-            </div>
-            <div className="text-xs text-[#6B6B6B] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="font-medium text-[#1A1A1A]">{caseData.branch}</span>
-              <span>·</span>
-              <span>Submitted: {caseData.submittedAt} WIB</span>
-              <span>·</span>
-              <span className="capitalize">
-                Status:{' '}
-                <strong
-                  className={`font-semibold ${
-                    caseData.status === 'approved'
-                      ? 'text-[#16A34A]'
-                      : caseData.status === 'rejected_fraud'
-                      ? 'text-[#DC2626]'
-                      : caseData.status === 'resurvey'
-                      ? 'text-[#D97706]'
-                      : 'text-[#2563EB]'
-                  }`}
-                >
-                  {caseData.status === 'approved'
-                    ? 'Approved'
-                    : caseData.status === 'resurvey'
-                    ? 'Re-Survey'
-                    : caseData.status === 'rejected_fraud'
-                    ? 'Rejected Fraud'
-                    : 'Pending'}
-                </strong>
-              </span>
+
+              {/* Case Dropdown Switcher */}
+              {allCases.length > 1 && onSelectCase && (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsCaseSelectorOpen(!isCaseSelectorOpen)}
+                    className="text-xs font-semibold text-[#2563EB] bg-[#2563EB]/10 hover:bg-[#2563EB]/15 px-2.5 py-1 rounded-lg border border-[#2563EB]/20 flex items-center gap-1 transition-colors"
+                  >
+                    <span>Switch Case</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+
+                  {isCaseSelectorOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-[#E5E5E3] rounded-xl shadow-lg z-30 p-2 space-y-1">
+                      <div className="text-[10px] uppercase font-semibold text-[#6B6B6B] px-2 py-1">
+                        Select Verification Case
+                      </div>
+                      {allCases.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            onSelectCase(c.id);
+                            setIsCaseSelectorOpen(false);
+                          }}
+                          className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex items-center justify-between ${
+                            c.id === caseData.id
+                              ? 'bg-[#2563EB]/10 text-[#2563EB] font-semibold'
+                              : 'text-[#1A1A1A] hover:bg-[#F7F7F5]'
+                          }`}
+                        >
+                          <div>
+                            <div className="font-medium">{c.customerName}</div>
+                            <div className="text-[10px] text-[#6B6B6B] font-mono">{c.id} · {c.branch}</div>
+                          </div>
+                          <span
+                            className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                              c.riskScore.level === 'high'
+                                ? 'bg-[#DC2626]/10 text-[#DC2626]'
+                                : c.riskScore.level === 'medium'
+                                ? 'bg-[#D97706]/10 text-[#D97706]'
+                                : 'bg-[#16A34A]/10 text-[#16A34A]'
+                            }`}
+                          >
+                            {c.riskScore.totalScore}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* 4 Financial Metric Chips & Composite Risk Badge */}
+        {/* Financial Metrics & Status Badge */}
         <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
           <div className="px-3 py-1.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] text-xs">
             <span className="text-[#6B6B6B]">Unit: </span>
@@ -150,13 +203,6 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
             <span className="text-[#6B6B6B]">Loan: </span>
             <span className="font-semibold text-[#1A1A1A] font-mono">
               Rp {(caseData.loanAmount / 1000000).toFixed(1)} M
-            </span>
-          </div>
-
-          <div className="px-3 py-1.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] text-xs">
-            <span className="text-[#6B6B6B]">Monthly: </span>
-            <span className="font-semibold text-[#2563EB] font-mono">
-              Rp {caseData.monthlyInstallment.toLocaleString('id-ID')}/mo
             </span>
           </div>
 
@@ -171,368 +217,195 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
           >
             <span>Score: {riskScore.totalScore}/100</span>
             <span>·</span>
-            <span>{isHigh ? 'High Risk' : isMedium ? 'Medium Risk' : 'Low Risk'}</span>
+            <span>{isHigh ? 'High Risk' : isMedium ? 'Medium' : 'Low Risk'}</span>
           </div>
+
+          <button
+            onClick={() => setIsDecisionModalOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <Send className="w-3 h-3" />
+            <span>Make Decision</span>
+          </button>
         </div>
       </div>
 
-      {/* Alert Notification Toast */}
-      {actionSuccess && (
-        <div className="p-3.5 rounded-lg bg-[#16A34A]/10 border border-[#16A34A]/30 text-[#16A34A] text-xs font-medium flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{actionSuccess}</span>
-        </div>
-      )}
+      {/* Dedicated Multi-Page Stepper Navigation Bar */}
+      <div className="bg-white border border-[#E5E5E3] rounded-xl p-2 flex items-center gap-1 overflow-x-auto text-xs">
+        {PAGES.map((page) => {
+          const Icon = page.icon;
+          const isActive = activeSubPage === page.id;
 
-      {/* Ergonomic 2-Column Institutional Underwriting Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN (4 of 12 cols): Sticky Verifier Underwriting Console */}
-        <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
-          {/* Card A: Multi-Pillar Risk Engine Scorecard */}
-          <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
-              <div className="text-xs font-semibold text-[#1A1A1A]">
-                Multi-Pillar Risk Evaluation
-              </div>
-              <span className="text-[11px] text-[#6B6B6B]">BAF Standards</span>
-            </div>
-
-            {/* Pillar Breakdown Table */}
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">1. e-KTP &amp; Biometrics (30%)</span>
-                </div>
-                <span
-                  className={`font-mono font-bold ${
-                    caseData.document.score >= 70
-                      ? 'text-[#DC2626]'
-                      : caseData.document.score >= 40
-                      ? 'text-[#D97706]'
-                      : 'text-[#16A34A]'
-                  }`}
-                >
-                  {caseData.document.score}/100
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">2. Geotag &amp; Survey (30%)</span>
-                </div>
-                <span
-                  className={`font-mono font-bold ${
-                    caseData.geo.score >= 70
-                      ? 'text-[#DC2626]'
-                      : caseData.geo.score >= 40
-                      ? 'text-[#D97706]'
-                      : 'text-[#16A34A]'
-                  }`}
-                >
-                  {caseData.geo.score}/100
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                <div className="flex items-center gap-2">
-                  <Headphones className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">3. Tele-Verification QA (25%)</span>
-                </div>
-                <span
-                  className={`font-mono font-bold ${
-                    caseData.voice.score >= 70
-                      ? 'text-[#DC2626]'
-                      : caseData.voice.score >= 40
-                      ? 'text-[#D97706]'
-                      : 'text-[#16A34A]'
-                  }`}
-                >
-                  {caseData.voice.score}/100
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                <div className="flex items-center gap-2">
-                  <FileCheck className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">4. Documents &amp; ICR (15%)</span>
-                </div>
-                <span className="font-mono font-bold text-[#16A34A]">15/100</span>
-              </div>
-            </div>
-
-            {/* Key Detected Anomalies Checklist */}
-            {riskScore.reasons.length > 0 && (
-              <div className="pt-2 border-t border-[#E5E5E3] space-y-1.5">
-                <div className="text-[11px] font-semibold text-[#DC2626] uppercase tracking-wider flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  <span>AI Engine Detected Anomalies:</span>
-                </div>
-                <ul className="space-y-1 text-xs text-[#1A1A1A]">
-                  {riskScore.reasons.map((reason, idx) => (
-                    <li key={idx} className="flex items-start gap-1.5 text-[11px] leading-relaxed">
-                      <span className="text-[#DC2626] font-bold">·</span>
-                      <span>{reason}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Card B: Konsol Keputusan Verifikator (The Action Dock) */}
-          <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
-              <div className="text-xs font-semibold text-[#1A1A1A]">
-                Manual Verifier Decision Console
-              </div>
-              <span className="text-[10px] bg-[#2563EB]/10 text-[#2563EB] px-2 py-0.5 rounded font-semibold">
-                SLA Review
+          // Status indicator per pillar
+          let statusBadge: React.ReactNode = null;
+          if (page.id === 'overview') {
+            statusBadge = (
+              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                isHigh ? 'bg-[#DC2626]/10 text-[#DC2626]' : isMedium ? 'bg-[#D97706]/10 text-[#D97706]' : 'bg-[#16A34A]/10 text-[#16A34A]'
+              }`}>
+                {riskScore.totalScore}
               </span>
-            </div>
+            );
+          } else if (page.id === 'ektp') {
+            statusBadge = (
+              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                caseData.document.score >= 70 ? 'bg-[#DC2626]/10 text-[#DC2626]' : 'bg-[#16A34A]/10 text-[#16A34A]'
+              }`}>
+                {caseData.document.faceMatchScore}%
+              </span>
+            );
+          } else if (page.id === 'geo') {
+            statusBadge = (
+              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                caseData.geo.distanceStatus === 'red' ? 'bg-[#DC2626]/10 text-[#DC2626]' : 'bg-[#16A34A]/10 text-[#16A34A]'
+              }`}>
+                {caseData.geo.distanceMeters}m
+              </span>
+            );
+          } else if (page.id === 'voice') {
+            statusBadge = (
+              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                caseData.voice.score >= 60 ? 'bg-[#D97706]/10 text-[#D97706]' : 'bg-[#16A34A]/10 text-[#16A34A]'
+              }`}>
+                {caseData.voice.audioDurationFormatted}
+              </span>
+            );
+          } else if (page.id === 'icr') {
+            statusBadge = (
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#16A34A]/10 text-[#16A34A]">
+                ICR
+              </span>
+            );
+          }
 
-            {/* Structured Segmented Choice for Decision */}
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setDecisionChoice('approved')}
-                className={`py-2 px-1 text-xs font-semibold rounded-lg border transition-all flex flex-col items-center gap-1 ${
-                  decisionChoice === 'approved'
-                    ? 'bg-[#16A34A] text-white border-[#16A34A]'
-                    : 'bg-white text-[#1A1A1A] border-[#E5E5E3] hover:bg-[#F7F7F5]'
-                }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Approve</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDecisionChoice('resurvey')}
-                className={`py-2 px-1 text-xs font-semibold rounded-lg border transition-all flex flex-col items-center gap-1 ${
-                  decisionChoice === 'resurvey'
-                    ? 'bg-[#D97706] text-white border-[#D97706]'
-                    : 'bg-white text-[#1A1A1A] border-[#E5E5E3] hover:bg-[#F7F7F5]'
-                }`}
-              >
-                <AlertTriangle className="w-4 h-4" />
-                <span>Re-Survey</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDecisionChoice('rejected_fraud')}
-                className={`py-2 px-1 text-xs font-semibold rounded-lg border transition-all flex flex-col items-center gap-1 ${
-                  decisionChoice === 'rejected_fraud'
-                    ? 'bg-[#DC2626] text-white border-[#DC2626]'
-                    : 'bg-white text-[#1A1A1A] border-[#E5E5E3] hover:bg-[#F7F7F5]'
-                }`}
-              >
-                <XCircle className="w-4 h-4" />
-                <span>Reject Fraud</span>
-              </button>
-            </div>
-
-            {/* Quick Reason Insert Tags */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] text-[#6B6B6B] font-medium block">
-                Verification Notes &amp; Decision Rationale:
-              </label>
-              <div className="flex flex-wrap gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleInsertTag('NIK verified against Dukcapil')}
-                  className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#1A1A1A]"
-                >
-                  + Valid NIK
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertTag('Mock Location provider detected')}
-                  className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#DC2626]"
-                >
-                  + Fake GPS
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertTag('Survey radius > 1,000 meters from home')}
-                  className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#DC2626]"
-                >
-                  + Red Radius
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertTag('Customer speech hesitancy in tele-QA')}
-                  className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#D97706]"
-                >
-                  + Hesitant Voice
-                </button>
-              </div>
-
-              <textarea
-                rows={3}
-                value={decisionNotes}
-                onChange={(e) => setDecisionNotes(e.target.value)}
-                placeholder="Enter underwriting notes and justification for OJK audit trail..."
-                className="w-full p-2.5 text-xs bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg focus:outline-none focus:border-[#2563EB] leading-relaxed resize-none"
-              />
-            </div>
-
-            {/* Submit Action Button */}
+          return (
             <button
-              type="button"
-              onClick={handleSaveDecision}
-              disabled={isSubmitting}
-              className="w-full py-2.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold transition-colors flex items-center justify-center gap-2"
+              key={page.id}
+              onClick={() => setSubPage(page.id)}
+              className={`px-3.5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 shrink-0 ${
+                isActive
+                  ? 'bg-[#1A1A1A] text-white shadow-xs'
+                  : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#E5E5E3]/70'
+              }`}
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Submitting...' : 'Submit Decision'}</span>
-            </button>
-          </div>
-
-          {/* Card C: Immutable Audit Trail Log */}
-          <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
-              <div className="text-xs font-semibold text-[#1A1A1A] flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5 text-[#6B6B6B]" />
-                <span>Application Audit Trail</span>
-              </div>
-              <span className="text-[10px] text-[#6B6B6B] font-mono">
-                {caseData.auditTrail.length} Entries
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-semibold font-mono ${
+                isActive ? 'bg-white text-[#1A1A1A]' : 'bg-[#E5E5E3] text-[#1A1A1A]'
+              }`}>
+                {page.pageNumber}
               </span>
-            </div>
+              <Icon className="w-3.5 h-3.5" />
+              <span>{page.shortLabel}</span>
+              {statusBadge}
+            </button>
+          );
+        })}
+      </div>
 
-            <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
-              {caseData.auditTrail.map((log) => (
-                <div key={log.id} className="text-[11px] space-y-0.5 pb-2 border-b border-[#E5E5E3] last:border-0">
-                  <div className="flex items-center justify-between text-[#6B6B6B]">
-                    <span className="font-semibold text-[#1A1A1A]">{log.action}</span>
-                    <span className="font-mono text-[10px]">{log.timestamp.split(' ')[1]}</span>
-                  </div>
-                  <div className="text-[#6B6B6B] truncate">{log.actor}</div>
-                  <div className="text-[#1A1A1A] text-[10px] italic">{log.notes}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* DEDICATED SUB-PAGE CANVAS */}
+      <div className="min-h-[500px]">
+        {activeSubPage === 'overview' && (
+          <CaseOverviewPage
+            caseData={caseData}
+            onNavigateSubPage={setSubPage}
+            onUpdateStatus={onUpdateStatus}
+          />
+        )}
+
+        {activeSubPage === 'ektp' && <CaseEktpPage caseData={caseData} />}
+
+        {activeSubPage === 'geo' && <CaseGeoPage caseData={caseData} />}
+
+        {activeSubPage === 'voice' && <CaseVoicePage caseData={caseData} />}
+
+        {activeSubPage === 'icr' && <CaseIcrPage caseData={caseData} />}
+      </div>
+
+      {/* Persistent Bottom Stepper & Decision Bar */}
+      <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 sticky bottom-4 z-20 shadow-xs">
+        {/* Previous Button */}
+        <div>
+          {prevPage ? (
+            <button
+              onClick={() => setSubPage(prevPage.id)}
+              className="px-4 py-2 rounded-lg border border-[#E5E5E3] text-xs font-semibold text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors flex items-center gap-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous: Page {prevPage.pageNumber} ({prevPage.shortLabel})</span>
+            </button>
+          ) : (
+            <button
+              onClick={onBackToQueue}
+              className="px-4 py-2 rounded-lg border border-[#E5E5E3] text-xs font-semibold text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Review Queue</span>
+            </button>
+          )}
         </div>
 
-        {/* RIGHT COLUMN (8 of 12 cols): Forensic Investigation Workspace */}
-        <div className="lg:col-span-8 space-y-4">
-          {/* Structured Navigation Segment Bar */}
-          <div className="bg-white border border-[#E5E5E3] rounded-xl p-2.5 flex items-center gap-1.5 overflow-x-auto text-xs">
-            <button
-              onClick={() => setActiveTab('summary')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'summary'
-                  ? 'bg-[#1A1A1A] text-white'
-                  : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
+        {/* Center: Underwriting Status Pill & Quick Decision Trigger */}
+        <div className="flex items-center gap-3">
+          <div className="text-xs text-[#6B6B6B] hidden md:block">
+            Current Status:{' '}
+            <strong
+              className={`font-semibold capitalize ${
+                caseData.status === 'approved'
+                  ? 'text-[#16A34A]'
+                  : caseData.status === 'rejected_fraud'
+                  ? 'text-[#DC2626]'
+                  : caseData.status === 'resurvey'
+                  ? 'text-[#D97706]'
+                  : 'text-[#2563EB]'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Executive Summary (4 Pillars)</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('ektp')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'ektp'
-                  ? 'bg-[#1A1A1A] text-white'
-                  : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>1. e-KTP &amp; Biometrics</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('geo')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'geo'
-                  ? 'bg-[#1A1A1A] text-white'
-                  : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
-              }`}
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>2. Geotag &amp; GIS Survey</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('voice')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'voice'
-                  ? 'bg-[#1A1A1A] text-white'
-                  : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
-              }`}
-            >
-              <Headphones className="w-3.5 h-3.5" />
-              <span>3. Tele-Verification QA</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('decision')}
-              className={`px-3 py-2 rounded-lg font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
-                activeTab === 'decision'
-                  ? 'bg-[#1A1A1A] text-white'
-                  : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>4. Risk Parameters</span>
-            </button>
+              {caseData.status === 'approved'
+                ? 'Approved'
+                : caseData.status === 'resurvey'
+                ? 'Re-Survey Requested'
+                : caseData.status === 'rejected_fraud'
+                ? 'Rejected Fraud'
+                : 'Pending Review'}
+            </strong>
           </div>
 
-          {/* ACTIVE TAB CANVAS */}
-          <div>
-            {/* TAB 0: Ringkasan Eksekutif (4 Pilar Side-by-Side Matrix) */}
-            {activeTab === 'summary' && (
-              <ExecutiveSummaryTab
-                caseData={caseData}
-                onNavigateTab={(tab) => {
-                  if (tab === 'icr') {
-                    setActiveTab('decision');
-                  } else {
-                    setActiveTab(tab);
-                  }
-                }}
-              />
-            )}
+          <button
+            onClick={() => setIsDecisionModalOpen(true)}
+            className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Submit Underwriter Decision</span>
+          </button>
+        </div>
 
-            {/* TAB 1: Forensik e-KTP & Biometrik */}
-            {activeTab === 'ektp' && (
-              <EktpDocumentTab
-                document={caseData.document}
-                customerName={caseData.customerName}
-              />
-            )}
-
-            {/* TAB 2: Forensik Geotag & Survei GIS */}
-            {activeTab === 'geo' && (
-              <GeoSurveyTab
-                geo={caseData.geo}
-                customerName={caseData.customerName}
-              />
-            )}
-
-            {/* TAB 3: Forensik Tele-Verifikasi QA */}
-            {activeTab === 'voice' && (
-              <VoiceVerificationTab
-                voice={caseData.voice}
-                customerName={caseData.customerName}
-              />
-            )}
-
-            {/* TAB 4: Mesin Risiko & Parameter Bobot */}
-            {activeTab === 'decision' && (
-              <RiskEngineDecisionTab
-                caseData={caseData}
-                onUpdateStatus={onUpdateStatus}
-              />
-            )}
-          </div>
+        {/* Next Button */}
+        <div>
+          {nextPage ? (
+            <button
+              onClick={() => setSubPage(nextPage.id)}
+              className="px-4 py-2 rounded-lg bg-[#1A1A1A] hover:bg-[#333333] text-white text-xs font-semibold transition-colors flex items-center gap-2"
+            >
+              <span>Next: Page {nextPage.pageNumber} ({nextPage.shortLabel})</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setSubPage('overview')}
+              className="px-4 py-2 rounded-lg border border-[#E5E5E3] text-xs font-semibold text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors flex items-center gap-2"
+            >
+              <span>Return to Overview</span>
+              <Sparkles className="w-4 h-4 text-[#2563EB]" />
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Quick Underwriting Decision Modal */}
+      <QuickDecisionModal
+        isOpen={isDecisionModalOpen}
+        onClose={() => setIsDecisionModalOpen(false)}
+        caseData={caseData}
+        onUpdateStatus={onUpdateStatus}
+      />
     </div>
   );
 };

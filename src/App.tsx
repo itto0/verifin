@@ -17,12 +17,13 @@ import { ReportsAuditView } from './components/reports/ReportsAuditView';
 import { MasterDataView } from './components/master/MasterDataView';
 import { RuleSettingsView } from './components/settings/RuleSettingsView';
 import { mockCases } from './data/mockData';
-import { FinancingCase, CaseStatus } from './types';
+import { FinancingCase, CaseStatus, CaseSubPage } from './types';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [cases, setCases] = useState<FinancingCase[]>(mockCases);
   const [selectedCaseId, setSelectedCaseId] = useState<string>('CASE-0941');
+  const [detailSubPage, setDetailSubPage] = useState<CaseSubPage>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
@@ -30,8 +31,9 @@ export default function App() {
   const currentCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
 
   // Handler to navigate to a case's detail
-  const handleSelectCase = (caseId: string) => {
+  const handleSelectCase = (caseId: string, subPage: CaseSubPage = 'overview') => {
     setSelectedCaseId(caseId);
+    setDetailSubPage(subPage);
     setCurrentTab('detail');
   };
 
@@ -95,6 +97,12 @@ export default function App() {
         pendingCount={pendingCount}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
+        selectedCaseId={selectedCaseId}
+        activeCaseSubPage={detailSubPage}
+        onSelectCaseSubPage={(sub) => {
+          setDetailSubPage(sub);
+          setCurrentTab('detail');
+        }}
       />
 
       {/* Main Content Area (offset by 240px on lg screens) */}
@@ -131,8 +139,12 @@ export default function App() {
           {currentTab === 'detail' && (
             <CaseDetailView
               caseData={currentCase}
+              allCases={cases}
+              onSelectCase={handleSelectCase}
               onBackToQueue={() => setCurrentTab('queue')}
               onUpdateStatus={handleUpdateCaseStatus}
+              activeSubPage={detailSubPage}
+              onSubPageChange={setDetailSubPage}
             />
           )}
 

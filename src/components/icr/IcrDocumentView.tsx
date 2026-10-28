@@ -12,6 +12,7 @@ import {
   Check
 } from 'lucide-react';
 import { mockIcrDocuments, IcrDocumentSample } from '../../data/icrData';
+import { DetailedIcrDocumentCard } from './DetailedIcrDocumentCard';
 
 interface IcrDocumentViewProps {
   onSelectCase: (caseId: string) => void;
@@ -21,6 +22,7 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
   const [selectedDocId, setSelectedDocId] = useState<string>(mockIcrDocuments[0].id);
   const [correctedFields, setCorrectedFields] = useState<Record<string, string>>({});
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [highlightedFieldKey, setHighlightedFieldKey] = useState<string | null>(null);
 
   const activeDoc: IcrDocumentSample =
     mockIcrDocuments.find((d) => d.id === selectedDocId) || mockIcrDocuments[0];
@@ -114,56 +116,20 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
 
       {/* Main Content: Left Document Preview + Right Extraction Data */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Physical Document Scan / Thumbnail (5 Cols) */}
+        {/* Left Column: Authentic Document Scan & Related Photos (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E3]">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#2563EB]" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#1A1A1A]">
-                  Physical Document Scan
-                </span>
-              </div>
-              <span className="text-xs text-[#6B6B6B] font-mono">{activeDoc.documentNumber}</span>
+          <DetailedIcrDocumentCard
+            document={activeDoc}
+            onSelectCase={onSelectCase}
+            highlightedFieldKey={highlightedFieldKey}
+          />
+
+          <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white text-xs text-[#6B6B6B] space-y-1.5">
+            <div className="font-semibold text-[#1A1A1A] flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-[#2563EB]" />
+              <span>Multi-Pillar Verification Notes:</span>
             </div>
-
-            {/* Document Image Container with simulated bounding boxes */}
-            <div className="relative mt-4 aspect-[3/4] bg-[#F7F7F5] rounded-lg border border-[#E5E5E3] overflow-hidden flex items-center justify-center">
-              <img
-                src={activeDoc.thumbnailUrl}
-                alt="Document Scan"
-                className="w-full h-full object-cover object-top"
-              />
-
-              {/* Overlaid OCR Bounding Box Indicator */}
-              <div className="absolute inset-x-6 top-1/4 h-20 border-2 border-dashed border-[#2563EB] bg-[#2563EB]/10 rounded flex items-start justify-between p-2 pointer-events-none">
-                <span className="text-[10px] font-mono font-semibold bg-[#2563EB] text-white px-1 rounded">
-                  ICR Active Region
-                </span>
-                <span className="text-[10px] font-mono bg-white/90 text-[#1A1A1A] px-1 rounded">
-                  Conf: {activeDoc.overallConfidence}%
-                </span>
-              </div>
-
-              {/* Status Badge */}
-              <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-xs p-2.5 rounded-lg border border-[#E5E5E3] text-xs">
-                <div className="flex items-center justify-between text-[#1A1A1A] font-semibold">
-                  <span>{activeDoc.applicantName}</span>
-                  <button
-                    onClick={() => onSelectCase(activeDoc.caseId)}
-                    className="text-[#2563EB] hover:underline flex items-center gap-1 text-[11px]"
-                  >
-                    <span>View Case Detail</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                </div>
-                <div className="text-[11px] text-[#6B6B6B] mt-0.5">Scan Timestamp: {activeDoc.scanDate}</div>
-              </div>
-            </div>
-
-            <p className="text-xs text-[#6B6B6B] mt-3 leading-relaxed">
-              <strong>Engine Notes:</strong> {activeDoc.summaryNote}
-            </p>
+            <p className="leading-relaxed">{activeDoc.summaryNote}</p>
           </div>
         </div>
 
@@ -270,8 +236,12 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
                 return (
                   <div
                     key={field.fieldKey}
-                    className={`p-3 rounded-lg border transition-colors ${
-                      isLowConfidence
+                    onMouseEnter={() => setHighlightedFieldKey(field.fieldKey)}
+                    onMouseLeave={() => setHighlightedFieldKey(null)}
+                    className={`p-3 rounded-lg border transition-all ${
+                      highlightedFieldKey === field.fieldKey
+                        ? 'border-[#2563EB] ring-2 ring-[#2563EB]/20 bg-blue-50/20'
+                        : isLowConfidence
                         ? 'border-amber-300 bg-amber-50/30'
                         : 'border-[#E5E5E3] bg-[#F7F7F5]'
                     }`}
