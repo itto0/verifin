@@ -3,7 +3,8 @@ import {
   FileText,
   Clock,
   AlertTriangle,
-  XCircle
+  XCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { FinancingCase } from '../../types';
 import { VerificationCharts } from './VerificationCharts';
@@ -47,62 +48,73 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Stat Cards Row */}
+      {/* Stat Cards 4-Column Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
+        {/* Card 1: Total Volume */}
+        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
-            <span>Applications Processed Today</span>
-            <FileText className="w-4 h-4 text-[#6B6B6B]" />
+            <span>Processed Today</span>
+            <FileText className="w-4 h-4 text-[#2563EB]" />
           </div>
-          <div className="mt-3 text-2xl font-semibold text-[#1A1A1A] tabular-nums">
+          <div className="mt-3 text-2xl font-bold text-[#1A1A1A] tabular-nums font-mono">
             148
           </div>
-          <div className="mt-2 text-xs text-[#6B6B6B] flex items-center gap-1.5">
-            <span className="text-[#16A34A] font-medium">+18%</span>
-            <span>vs yesterday · 9 active branches</span>
+          <div className="mt-2 text-xs text-[#6B6B6B] flex items-center justify-between">
+            <span className="text-[#16A34A] font-medium">+18% vs yesterday</span>
+            <span>9 branches</span>
           </div>
         </div>
 
-        {/* Card 2 */}
-        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
+        {/* Card 2: Straight-Through Pass */}
+        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
+            <span>Straight-Through (STP)</span>
+            <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
+          </div>
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-[#16A34A] tabular-nums font-mono">78.4%</span>
+            <span className="text-[11px] font-mono text-[#6B6B6B]">114 auto-approved</span>
+          </div>
+          <div className="mt-2 text-xs text-[#6B6B6B]">
+            Zero-touch instant verification
+          </div>
+        </div>
+
+        {/* Card 3: Pending Review */}
+        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
             <span>Pending Manual Review</span>
             <AlertTriangle className="w-4 h-4 text-[#D97706]" />
           </div>
-          <div className="mt-3 text-2xl font-semibold text-[#1A1A1A] tabular-nums">
-            {pendingCases.length}
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-[#D97706] tabular-nums font-mono">
+              {pendingCases.length}
+            </span>
+            <span className="text-xs font-semibold text-[#16A34A] font-mono">
+              SLA: 4.2 min
+            </span>
           </div>
           <div className="mt-2 text-xs text-[#6B6B6B]">
-            Medium &amp; high risk applications requiring underwriter decision
+            Ahead of 15 min underwriter target
           </div>
         </div>
 
-        {/* Card 3 */}
-        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
+        {/* Card 4: Fraud Blocked */}
+        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
-            <span>Fraud &amp; Anomalies Blocked</span>
+            <span>Fraud Blocked</span>
             <XCircle className="w-4 h-4 text-[#DC2626]" />
           </div>
-          <div className="mt-3 text-2xl font-semibold text-[#DC2626] tabular-nums">
-            {highRiskCases.length}
+          <div className="mt-3 flex items-baseline justify-between">
+            <span className="text-2xl font-bold text-[#DC2626] tabular-nums font-mono">
+              {highRiskCases.length} cases
+            </span>
+            <span className="text-[11px] font-mono font-semibold text-[#16A34A] bg-[#16A34A]/10 px-1.5 py-0.5 rounded">
+              Rp 2.8 B
+            </span>
           </div>
           <div className="mt-2 text-xs text-[#6B6B6B]">
-            Fake GPS, duplicate NIK, e-KTP font tampering
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
-          <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
-            <span>Average Turnaround SLA</span>
-            <Clock className="w-4 h-4 text-[#2563EB]" />
-          </div>
-          <div className="mt-3 text-2xl font-semibold text-[#1A1A1A] tabular-nums">
-            4.2 min
-          </div>
-          <div className="mt-2 text-xs text-[#16A34A] font-medium">
-            Significantly ahead of 15 min SLA target
+            Fake GPS, NIK &amp; e-KTP font tamper
           </div>
         </div>
       </div>
