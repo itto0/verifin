@@ -133,16 +133,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
  >
  {/* Top Header / Branding with BAF official logo */}
  <div className="flex-1 overflow-y-auto">
- <div className="h-16 px-5 flex items-center justify-center border-b border-[#E5E5E3] shrink-0 sticky top-0 bg-white z-10">
+ <div className="h-16 px-4 flex items-center justify-center border-b border-[#E5E5E3] shrink-0 sticky top-0 bg-white z-10">
  <div className="flex items-center content-center gap-3">
- <div className="h-8 flex items-center">
+ <div className="h-10 flex items-center justify-center overflow-hidden">
  {!logoError ? (
  <img
- src="https://www.baf.id/static/images/logos/baf.svg"
+ src="https://cdn-jk01.kabaroto.com/media/6f/4d/b9/6f4db95441531a1b78f188073be60248_800x450.jpeg"
  alt="BAF Logo"
  referrerPolicy="no-referrer"
  onError={() => setLogoError(true)}
- className="h-7 w-auto object-contain"
+ className="h-10 w-auto max-w-[190px] object-contain rounded"
  />
  ) : (
  <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white font-bold text-xs tracking-wider">
@@ -222,6 +222,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
  );
  })}
  </nav>
+ </div>
+
+ {/* Bottom / End of Sidebar Logo Banner */}
+ <div className="p-3 border-t border-[#E5E5E3] bg-[#F7F7F5]/50 shrink-0">
+ <div className="rounded-lg overflow-hidden border border-[#E5E5E3] bg-white p-1">
+ <img
+ src="https://media.licdn.com/dms/image/v2/D5616AQH409ezuliHhA/profile-displaybackgroundimage-shrink_200_800/profile-displaybackgroundimage-shrink_200_800/0/1673932651632?e=2147483647&v=beta&t=qcznV1bzS-0Jir46pT15oxMuf54dhBRIQ46B9CfFaqY"
+ alt="BAF Corporate Logo"
+ referrerPolicy="no-referrer"
+ className="w-full h-auto max-h-14 object-contain rounded"
+ />
+ </div>
+ <div className="mt-1.5 px-0.5 text-[10px] text-[#6B6B6B] flex items-center justify-between">
+ <span>PT Bussan Auto Finance</span>
+ <span>VeriFin 2.4</span>
+ </div>
  </div>
  </aside>
  </>
