@@ -11,6 +11,10 @@ import { ReviewQueueView } from './components/queue/ReviewQueueView';
 import { CaseDetailView } from './components/detail/CaseDetailView';
 import { GisMapView } from './components/gis/GisMapView';
 import { QaCallMonitoringView } from './components/qa/QaCallMonitoringView';
+import { SurveyorFleetView } from './components/surveyor/SurveyorFleetView';
+import { IcrDocumentView } from './components/icr/IcrDocumentView';
+import { ReportsAuditView } from './components/reports/ReportsAuditView';
+import { MasterDataView } from './components/master/MasterDataView';
 import { RuleSettingsView } from './components/settings/RuleSettingsView';
 import { mockCases } from './data/mockData';
 import { FinancingCase, CaseStatus } from './types';
@@ -68,13 +72,17 @@ export default function App() {
   // Compute pending count
   const pendingCount = cases.filter((c) => c.status === 'pending').length;
 
-  // Title per tab in English
+  // Title per tab in Indonesian / English
   const tabTitles: Record<NavTab, string> = {
     dashboard: 'Financing Verification Dashboard',
     queue: 'Review Queue & Decisions',
     detail: `Verification Audit — ${currentCase.customerName} (${currentCase.id})`,
     gis: 'Geospatial Field Survey Map (GIS)',
     qa: 'Tele-Verification Audio QA & Compliance',
+    surveyor: 'Kinerja & Monitoring Surveyor Lapangan (CMO)',
+    icr: 'ICR Formulir & Validasi Agunan ("Sentuh Tanahku")',
+    reports: 'Laporan Kinerja Cabang & Audit Trail OJK',
+    master: 'Master Data & Konfigurasi Operasional BAF',
     settings: 'Risk Engine Rules & Parameters',
   };
 
@@ -133,6 +141,19 @@ export default function App() {
           {currentTab === 'qa' && (
             <QaCallMonitoringView cases={cases} onSelectCase={handleSelectCase} />
           )}
+
+          {currentTab === 'surveyor' && (
+            <SurveyorFleetView
+              onSelectCase={handleSelectCase}
+              onOpenGisMap={() => setCurrentTab('gis')}
+            />
+          )}
+
+          {currentTab === 'icr' && <IcrDocumentView onSelectCase={handleSelectCase} />}
+
+          {currentTab === 'reports' && <ReportsAuditView onSelectCase={handleSelectCase} />}
+
+          {currentTab === 'master' && <MasterDataView />}
 
           {currentTab === 'settings' && <RuleSettingsView />}
         </main>

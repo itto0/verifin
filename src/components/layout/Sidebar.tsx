@@ -4,10 +4,24 @@ import {
   ShieldAlert,
   MapPin,
   Headphones,
-  Sliders
+  Sliders,
+  Users,
+  ScanLine,
+  FileCheck,
+  Database
 } from 'lucide-react';
 
-export type NavTab = 'dashboard' | 'queue' | 'detail' | 'gis' | 'qa' | 'settings';
+export type NavTab =
+  | 'dashboard'
+  | 'queue'
+  | 'detail'
+  | 'gis'
+  | 'qa'
+  | 'surveyor'
+  | 'icr'
+  | 'reports'
+  | 'master'
+  | 'settings';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -53,6 +67,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
       desc: 'Call compliance & audio'
     },
     {
+      id: 'surveyor' as NavTab,
+      label: 'Kinerja Surveyor',
+      icon: Users,
+      desc: 'Field surveyor fleet & SLA'
+    },
+    {
+      id: 'icr' as NavTab,
+      label: 'ICR & Agunan BPN',
+      icon: ScanLine,
+      desc: 'Handwritten & Sentuh Tanahku'
+    },
+    {
+      id: 'reports' as NavTab,
+      label: 'Laporan & Audit OJK',
+      icon: FileCheck,
+      desc: 'Compliance & audit logs'
+    },
+    {
+      id: 'master' as NavTab,
+      label: 'Master Data BAF',
+      icon: Database,
+      desc: 'Branches, products & scripts'
+    },
+    {
       id: 'settings' as NavTab,
       label: 'Risk Rules & Weights',
       icon: Sliders,
@@ -76,8 +114,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Top Header / Branding with BAF official logo */}
-        <div>
-          <div className="h-16 px-5 flex items-center justify-center border-b border-[#E5E5E3]">
+        <div className="flex-1 overflow-y-auto">
+          <div className="h-16 px-5 flex items-center justify-center border-b border-[#E5E5E3] shrink-0 sticky top-0 bg-white z-10">
             <div className="flex items-center content-center gap-3">
               {/* BAF Official SVG Logo from https://www.baf.id/static/images/logos/baf.svg */}
               <div className="h-8 flex items-center">

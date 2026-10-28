@@ -176,3 +176,70 @@ export interface RiskEngineRules {
   autoApproveMaxScore: number; // 39
   autoRejectMinScore: number; // 70
 }
+
+export interface MasterBranch {
+  id: string;
+  code: string;
+  name: string;
+  region: string;
+  address: string;
+  manager: string;
+  activeSurveyors: number;
+  maxRadiusMeters: number;
+  latitude: number;
+  longitude: number;
+  status: 'active' | 'inactive';
+}
+
+export interface MasterProduct {
+  id: string;
+  code: string;
+  category: 'Motor Baru' | 'Motor Bekas' | 'Dana Syariah' | 'Elektronik';
+  brand: string;
+  modelName: string;
+  engineCc: number;
+  otrPrice: number;
+  minDownPaymentPercent: number;
+  maxTenorMonths: number;
+  annualInterestRate: number;
+  status: 'active' | 'inactive';
+}
+
+export interface MasterSurveyor {
+  id: string;
+  employeeNik: string;
+  fullName: string;
+  branchCode: string;
+  branchName: string;
+  phone: string;
+  deviceModel: string;
+  deviceImei: string;
+  osVersion: string;
+  gpsAccuracyThresholdMeters: number;
+  mockLocationStrikes: number;
+  status: 'active' | 'suspended';
+  lastActive: string;
+}
+
+export interface MasterScriptItem {
+  id: string;
+  sequence: number;
+  category: string;
+  questionText: string;
+  isMandatory: boolean;
+  weightPercent: number;
+  expectedKeywords: string[];
+  complianceNotes: string;
+}
+
+export interface MasterDocumentRule {
+  id: string;
+  documentType: string;
+  applicableProduct: string;
+  isMandatory: boolean;
+  minOcrConfidence: number;
+  minBiometricMatch: number;
+  autoRejectOnTamper: boolean;
+  description: string;
+}
+
