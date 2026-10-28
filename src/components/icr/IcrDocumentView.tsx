@@ -43,10 +43,10 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-[#1A1A1A]">
-            ICR Dokumen &amp; Agunan Properti (&ldquo;Sentuh Tanahku&rdquo;)
+            ICR Document Reader &amp; Collateral Verification (&ldquo;Sentuh Tanahku&rdquo;)
           </h1>
           <p className="text-sm text-[#6B6B6B] mt-1">
-            Ekstraksi tulisan tangan (ICR) formulir survei lapangan dan pencocokan spasial bidang tanah SHM/SHGB Kementerian ATR/BPN.
+            Intelligent Character Recognition (ICR) for handwritten field survey forms and ATR/BPN land parcel spatial matching.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -86,15 +86,15 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
                         : 'bg-red-50 text-[#DC2626] border border-red-200'
                     }`}
                   >
-                    {isVerified ? 'Tervalidasi BPN' : isReview ? 'Perlu Review' : 'Anomali Terdeteksi'}
+                    {isVerified ? 'BPN Validated' : isReview ? 'Needs Review' : 'Anomaly Detected'}
                   </span>
                 </div>
                 <div className="font-semibold text-sm text-[#1A1A1A] line-clamp-1">{doc.title}</div>
-                <div className="text-xs text-[#6B6B6B] mt-1">Pemohon: {doc.applicantName}</div>
+                <div className="text-xs text-[#6B6B6B] mt-1">Applicant: {doc.applicantName}</div>
               </div>
 
               <div className="mt-3 pt-2 border-t border-[#E5E5E3] flex items-center justify-between text-xs">
-                <span className="text-[#6B6B6B]">Keyakinan ICR:</span>
+                <span className="text-[#6B6B6B]">ICR Confidence:</span>
                 <span
                   className={`font-mono font-bold ${
                     doc.overallConfidence >= 90
@@ -121,7 +121,7 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[#2563EB]" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#1A1A1A]">
-                  Pratinjau Berkas Fisik
+                  Physical Document Scan
                 </span>
               </div>
               <span className="text-xs text-[#6B6B6B] font-mono">{activeDoc.documentNumber}</span>
@@ -153,16 +153,16 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
                     onClick={() => onSelectCase(activeDoc.caseId)}
                     className="text-[#2563EB] hover:underline flex items-center gap-1 text-[11px]"
                   >
-                    <span>Buka Detail Kasus</span>
+                    <span>View Case Detail</span>
                     <ExternalLink className="w-3 h-3" />
                   </button>
                 </div>
-                <div className="text-[11px] text-[#6B6B6B] mt-0.5">Waktu Scan: {activeDoc.scanDate}</div>
+                <div className="text-[11px] text-[#6B6B6B] mt-0.5">Scan Timestamp: {activeDoc.scanDate}</div>
               </div>
             </div>
 
             <p className="text-xs text-[#6B6B6B] mt-3 leading-relaxed">
-              <strong>Catatan Engine:</strong> {activeDoc.summaryNote}
+              <strong>Engine Notes:</strong> {activeDoc.summaryNote}
             </p>
           </div>
         </div>
@@ -176,7 +176,7 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-[#2563EB]" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-[#1A1A1A]">
-                    Verifikasi Persil Spasial ATR/BPN (&ldquo;Sentuh Tanahku&rdquo;)
+                    ATR/BPN Spatial Land Parcel Verification (&ldquo;Sentuh Tanahku&rdquo;)
                   </span>
                 </div>
                 <span
@@ -192,25 +192,25 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                  <span className="text-[#6B6B6B] block">NIB Persil Tanah:</span>
+                  <span className="text-[#6B6B6B] block">Land Parcel NIB:</span>
                   <strong className="font-mono text-[#1A1A1A]">
                     {activeDoc.bpnSpatialVerification.persilNib}
                   </strong>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                  <span className="text-[#6B6B6B] block">Luas Tanah Terdaftar:</span>
+                  <span className="text-[#6B6B6B] block">Registered Surface Area:</span>
                   <strong className="text-[#1A1A1A]">
                     {activeDoc.bpnSpatialVerification.surfaceAreaM2} m²
                   </strong>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                  <span className="text-[#6B6B6B] block">Pemilik Resmi (Buku Tanah):</span>
+                  <span className="text-[#6B6B6B] block">Registered Owner (Land Registry):</span>
                   <strong className="text-[#1A1A1A]">
                     {activeDoc.bpnSpatialVerification.registeredOwner}
                   </strong>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
-                  <span className="text-[#6B6B6B] block">Kantor Pertanahan:</span>
+                  <span className="text-[#6B6B6B] block">District Land Office:</span>
                   <strong className="text-[#1A1A1A]">
                     {activeDoc.bpnSpatialVerification.districtOffice}
                   </strong>
@@ -222,17 +222,17 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
                 <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-xs text-[#16A34A] flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>
-                    Koordinat persil sertipikat tanah cocok dengan titik geolokasi survei rumah pemohon (Jarak &lt;10 meter).
+                    Land certificate parcel coordinates match applicant home survey geolocation (&lt;10 meters distance).
                   </span>
                 </div>
               ) : (
                 <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-xs text-[#DC2626] flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <div>
-                    <strong>Peringatan Diskrepansi Agunan:</strong>
+                    <strong>Collateral Discrepancy Warning:</strong>
                     <p className="mt-0.5 text-[11px]">
-                      Sertipikat terdaftar atas nama perusahaan pihak ketiga dan tidak sesuai dengan identitas pemohon.
-                      Potensi dokumen palsu atau agunan fiktif.
+                      Certificate registered under third-party enterprise name and does not match applicant identity.
+                      Potential proxy document or fictitious collateral.
                     </p>
                   </div>
                 </div>
@@ -245,16 +245,16 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
             <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
               <div>
                 <h3 className="text-sm font-semibold text-[#1A1A1A]">
-                  Hasil Pembacaan Field ICR / Formulir
+                  Extracted ICR / Form Fields
                 </h3>
                 <p className="text-xs text-[#6B6B6B] mt-0.5">
-                  Field berwarna kuning memiliki confidence &lt;80% dan memerlukan verifikasi manual verifikator.
+                  Highlighted fields have confidence &lt;80% and require manual verifier review.
                 </p>
               </div>
               {saveSuccess && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#16A34A]">
                   <Check className="w-4 h-4" />
-                  <span>Koreksi Tersimpan!</span>
+                  <span>Corrections Saved!</span>
                 </span>
               )}
             </div>
@@ -288,7 +288,7 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
                         </span>
                         {field.isAnomaly && (
                           <span className="px-1.5 py-0.5 rounded bg-red-100 text-[#DC2626] text-[10px] font-semibold">
-                            Anomali
+                            Anomaly
                           </span>
                         )}
                       </div>
@@ -321,13 +321,13 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
             {/* Action Buttons */}
             <div className="pt-3 border-t border-[#E5E5E3] flex items-center justify-between">
               <span className="text-xs text-[#6B6B6B]">
-                Koreksi manual otomatis dijadikan data pelatihan (continuous learning).
+                Manual corrections are continuously fed into model retraining.
               </span>
               <button
                 onClick={handleSaveCorrection}
                 className="px-4 py-2 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
               >
-                Simpan &amp; Perbarui Data
+                Save &amp; Update Fields
               </button>
             </div>
           </div>

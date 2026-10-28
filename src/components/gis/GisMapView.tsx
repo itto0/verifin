@@ -22,14 +22,14 @@ interface GisMapViewProps {
 }
 
 export const GisMapView: React.FC<GisMapViewProps> = ({ onSelectCase }) => {
-  const [selectedBranch, setSelectedBranch] = useState<string>('Semua Cabang');
+  const [selectedBranch, setSelectedBranch] = useState<string>('All Branches');
   const [statusFilter, setStatusFilter] = useState<'all' | 'green' | 'yellow' | 'red'>('all');
   const [selectedPoint, setSelectedPoint] = useState<SurveyorPoint | null>(mockSurveyPoints[0]);
   const [showSurveyorRoute, setShowSurveyorRoute] = useState(true);
 
   // Filter points
   const filteredPoints = mockSurveyPoints.filter((pt) => {
-    const matchesBranch = selectedBranch === 'Semua Cabang' || pt.branch === selectedBranch;
+    const matchesBranch = selectedBranch === 'All Branches' || pt.branch === selectedBranch;
     const matchesStatus = statusFilter === 'all' || pt.status === statusFilter;
     return matchesBranch && matchesStatus;
   });

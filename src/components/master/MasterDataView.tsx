@@ -60,7 +60,7 @@ export const MasterDataView: React.FC = () => {
       prev.map((s) => {
         if (s.id === id) {
           const newStatus = s.status === 'active' ? 'suspended' : 'active';
-          showNotification(`Status ${s.fullName} diubah menjadi ${newStatus.toUpperCase()}`);
+          showNotification(`Status of ${s.fullName} updated to ${newStatus.toUpperCase()}`);
           return { ...s, status: newStatus };
         }
         return s;
@@ -74,7 +74,7 @@ export const MasterDataView: React.FC = () => {
       prev.map((b) => {
         if (b.id === id) {
           const newStatus = b.status === 'active' ? 'inactive' : 'active';
-          showNotification(`Status cabang ${b.name} diubah menjadi ${newStatus.toUpperCase()}`);
+          showNotification(`Branch ${b.name} updated to ${newStatus.toUpperCase()}`);
           return { ...b, status: newStatus };
         }
         return b;
@@ -88,7 +88,7 @@ export const MasterDataView: React.FC = () => {
       prev.map((p) => {
         if (p.id === id) {
           const newStatus = p.status === 'active' ? 'inactive' : 'active';
-          showNotification(`Unit ${p.modelName} ${newStatus === 'active' ? 'diaktifkan' : 'dinonaktifkan'}`);
+          showNotification(`Unit ${p.modelName} ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
           return { ...p, status: newStatus };
         }
         return p;
@@ -139,21 +139,21 @@ export const MasterDataView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#1A1A1A]">
-            Master Data &amp; Konfigurasi Operasional BAF
+            Master Data &amp; Operational Configuration
           </h2>
           <p className="text-xs text-[#6B6B6B] mt-1">
-            Pengelolaan entitas referensi institusional: data cabang, katalog unit pembiayaan, whitelist surveyor CMO, script tele-verifikasi, dan ambang batas dokumen.
+            Institutional reference registry: branch geofences, financing unit catalog, CMO surveyor whitelist, tele-verification scripts, and document validation thresholds.
           </p>
         </div>
 
         {/* Global Action Export */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => showNotification('Data master berhasil diekspor ke format CSV.')}
+            onClick={() => showNotification('Master data successfully exported to CSV.')}
             className="px-3 py-2 rounded-lg border border-[#E5E5E3] bg-white text-xs font-medium text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5 text-[#6B6B6B]" />
-            <span>Ekspor Master Data</span>
+            <span>Export Master Data</span>
           </button>
         </div>
       </div>
@@ -170,24 +170,24 @@ export const MasterDataView: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="flex items-center justify-between text-xs text-[#6B6B6B]">
-            <span>Cabang Terdaftar</span>
+            <span>Registered Branches</span>
             <Building2 className="w-4 h-4 text-[#2563EB]" />
           </div>
           <div className="text-2xl font-bold text-[#1A1A1A] mt-2 font-mono">
-            {branches.length} <span className="text-xs font-normal text-[#16A34A]">({branches.filter(b => b.status === 'active').length} Aktif)</span>
+            {branches.length} <span className="text-xs font-normal text-[#16A34A]">({branches.filter(b => b.status === 'active').length} Active)</span>
           </div>
           <div className="text-[11px] text-[#6B6B6B] mt-1">
-            Tersebar di 5 Regional Kerja
+            Across 5 regional operations
           </div>
         </div>
 
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="flex items-center justify-between text-xs text-[#6B6B6B]">
-            <span>Katalog Unit Pembiayaan</span>
+            <span>Financing Catalog</span>
             <Bike className="w-4 h-4 text-[#2563EB]" />
           </div>
           <div className="text-2xl font-bold text-[#1A1A1A] mt-2 font-mono">
-            {products.length} <span className="text-xs font-normal text-[#6B6B6B]">Model</span>
+            {products.length} <span className="text-xs font-normal text-[#6B6B6B]">Models</span>
           </div>
           <div className="text-[11px] text-[#6B6B6B] mt-1">
             Yamaha Maxi, Classy &amp; Syariah
@@ -196,27 +196,27 @@ export const MasterDataView: React.FC = () => {
 
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="flex items-center justify-between text-xs text-[#6B6B6B]">
-            <span>Whitelist Surveyor CMO</span>
+            <span>Surveyor CMO Whitelist</span>
             <Users className="w-4 h-4 text-[#2563EB]" />
           </div>
           <div className="text-2xl font-bold text-[#1A1A1A] mt-2 font-mono">
-            {surveyors.length} <span className="text-xs font-normal text-[#D97706]">({surveyors.filter(s => s.status === 'suspended').length} Terkena Suspend)</span>
+            {surveyors.length} <span className="text-xs font-normal text-[#D97706]">({surveyors.filter(s => s.status === 'suspended').length} Suspended)</span>
           </div>
           <div className="text-[11px] text-[#6B6B6B] mt-1">
-            Tervalidasi IMEI &amp; Perangkat Resmi
+            Hardware IMEI validated
           </div>
         </div>
 
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="flex items-center justify-between text-xs text-[#6B6B6B]">
-            <span>Kepatuhan Script OJK</span>
+            <span>OJK Script Compliance</span>
             <PhoneCall className="w-4 h-4 text-[#2563EB]" />
           </div>
           <div className="text-2xl font-bold text-[#1A1A1A] mt-2 font-mono">
-            {scripts.length} <span className="text-xs font-normal text-[#16A34A]">Butir Wajib</span>
+            {scripts.length} <span className="text-xs font-normal text-[#16A34A]">Mandatory Items</span>
           </div>
           <div className="text-[11px] text-[#6B6B6B] mt-1">
-            Bobot Total Verifikasi 100%
+            Total verification weight 100%
           </div>
         </div>
       </div>
@@ -233,7 +233,7 @@ export const MasterDataView: React.FC = () => {
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>Cabang &amp; Wilayah ({branches.length})</span>
+            <span>Branches &amp; Regions ({branches.length})</span>
           </button>
 
           <button
@@ -245,7 +245,7 @@ export const MasterDataView: React.FC = () => {
             }`}
           >
             <Bike className="w-3.5 h-3.5" />
-            <span>Katalog Unit &amp; OTR ({products.length})</span>
+            <span>Unit Catalog &amp; OTR ({products.length})</span>
           </button>
 
           <button
@@ -257,7 +257,7 @@ export const MasterDataView: React.FC = () => {
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Whitelist Surveyor CMO ({surveyors.length})</span>
+            <span>Surveyor CMO Whitelist ({surveyors.length})</span>
           </button>
 
           <button
@@ -269,7 +269,7 @@ export const MasterDataView: React.FC = () => {
             }`}
           >
             <PhoneCall className="w-3.5 h-3.5" />
-            <span>Script Tele-Verifikasi ({scripts.length})</span>
+            <span>Tele-Verification Scripts ({scripts.length})</span>
           </button>
 
           <button
@@ -281,7 +281,7 @@ export const MasterDataView: React.FC = () => {
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Ambang Batas Dokumen ({docRules.length})</span>
+            <span>Document Validation Rules ({docRules.length})</span>
           </button>
         </div>
 
@@ -290,7 +290,7 @@ export const MasterDataView: React.FC = () => {
           <Search className="w-3.5 h-3.5 text-[#6B6B6B] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Cari data master..."
+            placeholder="Search master data..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg focus:outline-none focus:border-[#2563EB]"
@@ -304,18 +304,18 @@ export const MasterDataView: React.FC = () => {
           <div className="p-4 border-b border-[#E5E5E3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F7F7F5]">
             <div>
               <h3 className="text-sm font-semibold text-[#1A1A1A]">
-                Daftar Kantor Cabang &amp; Batas Geofence BAF
+                Branch Office Registry &amp; BAF Geofence Boundaries
               </h3>
               <p className="text-xs text-[#6B6B6B]">
-                Mendefinisikan kode cabang LOS, koordinat sentral, dan batas radius survei maksimal per wilayah.
+                Configure LOS branch codes, central GPS coordinates, and maximum survey radius per operational territory.
               </p>
             </div>
             <button
-              onClick={() => showNotification('Modal Tambah Cabang dibuka')}
+              onClick={() => showNotification('Add Branch modal opened.')}
               className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Cabang Baru</span>
+              <span>Add New Branch</span>
             </button>
           </div>
 
@@ -323,14 +323,14 @@ export const MasterDataView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FFFFFF] border-b border-[#E5E5E3] text-[#6B6B6B] font-medium">
                 <tr>
-                  <th className="py-3 px-4">Kode Cabang</th>
-                  <th className="py-3 px-4">Nama Kantor Cabang</th>
-                  <th className="py-3 px-4">Regional</th>
-                  <th className="py-3 px-4">Kepala Cabang</th>
-                  <th className="py-3 px-4 text-center">CMO Aktif</th>
-                  <th className="py-3 px-4 text-right">Maks. Radius</th>
+                  <th className="py-3 px-4">Branch Code</th>
+                  <th className="py-3 px-4">Branch Office Name</th>
+                  <th className="py-3 px-4">Region</th>
+                  <th className="py-3 px-4">Branch Manager</th>
+                  <th className="py-3 px-4 text-center">Active CMOs</th>
+                  <th className="py-3 px-4 text-right">Max. Radius</th>
                   <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Aksi</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E5E3]">
@@ -349,7 +349,7 @@ export const MasterDataView: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-[#1A1A1A]">{branch.manager}</td>
-                    <td className="py-3.5 px-4 text-center font-mono font-medium">{branch.activeSurveyors} orang</td>
+                    <td className="py-3.5 px-4 text-center font-mono font-medium">{branch.activeSurveyors} officers</td>
                     <td className="py-3.5 px-4 text-right font-mono font-medium">{branch.maxRadiusMeters} m</td>
                     <td className="py-3.5 px-4 text-center">
                       <span
@@ -359,7 +359,7 @@ export const MasterDataView: React.FC = () => {
                             : 'bg-[#DC2626]/10 text-[#DC2626]'
                         }`}
                       >
-                        {branch.status === 'active' ? 'Aktif' : 'Non-aktif'}
+                        {branch.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
@@ -367,7 +367,7 @@ export const MasterDataView: React.FC = () => {
                         onClick={() => handleToggleBranchStatus(branch.id)}
                         className="text-xs text-[#2563EB] hover:underline font-medium"
                       >
-                        {branch.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
+                        {branch.status === 'active' ? 'Deactivate' : 'Activate'}
                       </button>
                     </td>
                   </tr>
@@ -384,18 +384,18 @@ export const MasterDataView: React.FC = () => {
           <div className="p-4 border-b border-[#E5E5E3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F7F7F5]">
             <div>
               <h3 className="text-sm font-semibold text-[#1A1A1A]">
-                Katalog Model Kendaraan &amp; Parameter Plafon BAF
+                Vehicle Catalog &amp; Financing Guidelines
               </h3>
               <p className="text-xs text-[#6B6B6B]">
-                Daftar unit resmi Yamaha &amp; lini dana syariah dengan ketentuan acuan OTR, batas DP minimal, dan suku bunga tahunan.
+                Official Yamaha models &amp; sharia financing lines with benchmark OTR prices, minimum down payment limits, and annual interest rates.
               </p>
             </div>
             <button
-              onClick={() => showNotification('Modal Tambah Unit dibuka')}
+              onClick={() => showNotification('Add Unit modal opened.')}
               className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Unit Baru</span>
+              <span>Add New Model</span>
             </button>
           </div>
 
@@ -403,15 +403,15 @@ export const MasterDataView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FFFFFF] border-b border-[#E5E5E3] text-[#6B6B6B] font-medium">
                 <tr>
-                  <th className="py-3 px-4">Kode Unit</th>
-                  <th className="py-3 px-4">Model &amp; Varian</th>
-                  <th className="py-3 px-4">Kategori</th>
-                  <th className="py-3 px-4 text-right">Harga OTR Acuan</th>
+                  <th className="py-3 px-4">Unit Code</th>
+                  <th className="py-3 px-4">Model &amp; Variant</th>
+                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4 text-right">Benchmark OTR</th>
                   <th className="py-3 px-4 text-center">Min. DP</th>
-                  <th className="py-3 px-4 text-center">Maks. Tenor</th>
-                  <th className="py-3 px-4 text-right">Bunga/Thn</th>
+                  <th className="py-3 px-4 text-center">Max. Tenor</th>
+                  <th className="py-3 px-4 text-right">Annual Rate</th>
                   <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Aksi</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E5E3]">
@@ -431,7 +431,7 @@ export const MasterDataView: React.FC = () => {
                       Rp {p.otrPrice.toLocaleString('id-ID')}
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono">{p.minDownPaymentPercent}%</td>
-                    <td className="py-3.5 px-4 text-center font-mono">{p.maxTenorMonths} Bln</td>
+                    <td className="py-3.5 px-4 text-center font-mono">{p.maxTenorMonths} Mos</td>
                     <td className="py-3.5 px-4 text-right font-mono text-[#2563EB] font-medium">{p.annualInterestRate}%</td>
                     <td className="py-3.5 px-4 text-center">
                       <span
@@ -441,7 +441,7 @@ export const MasterDataView: React.FC = () => {
                             : 'bg-[#DC2626]/10 text-[#DC2626]'
                         }`}
                       >
-                        {p.status === 'active' ? 'Aktif' : 'Non-aktif'}
+                        {p.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
@@ -449,7 +449,7 @@ export const MasterDataView: React.FC = () => {
                         onClick={() => handleToggleProductStatus(p.id)}
                         className="text-xs text-[#2563EB] hover:underline font-medium"
                       >
-                        {p.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
+                        {p.status === 'active' ? 'Deactivate' : 'Activate'}
                       </button>
                     </td>
                   </tr>
@@ -466,18 +466,18 @@ export const MasterDataView: React.FC = () => {
           <div className="p-4 border-b border-[#E5E5E3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F7F7F5]">
             <div>
               <h3 className="text-sm font-semibold text-[#1A1A1A]">
-                Whitelist Surveyor Lapangan (CMO) &amp; Perangkat Mobile
+                Field Surveyor (CMO) Whitelist &amp; Authorized Mobile Hardware
               </h3>
               <p className="text-xs text-[#6B6B6B]">
-                Otorisasi identitas perangkat Android resmi untuk mencegah pemasangan FakeGPS dan survei liar dari luar wilayah tugas.
+                Authorize official Android devices to prevent Mock GPS spoofing and cross-territory survey attempts.
               </p>
             </div>
             <button
-              onClick={() => showNotification('Modal Tambah Surveyor dibuka')}
+              onClick={() => showNotification('Register Surveyor modal opened.')}
               className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Daftarkan Surveyor Baru</span>
+              <span>Register New Surveyor</span>
             </button>
           </div>
 
@@ -485,14 +485,14 @@ export const MasterDataView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FFFFFF] border-b border-[#E5E5E3] text-[#6B6B6B] font-medium">
                 <tr>
-                  <th className="py-3 px-4">NIK Karyawan</th>
-                  <th className="py-3 px-4">Nama Lengkap</th>
-                  <th className="py-3 px-4">Cabang Penempatan</th>
-                  <th className="py-3 px-4">Model Handphone Terdaftar</th>
-                  <th className="py-3 px-4">IMEI Hardware</th>
-                  <th className="py-3 px-4 text-center">Pelanggaran FakeGPS</th>
+                  <th className="py-3 px-4">Employee ID</th>
+                  <th className="py-3 px-4">Full Name</th>
+                  <th className="py-3 px-4">Branch Placement</th>
+                  <th className="py-3 px-4">Registered Device</th>
+                  <th className="py-3 px-4">Hardware IMEI</th>
+                  <th className="py-3 px-4 text-center">Fake GPS Violations</th>
                   <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Aksi</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E5E3]">
@@ -530,7 +530,7 @@ export const MasterDataView: React.FC = () => {
                             : 'bg-[#DC2626]/10 text-[#DC2626]'
                         }`}
                       >
-                        {s.status === 'active' ? 'Aktif' : 'Disuspend'}
+                        {s.status === 'active' ? 'Active' : 'Suspended'}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
@@ -540,7 +540,7 @@ export const MasterDataView: React.FC = () => {
                           s.status === 'active' ? 'text-[#DC2626]' : 'text-[#16A34A]'
                         }`}
                       >
-                        {s.status === 'active' ? 'Suspend CMO' : 'Pulihkan Akun'}
+                        {s.status === 'active' ? 'Suspend CMO' : 'Restore Account'}
                       </button>
                     </td>
                   </tr>
@@ -557,18 +557,18 @@ export const MasterDataView: React.FC = () => {
           <div className="p-4 border-b border-[#E5E5E3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F7F7F5]">
             <div>
               <h3 className="text-sm font-semibold text-[#1A1A1A]">
-                Kamus Script Tele-Verifikasi &amp; Standar Kepatuhan OJK
+                Tele-Verification Script Dictionary &amp; OJK Regulatory Standards
               </h3>
               <p className="text-xs text-[#6B6B6B]">
-                Daftar pertanyaan wajib dan kata kunci yang dipindai secara otomatis oleh mesin ASR speech-to-text saat verifikasi telepon.
+                Mandatory spoken inquiries and keyword patterns scanned automatically by ASR speech-to-text during phone verification calls.
               </p>
             </div>
             <button
-              onClick={() => showNotification('Modal Tambah Script dibuka')}
+              onClick={() => showNotification('Add Script modal opened.')}
               className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Pertanyaan Script</span>
+              <span>Add Script Inquiry</span>
             </button>
           </div>
 
@@ -585,10 +585,10 @@ export const MasterDataView: React.FC = () => {
                     </span>
                     {sc.isMandatory && (
                       <span className="text-[10px] bg-[#DC2626]/10 text-[#DC2626] px-1.5 py-0.5 rounded font-bold uppercase">
-                        Wajib OJK
+                        OJK Mandatory
                       </span>
                     )}
-                    <span className="text-xs text-[#6B6B6B]">· Bobot: {sc.weightPercent}%</span>
+                    <span className="text-xs text-[#6B6B6B]">· Weight: {sc.weightPercent}%</span>
                   </div>
 
                   <p className="text-xs text-[#1A1A1A] font-medium leading-relaxed bg-white p-3 rounded-lg border border-[#E5E5E3]">
@@ -596,7 +596,7 @@ export const MasterDataView: React.FC = () => {
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
-                    <span className="text-[#6B6B6B]">Kata Kunci Terdeteksi AI:</span>
+                    <span className="text-[#6B6B6B]">AI Detected Keywords:</span>
                     {sc.expectedKeywords.map((kw, i) => (
                       <span key={i} className="bg-[#2563EB]/10 text-[#2563EB] px-2 py-0.5 rounded text-[11px] font-mono">
                         +{kw}
@@ -605,13 +605,13 @@ export const MasterDataView: React.FC = () => {
                   </div>
 
                   <div className="text-[11px] text-[#6B6B6B] italic">
-                    Catatan Kepatuhan: {sc.complianceNotes}
+                    Compliance Notes: {sc.complianceNotes}
                   </div>
                 </div>
 
                 <div className="shrink-0 flex items-center gap-2 self-end sm:self-center">
                   <button
-                    onClick={() => showNotification(`Script No. ${sc.sequence} diedit`)}
+                    onClick={() => showNotification(`Script item #${sc.sequence} editing opened.`)}
                     className="px-3 py-1.5 rounded-lg border border-[#E5E5E3] text-xs font-medium text-[#1A1A1A] hover:bg-[#E5E5E3] transition-colors"
                   >
                     Edit Script
@@ -629,18 +629,18 @@ export const MasterDataView: React.FC = () => {
           <div className="p-4 border-b border-[#E5E5E3] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#F7F7F5]">
             <div>
               <h3 className="text-sm font-semibold text-[#1A1A1A]">
-                Katalog Dokumen Pengajuan &amp; Ambang Batas Validasi AI
+                Application Document Catalog &amp; AI Validation Thresholds
               </h3>
               <p className="text-xs text-[#6B6B6B]">
-                Menentukan dokumen wajib per kategori pembiayaan, toleransi skor OCR minimum, dan verifikasi biometrik wajah.
+                Define required documents per financing tier, OCR confidence score cutoffs, and facial biometric thresholds.
               </p>
             </div>
             <button
-              onClick={() => showNotification('Modal Aturan Dokumen dibuka')}
+              onClick={() => showNotification('Document Rule modal opened.')}
               className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-[#1D4ED8] transition-colors flex items-center gap-1.5 self-start sm:self-auto"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Aturan Dokumen</span>
+              <span>Add Document Rule</span>
             </button>
           </div>
 
@@ -648,13 +648,13 @@ export const MasterDataView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FFFFFF] border-b border-[#E5E5E3] text-[#6B6B6B] font-medium">
                 <tr>
-                  <th className="py-3 px-4">Jenis Dokumen</th>
-                  <th className="py-3 px-4">Produk Berlaku</th>
-                  <th className="py-3 px-4 text-center">Status Wajib</th>
+                  <th className="py-3 px-4">Document Type</th>
+                  <th className="py-3 px-4">Applicable Product</th>
+                  <th className="py-3 px-4 text-center">Requirement</th>
                   <th className="py-3 px-4 text-center">Min. OCR Confidence</th>
                   <th className="py-3 px-4 text-center">Min. Biometric Match</th>
-                  <th className="py-3 px-4 text-center">Auto-Reject Tamper</th>
-                  <th className="py-3 px-4 text-right">Aksi</th>
+                  <th className="py-3 px-4 text-center">Auto-Reject on Tamper</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E5E3]">
@@ -677,7 +677,7 @@ export const MasterDataView: React.FC = () => {
                             : 'bg-[#6B6B6B]/10 text-[#6B6B6B]'
                         }`}
                       >
-                        {r.isMandatory ? 'Wajib' : 'Kondisional'}
+                        {r.isMandatory ? 'Mandatory' : 'Conditional'}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono font-semibold">
@@ -688,17 +688,17 @@ export const MasterDataView: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       {r.autoRejectOnTamper ? (
-                        <span className="text-[#DC2626] font-semibold text-[11px]">YA (Hard Flag)</span>
+                        <span className="text-[#DC2626] font-semibold text-[11px]">YES (Hard Flag)</span>
                       ) : (
-                        <span className="text-[#6B6B6B] text-[11px]">Review Manual</span>
+                        <span className="text-[#6B6B6B] text-[11px]">Manual Review</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <button
-                        onClick={() => showNotification(`Aturan ${r.documentType} diedit`)}
+                        onClick={() => showNotification(`Rule for ${r.documentType} edited.`)}
                         className="text-xs text-[#2563EB] hover:underline font-medium"
                       >
-                        Ubah Batas
+                        Edit Rule
                       </button>
                     </td>
                   </tr>

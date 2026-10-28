@@ -72,17 +72,17 @@ export default function App() {
   // Compute pending count
   const pendingCount = cases.filter((c) => c.status === 'pending').length;
 
-  // Title per tab in Indonesian / English
+  // Title per tab in English
   const tabTitles: Record<NavTab, string> = {
     dashboard: 'Financing Verification Dashboard',
     queue: 'Review Queue & Decisions',
     detail: `Verification Audit — ${currentCase.customerName} (${currentCase.id})`,
     gis: 'Geospatial Field Survey Map (GIS)',
     qa: 'Tele-Verification Audio QA & Compliance',
-    surveyor: 'Kinerja & Monitoring Surveyor Lapangan (CMO)',
-    icr: 'ICR Formulir & Validasi Agunan ("Sentuh Tanahku")',
-    reports: 'Laporan Kinerja Cabang & Audit Trail OJK',
-    master: 'Master Data & Konfigurasi Operasional BAF',
+    surveyor: 'Field Surveyor Fleet Performance & SLA',
+    icr: 'ICR Form Reader & Collateral Verification ("Sentuh Tanahku")',
+    reports: 'Branch Compliance Reports & OJK Audit Trail',
+    master: 'Master Data & Operational Configuration',
     settings: 'Risk Engine Rules & Parameters',
   };
 

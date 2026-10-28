@@ -76,13 +76,13 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
     <div className="space-y-6">
       {/* 4-Pillar High-Density Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Pillar 1: e-KTP & Biometrik */}
+        {/* Pillar 1: e-KTP & Biometrics */}
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-[#F7F7F5] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs pb-2 border-b border-[#E5E5E3]">
               <span className="font-semibold text-[#1A1A1A] flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#2563EB]" />
-                1. e-KTP &amp; Biometrik
+                1. e-KTP &amp; Biometrics
               </span>
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
@@ -93,7 +93,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
                     : 'bg-[#16A34A]/10 text-[#16A34A]'
                 }`}
               >
-                Anomali {document.score}/100
+                Anomaly {document.score}/100
               </span>
             </div>
 
@@ -105,15 +105,15 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Format NIK:</span>
+                <span className="text-[#6B6B6B]">NIK Format:</span>
                 <span className={`font-medium ${document.nikValidation.isValidStructure ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
-                  {document.nikValidation.isValidStructure ? 'Valid Algoritma' : 'Anomali Tanggal'}
+                  {document.nikValidation.isValidStructure ? 'Valid Algorithm' : 'Date Anomaly'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Manipulasi Gambar:</span>
+                <span className="text-[#6B6B6B]">Image Tampering:</span>
                 <span className={`font-medium ${document.tamperFlags.length > 0 ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>
-                  {document.tamperFlags.length > 0 ? `${document.tamperFlags.length} Flag Forensik` : 'Bebas Rekayasa'}
+                  {document.tamperFlags.length > 0 ? `${document.tamperFlags.length} Forensic Flags` : 'Tamper Free'}
                 </span>
               </div>
             </div>
@@ -123,18 +123,18 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
             onClick={() => onNavigateTab('ektp')}
             className="mt-4 pt-2 border-t border-[#E5E5E3] text-[11px] font-medium text-[#2563EB] hover:underline flex items-center justify-between"
           >
-            <span>Buka Forensik e-KTP</span>
+            <span>Open e-KTP Forensics</span>
             <ExternalLink className="w-3 h-3" />
           </button>
         </div>
 
-        {/* Pillar 2: Geotag & Survei */}
+        {/* Pillar 2: Geotag & Survey */}
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-[#F7F7F5] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs pb-2 border-b border-[#E5E5E3]">
               <span className="font-semibold text-[#1A1A1A] flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
-                2. Geotag &amp; Survei
+                2. Geotag &amp; Survey
               </span>
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
@@ -145,13 +145,13 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
                     : 'bg-[#16A34A]/10 text-[#16A34A]'
                 }`}
               >
-                Anomali {geo.score}/100
+                Anomaly {geo.score}/100
               </span>
             </div>
 
             <div className="mt-3 space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Jarak ke Domisili:</span>
+                <span className="text-[#6B6B6B]">Distance to Home:</span>
                 <span
                   className={`font-mono font-bold ${
                     geo.distanceStatus === 'red'
@@ -161,19 +161,19 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
                       : 'text-[#16A34A]'
                   }`}
                 >
-                  {geo.distanceMeters.toLocaleString('id-ID')} meter
+                  {geo.distanceMeters.toLocaleString('id-ID')} m
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Deteksi Mock GPS:</span>
+                <span className="text-[#6B6B6B]">Mock GPS Detection:</span>
                 <span className={`font-medium ${geo.isMockLocationDetected ? 'text-[#DC2626] font-bold' : 'text-[#16A34A]'}`}>
-                  {geo.isMockLocationDetected ? 'FakeGPS AKTIF' : 'Bersih (Hardware GPS)'}
+                  {geo.isMockLocationDetected ? 'FakeGPS ACTIVE' : 'Clean (Hardware GPS)'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Foto Survei:</span>
+                <span className="text-[#6B6B6B]">Survey Photos:</span>
                 <span className="text-[#1A1A1A] font-medium">
-                  {geo.surveyPhotos.length} Foto In-App
+                  {geo.surveyPhotos.length} In-App Photos
                 </span>
               </div>
             </div>
@@ -183,18 +183,18 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
             onClick={() => onNavigateTab('geo')}
             className="mt-4 pt-2 border-t border-[#E5E5E3] text-[11px] font-medium text-[#2563EB] hover:underline flex items-center justify-between"
           >
-            <span>Buka Peta GIS &amp; Foto</span>
+            <span>Open GIS Map &amp; Photos</span>
             <ExternalLink className="w-3 h-3" />
           </button>
         </div>
 
-        {/* Pillar 3: Tele-Verifikasi QA */}
+        {/* Pillar 3: Tele-Verification QA */}
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-[#F7F7F5] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between text-xs pb-2 border-b border-[#E5E5E3]">
               <span className="font-semibold text-[#1A1A1A] flex items-center gap-1.5">
                 <Headphones className="w-3.5 h-3.5 text-[#2563EB]" />
-                3. Tele-Verifikasi QA
+                3. Tele-Verification QA
               </span>
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
@@ -205,25 +205,25 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
                     : 'bg-[#16A34A]/10 text-[#16A34A]'
                 }`}
               >
-                Anomali {voice.score}/100
+                Anomaly {voice.score}/100
               </span>
             </div>
 
             <div className="mt-3 space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Akurasi Spelling:</span>
+                <span className="text-[#6B6B6B]">Spelling Accuracy:</span>
                 <span className={`font-mono font-bold ${voice.spellingAccuracyScore >= 80 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
                   {voice.spellingAccuracyScore}%
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Keraguan Konsumen:</span>
+                <span className="text-[#6B6B6B]">Hesitation Pauses:</span>
                 <span className={`font-medium ${voice.overallHesitancyCount > 1 ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>
-                  {voice.overallHesitancyCount}x Jeda Ragu
+                  {voice.overallHesitancyCount}x Pauses
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Kepatuhan Script:</span>
+                <span className="text-[#6B6B6B]">Script Compliance:</span>
                 <span className="font-mono font-semibold text-[#1A1A1A]">
                   {voice.scriptComplianceScore}%
                 </span>
@@ -235,7 +235,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
             onClick={() => onNavigateTab('voice')}
             className="mt-4 pt-2 border-t border-[#E5E5E3] text-[11px] font-medium text-[#2563EB] hover:underline flex items-center justify-between"
           >
-            <span>Buka Audio &amp; Transkrip</span>
+            <span>Open Audio &amp; Transcript</span>
             <ExternalLink className="w-3 h-3" />
           </button>
         </div>
@@ -246,25 +246,25 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
             <div className="flex items-center justify-between text-xs pb-2 border-b border-[#E5E5E3]">
               <span className="font-semibold text-[#1A1A1A] flex items-center gap-1.5">
                 <FileCheck className="w-3.5 h-3.5 text-[#2563EB]" />
-                4. Dokumen &amp; ICR
+                4. Documents &amp; ICR
               </span>
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#16A34A]/10 text-[#16A34A]">
-                Kelengkapan 100%
+                100% Complete
               </span>
             </div>
 
             <div className="mt-3 space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Slip Gaji / Rekening:</span>
-                <span className="font-medium text-[#1A1A1A]">Tervalidasi OCR</span>
+                <span className="text-[#6B6B6B]">Salary / Bank Slip:</span>
+                <span className="font-medium text-[#1A1A1A]">OCR Validated</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Kartu Keluarga (KK):</span>
-                <span className="font-medium text-[#16A34A]">Terverifikasi</span>
+                <span className="text-[#6B6B6B]">Family Card (KK):</span>
+                <span className="font-medium text-[#16A34A]">Verified</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#6B6B6B]">Agunan Sentuh Tanahku:</span>
-                <span className="text-[#6B6B6B]">Non-Agunan Properti</span>
+                <span className="text-[#6B6B6B]">BPN Sentuh Tanahku:</span>
+                <span className="text-[#6B6B6B]">Non-Property Collateral</span>
               </div>
             </div>
           </div>
@@ -273,7 +273,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
             onClick={() => onNavigateTab('icr')}
             className="mt-4 pt-2 border-t border-[#E5E5E3] text-[11px] font-medium text-[#2563EB] hover:underline flex items-center justify-between"
           >
-            <span>Buka Cross-Check Dokumen</span>
+            <span>Open Cross-Check Documents</span>
             <ExternalLink className="w-3 h-3" />
           </button>
         </div>
@@ -287,7 +287,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
             <div className="flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-[#2563EB]" />
               <h4 className="text-sm font-semibold text-[#1A1A1A]">
-                Forensik Biometrik: Foto e-KTP vs Selfie Konsumen
+                Biometric Forensics: Physical e-KTP vs Consumer Selfie
               </h4>
             </div>
             <span
@@ -304,7 +304,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
           <div className="grid grid-cols-2 gap-4">
             {/* KTP Photo */}
             <div className="space-y-1.5 text-center">
-              <div className="text-[11px] text-[#6B6B6B] font-medium">Pasfoto Fisik e-KTP</div>
+              <div className="text-[11px] text-[#6B6B6B] font-medium">Physical e-KTP Portrait</div>
               <div className="h-44 rounded-lg border border-[#E5E5E3] overflow-hidden bg-[#F7F7F5] flex items-center justify-center relative">
                 <img
                   src={document.ktpImageUrl}
@@ -319,7 +319,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
 
             {/* Selfie Photo */}
             <div className="space-y-1.5 text-center">
-              <div className="text-[11px] text-[#6B6B6B] font-medium">Selfie Liveness Konsumen</div>
+              <div className="text-[11px] text-[#6B6B6B] font-medium">Consumer Liveness Selfie</div>
               <div className="h-44 rounded-lg border border-[#E5E5E3] overflow-hidden bg-[#F7F7F5] flex items-center justify-center relative">
                 <img
                   src={document.selfieImageUrl}
@@ -335,12 +335,12 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
 
           <div className="p-3 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] text-xs text-[#1A1A1A] space-y-1">
             <div className="font-semibold text-[11px] text-[#6B6B6B] uppercase tracking-wider">
-              Hasil Analisis Biometrik
+              Biometric Analysis Summary
             </div>
             <p>
               {document.faceMatchScore >= 80
-                ? 'Struktur tulang wajah, mata, dan jarak hidung-bibir identik antara foto e-KTP dan foto selfie. Terverifikasi pemilik sah.'
-                : 'Peringatan ketidakcocokan wajah: nilai kemiripan berada di bawah batas ambang 80%. Potensi pengajuan fiktif atau menggunakan identitas orang lain.'}
+                ? 'Facial landmarks, eye positioning, and bone geometry match between physical e-KTP and consumer selfie. Legitimate applicant verified.'
+                : 'Facial mismatch alert: Similarity score falls below 80% threshold. Potential synthetic identity or proxy applicant detected.'}
             </p>
           </div>
         </div>
@@ -351,7 +351,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
             <div className="flex items-center gap-2">
               <Navigation className="w-4 h-4 text-[#2563EB]" />
               <h4 className="text-sm font-semibold text-[#1A1A1A]">
-                Validasi Lokasi: Domisili KTP vs Titik Survei CMO
+                Location Validation: Target Residence vs Surveyor Check-In
               </h4>
             </div>
             <span
@@ -370,7 +370,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
           <div className="space-y-3 text-xs">
             <div className="p-3 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] space-y-1.5">
               <div className="flex items-center justify-between text-[#6B6B6B]">
-                <span>Alamat Target Pengajuan:</span>
+                <span>Target Residential Address:</span>
                 <span className="font-mono text-[11px]">{geo.targetLat.toFixed(4)}, {geo.targetLng.toFixed(4)}</span>
               </div>
               <div className="font-medium text-[#1A1A1A]">{geo.targetAddress}</div>
@@ -378,7 +378,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
 
             <div className="p-3 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] space-y-1.5">
               <div className="flex items-center justify-between text-[#6B6B6B]">
-                <span>Titik Check-In Surveyor (CMO):</span>
+                <span>Surveyor (CMO) Check-In Coordinates:</span>
                 <span className="font-mono text-[11px]">{geo.surveyLat.toFixed(4)}, {geo.surveyLng.toFixed(4)}</span>
               </div>
               <div className="font-medium text-[#1A1A1A] flex items-center justify-between">
@@ -392,16 +392,16 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
               <div className="p-3 rounded-lg bg-[#DC2626]/10 border border-[#DC2626]/30 text-xs text-[#DC2626] flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-semibold">Indikasi Mock Location / FakeGPS Aktif!</div>
+                  <div className="font-semibold">Mock Location / FakeGPS Detected!</div>
                   <div className="text-[11px] mt-0.5">
-                    {geo.mockLocationReason || 'Android Location Provider mengindikasikan koordinat disimulasikan dari luar lokasi asli.'}
+                    {geo.mockLocationReason || 'Android Location Provider indicates coordinates simulated via mock location provider.'}
                   </div>
                 </div>
               </div>
             ) : (
               <div className="p-3 rounded-lg bg-[#16A34A]/10 border border-[#16A34A]/30 text-xs text-[#16A34A] flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Hardware GPS Asli: Koordinat terverifikasi satelit GLONASS/GPS tanpa mock provider.</span>
+                <span>Hardware GPS Verified: Satellite GLONASS/GPS lock without mock location providers.</span>
               </div>
             )}
           </div>
@@ -413,14 +413,14 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
         <div className="p-4 border-b border-[#E5E5E3] bg-[#F7F7F5] flex items-center justify-between">
           <div>
             <h4 className="text-sm font-semibold text-[#1A1A1A]">
-              Matriks Konsistensi Data Lintas Dokumen &amp; Tele-Verifikasi
+              Cross-Document Data Consistency Matrix &amp; Tele-Verification
             </h4>
             <p className="text-xs text-[#6B6B6B]">
-              Otomasi pencocokan silang antara e-KTP, Kartu Keluarga, Slip Gaji, dan ucapan konsumen saat telepon.
+              Automated cross-referencing between e-KTP, Family Card (KK), salary slip, and tele-verification speech.
             </p>
           </div>
           <span className="text-xs bg-white border border-[#E5E5E3] px-2.5 py-1 rounded text-[#1A1A1A] font-medium">
-            5 Parameter Kunci
+            5 Key Parameters
           </span>
         </div>
 
@@ -428,12 +428,12 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
           <table className="w-full text-left text-xs">
             <thead className="bg-white border-b border-[#E5E5E3] text-[#6B6B6B] font-medium">
               <tr>
-                <th className="py-3 px-4">Parameter Pengajuan</th>
-                <th className="py-3 px-4">Ekstraksi Fisik e-KTP</th>
-                <th className="py-3 px-4">Kartu Keluarga (KK)</th>
-                <th className="py-3 px-4">Ucapan Tele-Verifikasi</th>
-                <th className="py-3 px-4 text-center">Status Konsistensi</th>
-                <th className="py-3 px-4 text-right">Catatan Validasi</th>
+                <th className="py-3 px-4">Application Parameter</th>
+                <th className="py-3 px-4">Physical e-KTP Extraction</th>
+                <th className="py-3 px-4">Family Card (KK)</th>
+                <th className="py-3 px-4">Tele-Verification Spoken</th>
+                <th className="py-3 px-4 text-center">Consistency Status</th>
+                <th className="py-3 px-4 text-right">Validation Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E5E3]">
@@ -454,7 +454,7 @@ export const ExecutiveSummaryTab: React.FC<ExecutiveSummaryTabProps> = ({
                       {row.isMatch ? (
                         <>
                           <CheckCircle2 className="w-3 h-3" />
-                          <span>Cocok</span>
+                          <span>Match</span>
                         </>
                       ) : (
                         <>

@@ -24,11 +24,11 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
   onOpenGisMap,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBranch, setSelectedBranch] = useState('Semua Cabang');
+  const [selectedBranch, setSelectedBranch] = useState('All Branches');
   const [selectedSurveyor, setSelectedSurveyor] = useState<SurveyorProfile>(mockSurveyorProfiles[0]);
 
   const branches = [
-    'Semua Cabang',
+    'All Branches',
     'BAF Jakarta Selatan',
     'BAF Kota Bekasi',
     'BAF Jakarta Barat',
@@ -40,7 +40,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
     const matchSearch =
       s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchBranch = selectedBranch === 'Semua Cabang' || s.branch === selectedBranch;
+    const matchBranch = selectedBranch === 'All Branches' || s.branch === selectedBranch;
     return matchSearch && matchBranch;
   });
 
@@ -59,10 +59,10 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-[#1A1A1A]">
-            Kinerja &amp; Monitoring Surveyor Lapangan (CMO)
+            Field Surveyor Fleet Performance &amp; SLA Monitoring
           </h1>
           <p className="text-sm text-[#6B6B6B] mt-1">
-            Pantau rute kunjungan, validasi geotag in-app, kepatuhan radius fisik, dan deteksi FakeGPS.
+            Track visit routes, in-app geotag validation, physical survey radius compliance, and Mock GPS spoofing detection.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-[#E5E5E3] bg-white text-sm font-medium text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors"
           >
             <MapPin className="w-4 h-4 text-[#2563EB]" />
-            <span>Buka Peta GIS Sebaran</span>
+            <span>Open GIS Field Map</span>
           </button>
         </div>
       </div>
@@ -80,47 +80,47 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="text-xs text-[#6B6B6B] flex items-center justify-between">
-            <span>Surveyor Aktif</span>
+            <span>Active Surveyors</span>
             <Users className="w-4 h-4 text-[#2563EB]" />
           </div>
           <div className="text-2xl font-semibold text-[#1A1A1A] mt-2">{totalSurveyors}</div>
-          <div className="text-[11px] text-[#16A34A] mt-1">100% terkoneksi CameraX</div>
+          <div className="text-[11px] text-[#16A34A] mt-1">100% CameraX connected</div>
         </div>
 
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="text-xs text-[#6B6B6B] flex items-center justify-between">
-            <span>Survei Selesai Hari Ini</span>
+            <span>Surveys Completed Today</span>
             <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
           </div>
           <div className="text-2xl font-semibold text-[#1A1A1A] mt-2">{totalCompleted}</div>
-          <div className="text-[11px] text-[#6B6B6B] mt-1">{totalPending} tugas berjalan</div>
+          <div className="text-[11px] text-[#6B6B6B] mt-1">{totalPending} tasks ongoing</div>
         </div>
 
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="text-xs text-[#6B6B6B] flex items-center justify-between">
-            <span>Tingkat Kepatuhan SLA</span>
+            <span>SLA Compliance Rate</span>
             <Clock className="w-4 h-4 text-[#2563EB]" />
           </div>
           <div className="text-2xl font-semibold text-[#1A1A1A] mt-2">{avgSla}%</div>
-          <div className="text-[11px] text-[#16A34A] mt-1">Target BAF ≥90%</div>
+          <div className="text-[11px] text-[#16A34A] mt-1">BAF Target &ge;90%</div>
         </div>
 
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="text-xs text-[#6B6B6B] flex items-center justify-between">
-            <span>Flag FakeGPS / Mock</span>
+            <span>Fake GPS / Mock Flags</span>
             <ShieldAlert className="w-4 h-4 text-[#DC2626]" />
           </div>
           <div className="text-2xl font-semibold text-[#DC2626] mt-2">{totalMockGps}</div>
-          <div className="text-[11px] text-[#DC2626] mt-1">Terdeteksi di Jaksel &amp; Jakpus</div>
+          <div className="text-[11px] text-[#DC2626] mt-1">Detected in Jaksel &amp; Jakpus</div>
         </div>
 
         <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white">
           <div className="text-xs text-[#6B6B6B] flex items-center justify-between">
-            <span>Rata-rata Deviasi</span>
+            <span>Avg. Radius Deviation</span>
             <Smartphone className="w-4 h-4 text-[#6B6B6B]" />
           </div>
           <div className="text-2xl font-semibold text-[#1A1A1A] mt-2">124 m</div>
-          <div className="text-[11px] text-[#16A34A] mt-1">Di dalam zona toleransi hijau</div>
+          <div className="text-[11px] text-[#16A34A] mt-1">Within green tolerance zone</div>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6B6B]" />
               <input
                 type="text"
-                placeholder="Cari surveyor berdasarkan nama atau ID..."
+                placeholder="Search surveyor by name or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-white border border-[#E5E5E3] rounded-lg text-sm text-[#1A1A1A] focus:outline-none focus:border-[#2563EB]"
@@ -160,11 +160,11 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
                 <thead>
                   <tr className="bg-[#F7F7F5] border-b border-[#E5E5E3] text-[#6B6B6B] text-xs font-semibold uppercase tracking-wider">
                     <th className="py-3 px-4">Surveyor</th>
-                    <th className="py-3 px-4">Cabang</th>
-                    <th className="py-3 px-4">Status Hari Ini</th>
+                    <th className="py-3 px-4">Branch</th>
+                    <th className="py-3 px-4">Today's Progress</th>
                     <th className="py-3 px-4">SLA</th>
-                    <th className="py-3 px-4 text-center">FakeGPS</th>
-                    <th className="py-3 px-4 text-right">Aksi</th>
+                    <th className="py-3 px-4 text-center">Fake GPS</th>
+                    <th className="py-3 px-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E5E3]">
@@ -188,7 +188,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
                         <td className="py-3 px-4">
                           <div className="text-xs text-[#1A1A1A]">
                             <span className="font-semibold text-[#16A34A]">{s.todayCompleted}</span>{' '}
-                            selesai · {s.todayPending} aktif
+                            completed · {s.todayPending} active
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -211,7 +211,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
                               <span>{s.mockGpsFlagsCount} Alert</span>
                             </span>
                           ) : (
-                            <span className="text-xs text-[#16A34A] font-medium">Bersih</span>
+                            <span className="text-xs text-[#16A34A] font-medium">Clean</span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-right">
@@ -232,7 +232,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
             <div className="flex items-start justify-between pb-3 border-b border-[#E5E5E3]">
               <div>
                 <span className="text-[11px] uppercase tracking-wider font-semibold text-[#2563EB]">
-                  Detail Profil Surveyor
+                  Surveyor Profile Details
                 </span>
                 <h2 className="text-lg font-semibold text-[#1A1A1A] mt-0.5">
                   {selectedSurveyor.name}
@@ -251,7 +251,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
                       : 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
                   }`}
                 >
-                  {selectedSurveyor.activeStatus === 'on_duty' ? 'Sedang di Lapangan' : 'Online / Siap'}
+                  {selectedSurveyor.activeStatus === 'on_duty' ? 'On Field Duty' : 'Online / Available'}
                 </span>
                 <div className="text-xs text-[#6B6B6B] mt-1 flex items-center justify-end gap-1">
                   <Phone className="w-3 h-3" />
@@ -263,19 +263,19 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
             {/* Performance Indicators */}
             <div className="grid grid-cols-3 gap-2 p-3 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] text-center">
               <div>
-                <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">SLA Kunjungan</div>
+                <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Visit SLA</div>
                 <div className="text-base font-bold text-[#1A1A1A] mt-0.5">
                   {selectedSurveyor.slaComplianceRate}%
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Deviasi Radius</div>
+                <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Radius Deviation</div>
                 <div className="text-base font-bold text-[#1A1A1A] mt-0.5">
                   {selectedSurveyor.avgDistanceDeviationMeters} m
                 </div>
               </div>
               <div>
-                <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">FakeGPS Alert</div>
+                <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Fake GPS Alerts</div>
                 <div
                   className={`text-base font-bold mt-0.5 ${
                     selectedSurveyor.mockGpsFlagsCount > 0 ? 'text-[#DC2626]' : 'text-[#16A34A]'
@@ -291,11 +291,11 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
               <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-xs text-[#DC2626] flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold">Indikasi Pelanggaran Integritas:</span>
+                  <span className="font-semibold">Integrity Violation Alert:</span>
                   <p className="mt-0.5 text-[11px] leading-relaxed">
-                    Perangkat surveyor terdeteksi menjalankan aplikasi mock location provider (FakeGPS)
-                    pada pengajuan Rian Hendrawan (CASE-0941) &amp; Hendra Irawan (CASE-0946). Tindakan investigasi
-                    lapangan direkomendasikan.
+                    Surveyor device detected running mock location provider (Fake GPS) on applications
+                    for Rian Hendrawan (CASE-0941) &amp; Hendra Irawan (CASE-0946). Immediate supervisor
+                    field audit recommended.
                   </p>
                 </div>
               </div>
@@ -304,7 +304,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
             {/* Today's Schedule & Cases */}
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-[#6B6B6B] mb-2">
-                Jadwal &amp; Penugasan Kasus Hari Ini
+                Today's Assigned Cases &amp; Route
               </div>
               <div className="space-y-2">
                 {selectedSurveyor.assignedCases.map((c) => (
@@ -333,11 +333,11 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
                             </span>
                           ) : c.status === 'completed' ? (
                             <span className="text-[10px] font-semibold text-[#16A34A] px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200">
-                              Selesai
+                              Completed
                             </span>
                           ) : (
                             <span className="text-[10px] font-semibold text-[#D97706] px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">
-                              Terjadwal
+                              Scheduled
                             </span>
                           )}
                         </div>
@@ -352,13 +352,13 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
                     {c.distanceMeters !== undefined && (
                       <div className="mt-2 pt-2 border-t border-[#E5E5E3] flex items-center justify-between text-[11px]">
                         <span className="text-[#6B6B6B]">
-                          Selisih GPS: <strong className="text-[#1A1A1A]">{c.distanceMeters} m</strong>
+                          GPS Deviation: <strong className="text-[#1A1A1A]">{c.distanceMeters} m</strong>
                         </span>
                         <button
                           onClick={() => onSelectCase(c.caseId)}
                           className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-medium"
                         >
-                          <span>Review Kasus</span>
+                          <span>Review Case</span>
                           <ExternalLink className="w-3 h-3" />
                         </button>
                       </div>

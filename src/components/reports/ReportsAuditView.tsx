@@ -46,10 +46,10 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-[#1A1A1A]">
-            Laporan Kinerja Cabang &amp; Audit Trail OJK / UU PDP
+            Branch Compliance Reports &amp; OJK Audit Trail
           </h1>
           <p className="text-sm text-[#6B6B6B] mt-1">
-            Rekapitulasi rasio penolakan fraud per cabang serta jejak audit keputusan sistem dan verifikator sesuai regulasi OJK.
+            Recap of branch fraud rejection rates and immutable audit logs of system and manual underwriter decisions in compliance with OJK and UU PDP.
           </p>
         </div>
 
@@ -60,14 +60,14 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E5E5E3] bg-white text-xs font-semibold text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors"
           >
             <Download className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>Ekspor Excel</span>
+            <span>Export Excel</span>
           </button>
           <button
             onClick={() => handleSimulateExport('PDF')}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2563EB] text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Unduh Laporan PDF</span>
+            <span>Download PDF Report</span>
           </button>
         </div>
       </div>
@@ -77,7 +77,7 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
         <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-xs text-[#16A34A] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>File laporan <strong>{downloadSuccess}</strong> berhasil di-generate secara lokal.</span>
+            <span>Report file <strong>{downloadSuccess}</strong> generated successfully.</span>
           </div>
         </div>
       )}
@@ -93,7 +93,7 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Kinerja &amp; Rasio Fraud per Cabang</span>
+          <span>Branch Performance &amp; Fraud Ratios</span>
         </button>
         <button
           onClick={() => setActiveTab('audit')}
@@ -104,7 +104,7 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
           }`}
         >
           <History className="w-4 h-4" />
-          <span>Jejak Audit Sistem (OJK &amp; UU PDP)</span>
+          <span>System Audit Trail (OJK &amp; UU PDP)</span>
         </button>
       </div>
 
@@ -116,14 +116,14 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="bg-[#F7F7F5] border-b border-[#E5E5E3] text-[#6B6B6B] text-xs font-semibold uppercase tracking-wider">
-                    <th className="py-3 px-4">Kantor Cabang BAF</th>
-                    <th className="py-3 px-4 text-center">Total Pengajuan</th>
+                    <th className="py-3 px-4">BAF Branch Office</th>
+                    <th className="py-3 px-4 text-center">Total Submissions</th>
                     <th className="py-3 px-4 text-center">Auto-Approve</th>
-                    <th className="py-3 px-4 text-center">Review Manual</th>
-                    <th className="py-3 px-4 text-center">Ditolak Fraud</th>
-                    <th className="py-3 px-4 text-center">Rasio Fraud</th>
-                    <th className="py-3 px-4 text-center">Mock GPS Alert</th>
-                    <th className="py-3 px-4 text-right">Rata-rata Durasi</th>
+                    <th className="py-3 px-4 text-center">Manual Review</th>
+                    <th className="py-3 px-4 text-center">Rejected Fraud</th>
+                    <th className="py-3 px-4 text-center">Fraud Rate</th>
+                    <th className="py-3 px-4 text-center">Mock GPS Alerts</th>
+                    <th className="py-3 px-4 text-right">Avg. Turnaround</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E5E3]">
@@ -158,14 +158,14 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
                       <td className="py-3.5 px-4 text-center">
                         {b.mockGpsDetectedCount > 0 ? (
                           <span className="font-mono text-xs font-bold text-[#DC2626]">
-                            {b.mockGpsDetectedCount} Kasus
+                            {b.mockGpsDetectedCount} Cases
                           </span>
                         ) : (
                           <span className="text-xs text-[#16A34A]">0</span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono text-xs text-[#6B6B6B]">
-                        {b.avgProcessTimeMinutes} Menit
+                        {b.avgProcessTimeMinutes} min
                       </td>
                     </tr>
                   ))}
@@ -182,10 +182,10 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
               </div>
               <div>
                 <span className="font-semibold text-[#1A1A1A] block">
-                  Kepatuhan UU Pelindungan Data Pribadi (UU PDP No. 27/2022) &amp; POJK Multifinance
+                  Personal Data Protection Act (UU PDP No. 27/2022) &amp; POJK Multifinance Compliance
                 </span>
                 <span className="text-[#6B6B6B] mt-0.5 block">
-                  Data NIK, biometrik wajah, dan rekaman percakapan tersimpan dengan enkripsi AES-256 di data center Indonesia. Masking 6 digit tengah otomatis diaktifkan pada role verifikator level 1.
+                  Applicant NIK, facial biometrics, and call recordings are encrypted with AES-256 within Indonesian data centers. Automated 6-digit middle masking is enforced for Level 1 verifiers.
                 </span>
               </div>
             </div>
@@ -205,14 +205,14 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6B6B]" />
               <input
                 type="text"
-                placeholder="Cari referensi kasus, aktor, atau aksi..."
+                placeholder="Search case reference, actor, or action..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-white border border-[#E5E5E3] rounded-lg text-sm text-[#1A1A1A] focus:outline-none focus:border-[#2563EB]"
               />
             </div>
             <span className="text-xs text-[#6B6B6B]">
-              Menampilkan {filteredAudits.length} catatan audit log immutable
+              Displaying {filteredAudits.length} immutable audit log entries
             </span>
           </div>
 
@@ -221,12 +221,12 @@ export const ReportsAuditView: React.FC<ReportsAuditViewProps> = ({ onSelectCase
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="bg-[#F7F7F5] border-b border-[#E5E5E3] text-[#6B6B6B] text-xs font-semibold uppercase tracking-wider">
-                    <th className="py-3 px-4">Waktu &amp; ID</th>
-                    <th className="py-3 px-4">Kategori</th>
-                    <th className="py-3 px-4">Aktor / Sistem</th>
-                    <th className="py-3 px-4">Kasus</th>
-                    <th className="py-3 px-4">Aksi &amp; Detail</th>
-                    <th className="py-3 px-4 text-right">Integritas SHA-256</th>
+                    <th className="py-3 px-4">Timestamp &amp; ID</th>
+                    <th className="py-3 px-4">Category</th>
+                    <th className="py-3 px-4">Actor / System</th>
+                    <th className="py-3 px-4">Case</th>
+                    <th className="py-3 px-4">Action &amp; Details</th>
+                    <th className="py-3 px-4 text-right">SHA-256 Integrity</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E5E3]">

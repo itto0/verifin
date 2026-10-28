@@ -64,16 +64,16 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
 
   const handleSaveDecision = () => {
     setIsSubmitting(true);
-    const finalNote = decisionNotes.trim() || `Keputusan ${decisionChoice} ditetapkan oleh verifikator.`;
+    const finalNote = decisionNotes.trim() || `Decision ${decisionChoice} confirmed by manual verifier.`;
     setTimeout(() => {
       onUpdateStatus(caseData.id, decisionChoice, finalNote);
       setIsSubmitting(false);
       setActionSuccess(
         decisionChoice === 'approved'
-          ? 'Pengajuan berhasil disetujui (Approved) dan dialihkan ke LOS.'
+          ? 'Application successfully approved and transferred to LOS.'
           : decisionChoice === 'resurvey'
-          ? 'Instruksi survey ulang berhasil dikirimkan ke CMO cabang.'
-          : 'Pengajuan ditolak sebagai indikasi fraud & dicatat pada audit trail OJK.'
+          ? 'Re-survey instruction dispatched to branch CMO.'
+          : 'Application rejected due to fraud indicators & logged in OJK audit trail.'
       );
       setTimeout(() => setActionSuccess(null), 4000);
     }, 400);
@@ -87,7 +87,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
           <button
             onClick={onBackToQueue}
             className="p-2 rounded-lg border border-[#E5E5E3] text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F7F7F5] transition-colors"
-            title="Kembali ke antrean review"
+            title="Back to review queue"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -102,7 +102,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <button
                 onClick={handleCopyNik}
                 className="text-xs text-[#6B6B6B] hover:text-[#1A1A1A] flex items-center gap-1 font-mono bg-[#F7F7F5] px-1.5 py-0.5 rounded border border-[#E5E5E3]"
-                title="Salin NIK"
+                title="Copy NIK"
               >
                 <span>NIK: {caseData.customerNik}</span>
                 {copiedNik ? <Check className="w-3 h-3 text-[#16A34A]" /> : <Copy className="w-3 h-3" />}
@@ -111,7 +111,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
             <div className="text-xs text-[#6B6B6B] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="font-medium text-[#1A1A1A]">{caseData.branch}</span>
               <span>·</span>
-              <span>Diajukan: {caseData.submittedAt} WIB</span>
+              <span>Submitted: {caseData.submittedAt} WIB</span>
               <span>·</span>
               <span className="capitalize">
                 Status:{' '}
@@ -126,7 +126,13 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                       : 'text-[#2563EB]'
                   }`}
                 >
-                  {caseData.status}
+                  {caseData.status === 'approved'
+                    ? 'Approved'
+                    : caseData.status === 'resurvey'
+                    ? 'Re-Survey'
+                    : caseData.status === 'rejected_fraud'
+                    ? 'Rejected Fraud'
+                    : 'Pending'}
                 </strong>
               </span>
             </div>
@@ -141,16 +147,16 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
           </div>
 
           <div className="px-3 py-1.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] text-xs">
-            <span className="text-[#6B6B6B]">Plafon: </span>
+            <span className="text-[#6B6B6B]">Loan: </span>
             <span className="font-semibold text-[#1A1A1A] font-mono">
-              Rp {(caseData.loanAmount / 1000000).toFixed(1)} Jt
+              Rp {(caseData.loanAmount / 1000000).toFixed(1)} M
             </span>
           </div>
 
           <div className="px-3 py-1.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] text-xs">
-            <span className="text-[#6B6B6B]">Cicilan: </span>
+            <span className="text-[#6B6B6B]">Monthly: </span>
             <span className="font-semibold text-[#2563EB] font-mono">
-              Rp {caseData.monthlyInstallment.toLocaleString('id-ID')}/bln
+              Rp {caseData.monthlyInstallment.toLocaleString('id-ID')}/mo
             </span>
           </div>
 
@@ -163,9 +169,9 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 : 'bg-[#16A34A]/10 border-[#16A34A]/30 text-[#16A34A]'
             }`}
           >
-            <span>Skor: {riskScore.totalScore}/100</span>
+            <span>Score: {riskScore.totalScore}/100</span>
             <span>·</span>
-            <span>{isHigh ? 'Risiko Tinggi' : isMedium ? 'Risiko Sedang' : 'Risiko Rendah'}</span>
+            <span>{isHigh ? 'High Risk' : isMedium ? 'Medium Risk' : 'Low Risk'}</span>
           </div>
         </div>
       </div>
@@ -186,9 +192,9 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
           <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
               <div className="text-xs font-semibold text-[#1A1A1A]">
-                Evaluasi Multi-Pilar Risiko
+                Multi-Pillar Risk Evaluation
               </div>
-              <span className="text-[11px] text-[#6B6B6B]">Standar BAF</span>
+              <span className="text-[11px] text-[#6B6B6B]">BAF Standards</span>
             </div>
 
             {/* Pillar Breakdown Table */}
@@ -196,7 +202,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">1. e-KTP &amp; Biometrik (30%)</span>
+                  <span className="text-[#1A1A1A] font-medium">1. e-KTP &amp; Biometrics (30%)</span>
                 </div>
                 <span
                   className={`font-mono font-bold ${
@@ -214,7 +220,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">2. Geotag &amp; Survei (30%)</span>
+                  <span className="text-[#1A1A1A] font-medium">2. Geotag &amp; Survey (30%)</span>
                 </div>
                 <span
                   className={`font-mono font-bold ${
@@ -232,7 +238,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
                 <div className="flex items-center gap-2">
                   <Headphones className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">3. Tele-Verifikasi QA (25%)</span>
+                  <span className="text-[#1A1A1A] font-medium">3. Tele-Verification QA (25%)</span>
                 </div>
                 <span
                   className={`font-mono font-bold ${
@@ -250,7 +256,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <div className="flex items-center justify-between p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
                 <div className="flex items-center gap-2">
                   <FileCheck className="w-3.5 h-3.5 text-[#2563EB]" />
-                  <span className="text-[#1A1A1A] font-medium">4. Dokumen &amp; ICR (15%)</span>
+                  <span className="text-[#1A1A1A] font-medium">4. Documents &amp; ICR (15%)</span>
                 </div>
                 <span className="font-mono font-bold text-[#16A34A]">15/100</span>
               </div>
@@ -261,7 +267,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <div className="pt-2 border-t border-[#E5E5E3] space-y-1.5">
                 <div className="text-[11px] font-semibold text-[#DC2626] uppercase tracking-wider flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  <span>Anomali Terdeteksi Mesin AI:</span>
+                  <span>AI Engine Detected Anomalies:</span>
                 </div>
                 <ul className="space-y-1 text-xs text-[#1A1A1A]">
                   {riskScore.reasons.map((reason, idx) => (
@@ -279,7 +285,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
           <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
               <div className="text-xs font-semibold text-[#1A1A1A]">
-                Keputusan Manual Verifikator
+                Manual Verifier Decision Console
               </div>
               <span className="text-[10px] bg-[#2563EB]/10 text-[#2563EB] px-2 py-0.5 rounded font-semibold">
                 SLA Review
@@ -298,7 +304,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Setujui</span>
+                <span>Approve</span>
               </button>
 
               <button
@@ -311,7 +317,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 }`}
               >
                 <AlertTriangle className="w-4 h-4" />
-                <span>Survey Ulang</span>
+                <span>Re-Survey</span>
               </button>
 
               <button
@@ -324,43 +330,43 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 }`}
               >
                 <XCircle className="w-4 h-4" />
-                <span>Tolak Fraud</span>
+                <span>Reject Fraud</span>
               </button>
             </div>
 
             {/* Quick Reason Insert Tags */}
             <div className="space-y-1.5">
               <label className="text-[11px] text-[#6B6B6B] font-medium block">
-                Catatan Verifikasi &amp; Alasan Keputusan:
+                Verification Notes &amp; Decision Rationale:
               </label>
               <div className="flex flex-wrap gap-1">
                 <button
                   type="button"
-                  onClick={() => handleInsertTag('NIK terverifikasi valid')}
+                  onClick={() => handleInsertTag('NIK verified against Dukcapil')}
                   className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#1A1A1A]"
                 >
-                  + NIK Valid
+                  + Valid NIK
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleInsertTag('Mock Location terdeteksi')}
+                  onClick={() => handleInsertTag('Mock Location provider detected')}
                   className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#DC2626]"
                 >
-                  + FakeGPS
+                  + Fake GPS
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleInsertTag('Jarak > 1.000 meter')}
+                  onClick={() => handleInsertTag('Survey radius > 1,000 meters from home')}
                   className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#DC2626]"
                 >
-                  + Radius Merah
+                  + Red Radius
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleInsertTag('Suara konsumen ragu')}
+                  onClick={() => handleInsertTag('Customer speech hesitancy in tele-QA')}
                   className="text-[10px] px-2 py-0.5 rounded bg-[#F7F7F5] border border-[#E5E5E3] hover:bg-[#E5E5E3] text-[#D97706]"
                 >
-                  + Suara Ragu
+                  + Hesitant Voice
                 </button>
               </div>
 
@@ -368,7 +374,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 rows={3}
                 value={decisionNotes}
                 onChange={(e) => setDecisionNotes(e.target.value)}
-                placeholder="Tuliskan catatan pertimbangan verifikator untuk audit trail OJK..."
+                placeholder="Enter underwriting notes and justification for OJK audit trail..."
                 className="w-full p-2.5 text-xs bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg focus:outline-none focus:border-[#2563EB] leading-relaxed resize-none"
               />
             </div>
@@ -381,7 +387,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               className="w-full py-2.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold transition-colors flex items-center justify-center gap-2"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Menyimpan...' : 'Kirim & Simpan Keputusan'}</span>
+              <span>{isSubmitting ? 'Submitting...' : 'Submit Decision'}</span>
             </button>
           </div>
 
@@ -390,10 +396,10 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
             <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
               <div className="text-xs font-semibold text-[#1A1A1A] flex items-center gap-1.5">
                 <History className="w-3.5 h-3.5 text-[#6B6B6B]" />
-                <span>Audit Trail Pengajuan</span>
+                <span>Application Audit Trail</span>
               </div>
               <span className="text-[10px] text-[#6B6B6B] font-mono">
-                {caseData.auditTrail.length} Entri
+                {caseData.auditTrail.length} Entries
               </span>
             </div>
 
@@ -425,7 +431,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Ringkasan Eksekutif (4 Pilar)</span>
+              <span>Executive Summary (4 Pillars)</span>
             </button>
 
             <button
@@ -437,7 +443,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>1. e-KTP &amp; Biometrik</span>
+              <span>1. e-KTP &amp; Biometrics</span>
             </button>
 
             <button
@@ -449,7 +455,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               }`}
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>2. Geotag &amp; Survei GIS</span>
+              <span>2. Geotag &amp; GIS Survey</span>
             </button>
 
             <button
@@ -461,7 +467,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               }`}
             >
               <Headphones className="w-3.5 h-3.5" />
-              <span>3. Tele-Verifikasi QA</span>
+              <span>3. Tele-Verification QA</span>
             </button>
 
             <button
@@ -473,7 +479,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>4. Parameter Risiko</span>
+              <span>4. Risk Parameters</span>
             </button>
           </div>
 

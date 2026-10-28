@@ -1030,7 +1030,7 @@ export const mockSurveyPoints: SurveyorPoint[] = [
 ];
 
 export const branchList = [
-  'Semua Cabang',
+  'All Branches',
   'BAF Jakarta Selatan',
   'BAF Jakarta Barat',
   'BAF Jakarta Pusat',

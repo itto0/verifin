@@ -126,10 +126,10 @@ export const VerificationCharts: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E5E5E3] pb-4 mb-4">
               <div>
                 <h3 className="text-base font-semibold text-[#1A1A1A]">
-                  Tren Volume Verifikasi &amp; Anomali
+                  Verification Volume &amp; Anomaly Trends
                 </h3>
                 <p className="text-xs text-[#6B6B6B] mt-0.5">
-                  Rincian pengajuan harian: persetujuan otomatis, antrean verifikasi manual, dan deteksi fraud.
+                  Daily application breakdown: straight-through approvals, manual review queue, and fraud flags.
                 </p>
               </div>
 
@@ -146,7 +146,7 @@ export const VerificationCharts: React.FC = () => {
                         : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
                     }`}
                   >
-                    7 Hari Terakhir
+                    Last 7 Days
                   </button>
                   <button
                     onClick={() => {
@@ -159,7 +159,7 @@ export const VerificationCharts: React.FC = () => {
                         : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
                     }`}
                   >
-                    30 Hari Terakhir
+                    Last 30 Days
                   </button>
                 </div>
               </div>
@@ -172,21 +172,21 @@ export const VerificationCharts: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-sm bg-[#16A34A]" />
-                    <span>Disetujui ({hoveredDay ? hoveredDay.approved : 114})</span>
+                    <span>Approved ({hoveredDay ? hoveredDay.approved : 114})</span>
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-sm bg-[#D97706]" />
-                    <span>Review Manual ({hoveredDay ? hoveredDay.review : 26})</span>
+                    <span>Manual Review ({hoveredDay ? hoveredDay.review : 26})</span>
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-sm bg-[#DC2626]" />
-                    <span>Terindikasi Fraud ({hoveredDay ? hoveredDay.fraud : 8})</span>
+                    <span>Flagged Fraud ({hoveredDay ? hoveredDay.fraud : 8})</span>
                   </span>
                 </div>
 
                 {hoveredDay && (
                   <div className="font-mono text-xs text-[#1A1A1A] font-semibold">
-                    {hoveredDay.date}: {hoveredDay.total} pengajuan
+                    {hoveredDay.date}: {hoveredDay.total} applications
                   </div>
                 )}
               </div>
@@ -244,10 +244,10 @@ export const VerificationCharts: React.FC = () => {
           <div className="mt-4 pt-3 flex flex-wrap items-center justify-between text-xs text-[#6B6B6B]">
             <div className="flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-[#16A34A]" />
-              <span>Rasio persetujuan otomatis (STP): <strong className="text-[#1A1A1A] tabular-nums">78.4%</strong></span>
+              <span>Straight-Through Processing (STP) ratio: <strong className="text-[#1A1A1A] tabular-nums">78.4%</strong></span>
             </div>
             <div className="tabular-nums font-mono">
-              Fraud tertahan: <strong className="text-[#DC2626]">8 kasus hari ini (42 minggu ini)</strong>
+              Fraud intercepted: <strong className="text-[#DC2626]">8 cases today (42 this week)</strong>
             </div>
           </div>
         </div>
@@ -257,10 +257,10 @@ export const VerificationCharts: React.FC = () => {
           <div>
             <div className="border-b border-[#E5E5E3] pb-4 mb-4">
               <h3 className="text-base font-semibold text-[#1A1A1A]">
-                Distribusi Risiko per Cabang
+                Risk Distribution by Branch
               </h3>
               <p className="text-xs text-[#6B6B6B] mt-0.5">
-                Volume &amp; rasio anomali pada kantor cabang operasional BAF hari ini.
+                Volume and anomaly ratios across active BAF operational branches.
               </p>
             </div>
 
@@ -275,7 +275,7 @@ export const VerificationCharts: React.FC = () => {
                     <div className="flex items-center justify-between font-medium">
                       <span className="text-[#1A1A1A]">{item.branch}</span>
                       <span className="font-mono tabular-nums text-[#6B6B6B]">
-                        {item.total} kasus ({item.avgSla})
+                        {item.total} cases ({item.avgSla})
                       </span>
                     </div>
 
@@ -283,7 +283,7 @@ export const VerificationCharts: React.FC = () => {
                       <div
                         className="h-full bg-[#16A34A]"
                         style={{ width: `${cleanPercent}%` }}
-                        title={`Lolos: ${item.clean}`}
+                        title={`Clean: ${item.clean}`}
                       />
                       <div
                         className="h-full bg-[#D97706]"
@@ -298,7 +298,7 @@ export const VerificationCharts: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] text-[#6B6B6B] font-mono">
-                      <span className="text-[#16A34A]">{cleanPercent}% aman</span>
+                      <span className="text-[#16A34A]">{cleanPercent}% clean</span>
                       <span className="text-[#D97706]">{warningPercent}% review</span>
                       <span className="text-[#DC2626]">{fraudPercent}% fraud</span>
                     </div>
@@ -309,8 +309,8 @@ export const VerificationCharts: React.FC = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#E5E5E3] text-[11px] text-[#6B6B6B] flex items-center justify-between">
-            <span>SLA tercepat: Jakarta Selatan (3.8 min)</span>
-            <span className="font-semibold text-[#2563EB]">5 Hub Utama</span>
+            <span>Fastest SLA: Jakarta Selatan (3.8 min)</span>
+            <span className="font-semibold text-[#2563EB]">5 Regional Hubs</span>
           </div>
         </div>
       </div>
@@ -323,10 +323,10 @@ export const VerificationCharts: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[#E5E5E3] pb-4 mb-4">
               <div>
                 <h3 className="text-base font-semibold text-[#1A1A1A]">
-                  Tipologi &amp; Kategori Fraud
+                  Fraud Typologies &amp; Anomaly Categories
                 </h3>
                 <p className="text-xs text-[#6B6B6B] mt-0.5">
-                  Distribusi jenis anomali yang berhasil dicegah sistem VeriFin bulan berjalan.
+                  Breakdown of fraud patterns and anomaly types intercepted by VeriFin this month.
                 </p>
               </div>
               <ShieldAlert className="w-5 h-5 text-[#DC2626]" />
@@ -348,7 +348,7 @@ export const VerificationCharts: React.FC = () => {
                     <div className="flex items-center justify-between text-xs font-medium">
                       <span className="text-[#1A1A1A] font-semibold">{item.type}</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[#6B6B6B]">{item.count} kasus</span>
+                        <span className="font-mono text-[#6B6B6B]">{item.count} cases</span>
                         <span className="font-mono font-bold text-[#DC2626] bg-[#DC2626]/10 px-1.5 py-0.5 rounded text-[11px]">
                           {item.percent}%
                         </span>
@@ -367,7 +367,7 @@ export const VerificationCharts: React.FC = () => {
                       {item.desc}
                     </p>
                     <div className="mt-1 text-[10px] font-mono text-[#2563EB] font-medium">
-                      Protokol Mitigasi: {item.riskImpact}
+                      Mitigation Protocol: {item.riskImpact}
                     </div>
                   </div>
                 );
@@ -376,8 +376,8 @@ export const VerificationCharts: React.FC = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#E5E5E3] text-xs text-[#6B6B6B] flex items-center justify-between">
-            <span>Total 84 anomali dicegah</span>
-            <span className="text-[#16A34A] font-medium">Estimasi potensi kerugian dicegah: Rp 2.8 Miliar</span>
+            <span>Total 84 anomalies intercepted</span>
+            <span className="text-[#16A34A] font-medium">Estimated loss prevented: IDR 2.8 Billion</span>
           </div>
         </div>
 
@@ -387,10 +387,10 @@ export const VerificationCharts: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[#E5E5E3] pb-4 mb-4">
               <div>
                 <h3 className="text-base font-semibold text-[#1A1A1A]">
-                  Kecepatan Pemrosesan per Jam &amp; SLA
+                  Hourly Processing Velocity &amp; SLA
                 </h3>
                 <p className="text-xs text-[#6B6B6B] mt-0.5">
-                  Throughput pengajuan per jam dan rata-rata durasi penyelesaian verifikasi (SLA target: 15 menit).
+                  Throughput per hour and average verification duration (SLA target: 15 min).
                 </p>
               </div>
               <Clock className="w-5 h-5 text-[#2563EB]" />
@@ -399,10 +399,10 @@ export const VerificationCharts: React.FC = () => {
             {/* Hourly Timeline Grid */}
             <div className="space-y-2.5">
               <div className="grid grid-cols-12 text-[10px] font-medium text-[#6B6B6B] px-2 pb-1">
-                <span className="col-span-2">JAM (WIB)</span>
-                <span className="col-span-6">VOLUME (OTOMATIS vs MANUAL)</span>
+                <span className="col-span-2">HOUR (WIB)</span>
+                <span className="col-span-6">VOLUME (AUTO vs MANUAL)</span>
                 <span className="col-span-2 text-right">TOTAL</span>
-                <span className="col-span-2 text-right">RATA-RATA SLA</span>
+                <span className="col-span-2 text-right">AVG SLA</span>
               </div>
 
               {hourlyVelocity.map((h) => {
@@ -423,18 +423,18 @@ export const VerificationCharts: React.FC = () => {
                         <div
                           className="h-full bg-[#2563EB]"
                           style={{ width: `${autoWidth}%` }}
-                          title={`Otomatis: ${h.autoDecided}`}
+                          title={`Automated: ${h.autoDecided}`}
                         />
                         <div
                           className="h-full bg-[#D97706]"
                           style={{ width: `${manualWidth}%` }}
-                          title={`Review Manual: ${h.manualReview}`}
+                          title={`Manual Review: ${h.manualReview}`}
                         />
                       </div>
                     </div>
 
                     <div className="col-span-2 text-right font-mono font-semibold text-[#1A1A1A]">
-                      {h.volume} unit
+                      {h.volume} units
                     </div>
 
                     <div className="col-span-2 text-right font-mono font-semibold text-[#16A34A]">
@@ -450,14 +450,14 @@ export const VerificationCharts: React.FC = () => {
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#2563EB]" />
-                <span>Keputusan Otomatis (STP)</span>
+                <span>Automated Approval (STP)</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#D97706]" />
-                <span>Intervensi Verifikator</span>
+                <span>Verifier Intervention</span>
               </span>
             </div>
-            <span className="font-semibold text-[#1A1A1A]">Puncak: 10:00 - 14:00 WIB</span>
+            <span className="font-semibold text-[#1A1A1A]">Peak: 10:00 - 14:00 WIB</span>
           </div>
         </div>
       </div>
@@ -469,25 +469,25 @@ export const VerificationCharts: React.FC = () => {
             <Bike className="w-5 h-5 text-[#2563EB]" />
             <div>
               <h3 className="text-base font-semibold text-[#1A1A1A]">
-                Eksposur Risiko Portofolio Pembiayaan per Model Unit
+                Financing Risk Exposure by Vehicle Model
               </h3>
               <p className="text-xs text-[#6B6B6B] mt-0.5">
-                Pemantauan kualitas aplikasi berdasarkan lini produk kendaraan Yamaha yang diajukan.
+                Application portfolio quality tracking by applied Yamaha vehicle model line.
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono text-[#6B6B6B]">Update Real-time BAF Core System</span>
+          <span className="text-xs font-mono text-[#6B6B6B]">Real-time BAF Core System Link</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-[#F7F7F5] text-[#6B6B6B] font-medium border-b border-[#E5E5E3]">
               <tr>
-                <th className="py-2.5 px-4">Model Kendaraan</th>
-                <th className="py-2.5 px-4">Pengajuan</th>
-                <th className="py-2.5 px-4">Rasio Persetujuan</th>
-                <th className="py-2.5 px-4">Tingkat Risiko BAF</th>
-                <th className="py-2.5 px-4 text-right">Nilai Pembiayaan Berjalan</th>
+                <th className="py-2.5 px-4">Vehicle Model</th>
+                <th className="py-2.5 px-4">Applications</th>
+                <th className="py-2.5 px-4">Approval Rate</th>
+                <th className="py-2.5 px-4">BAF Risk Tier</th>
+                <th className="py-2.5 px-4 text-right">Active Financing Portfolio</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E5E3]">
@@ -497,7 +497,7 @@ export const VerificationCharts: React.FC = () => {
                     {item.model}
                   </td>
                   <td className="py-3 px-4 font-mono text-[#1A1A1A]">
-                    {item.apps} pengajuan
+                    {item.apps} apps
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">

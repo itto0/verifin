@@ -31,10 +31,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div>
           <h2 className="text-xl font-semibold text-[#1A1A1A]">
-            Ringkasan Operasional &amp; Intelijen Risiko Pembiayaan BAF
+            Operational Overview &amp; Financing Risk Intelligence
           </h2>
           <p className="text-sm text-[#6B6B6B] mt-1">
-            Sistem otomatisasi verifikasi e-KTP Dukcapil, audit geospasial FakeGPS surveyor, dan tele-verifikasi seluruh kantor cabang BAF.
+            Automated multi-pillar risk scoring across Dukcapil e-KTP identity, surveyor geospatial audits, and tele-verification across BAF branch network.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -42,7 +42,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onClick={onNavigateToQueue}
             className="px-4 py-2 text-xs font-medium text-white bg-[#2563EB] rounded-lg hover:bg-[#1D4ED8] transition-colors whitespace-nowrap"
           >
-            Buka Antrean Review ({pendingCases.length})
+            Open Review Queue ({pendingCases.length})
           </button>
         </div>
       </div>
@@ -52,7 +52,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 1 */}
         <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
           <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
-            <span>Aplikasi Diproses Hari Ini</span>
+            <span>Applications Processed Today</span>
             <FileText className="w-4 h-4 text-[#6B6B6B]" />
           </div>
           <div className="mt-3 text-2xl font-semibold text-[#1A1A1A] tabular-nums">
@@ -60,49 +60,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="mt-2 text-xs text-[#6B6B6B] flex items-center gap-1.5">
             <span className="text-[#16A34A] font-medium">+18%</span>
-            <span>vs hari kemarin · 9 cabang aktif</span>
+            <span>vs yesterday · 9 active branches</span>
           </div>
         </div>
 
         {/* Card 2 */}
         <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
           <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
-            <span>Menunggu Review Manual</span>
+            <span>Pending Manual Review</span>
             <AlertTriangle className="w-4 h-4 text-[#D97706]" />
           </div>
           <div className="mt-3 text-2xl font-semibold text-[#1A1A1A] tabular-nums">
             {pendingCases.length}
           </div>
           <div className="mt-2 text-xs text-[#6B6B6B]">
-            Kasus risiko menengah / tinggi butuh approval verifikator
+            Medium &amp; high risk applications requiring underwriter decision
           </div>
         </div>
 
         {/* Card 3 */}
         <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
           <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
-            <span>Anomali &amp; Fraud Dicegah</span>
+            <span>Fraud &amp; Anomalies Blocked</span>
             <XCircle className="w-4 h-4 text-[#DC2626]" />
           </div>
           <div className="mt-3 text-2xl font-semibold text-[#DC2626] tabular-nums">
             {highRiskCases.length}
           </div>
           <div className="mt-2 text-xs text-[#6B6B6B]">
-            Fake GPS, duplikasi NIK, manipulasi font KTP
+            Fake GPS, duplicate NIK, e-KTP font tampering
           </div>
         </div>
 
         {/* Card 4 */}
         <div className="bg-white border border-[#E5E5E3] rounded-xl p-5">
           <div className="flex items-center justify-between text-[#6B6B6B] text-xs font-medium">
-            <span>Rata-Rata Turnaround SLA</span>
+            <span>Average Turnaround SLA</span>
             <Clock className="w-4 h-4 text-[#2563EB]" />
           </div>
           <div className="mt-3 text-2xl font-semibold text-[#1A1A1A] tabular-nums">
             4.2 min
           </div>
           <div className="mt-2 text-xs text-[#16A34A] font-medium">
-            Jauh lebih cepat dari target SLA 15 menit
+            Significantly ahead of 15 min SLA target
           </div>
         </div>
       </div>

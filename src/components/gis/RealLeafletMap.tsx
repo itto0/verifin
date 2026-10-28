@@ -169,26 +169,26 @@ export const RealLeafletMap: React.FC<RealLeafletMapProps> = ({
         markersLayer.addLayer(distLine);
       }
 
-      // Popup Content in Indonesian
+      // Popup Content in English
       const popupHtml = `
         <div style="font-family: Inter, sans-serif; min-width: 220px; padding: 2px;">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #E5E5E3; padding-bottom: 6px; margin-bottom: 8px;">
             <span style="font-weight: 600; font-size: 13px; color: #1A1A1A;">${pt.applicantName}</span>
             <span style="font-size: 10px; font-weight: 600; color: ${circleColor}; background: #F7F7F5; padding: 2px 6px; border-radius: 4px; border: 1px solid #E5E5E3;">
-              ${pt.status === 'green' ? 'Valid (≤200m)' : pt.status === 'yellow' ? 'Peringatan' : 'Anomali GPS'}
+              ${pt.status === 'green' ? 'Valid (≤200m)' : pt.status === 'yellow' ? 'Warning Zone' : 'GPS Anomaly'}
             </span>
           </div>
           <div style="font-size: 11px; color: #6B6B6B; line-height: 1.6;">
-            <div><strong>Cabang:</strong> ${pt.branch}</div>
+            <div><strong>Branch:</strong> ${pt.branch}</div>
             <div><strong>Surveyor:</strong> ${pt.surveyorName}</div>
-            <div><strong>Unit:</strong> ${pt.vehicleModel}</div>
-            <div><strong>Jarak Deviasi:</strong> ${pt.distanceMeters} m</div>
-            <div><strong>Waktu Survei:</strong> ${pt.surveyTime}</div>
-            ${pt.isMockLocation ? '<div style="color: #DC2626; font-weight: 600; margin-top: 4px;">⚠️ Terdeteksi Mock Location Provider</div>' : ''}
+            <div><strong>Vehicle:</strong> ${pt.vehicleModel}</div>
+            <div><strong>Deviation:</strong> ${pt.distanceMeters} m</div>
+            <div><strong>Survey Time:</strong> ${pt.surveyTime}</div>
+            ${pt.isMockLocation ? '<div style="color: #DC2626; font-weight: 600; margin-top: 4px;">⚠️ Mock Location Provider Detected</div>' : ''}
           </div>
           <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #E5E5E3; text-align: right;">
             <button id="btn-case-${pt.id}" style="background-color: #2563EB; color: #FFFFFF; font-size: 11px; font-weight: 500; border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer;">
-              Buka Kasus (${pt.caseId}) &rarr;
+              Open Case (${pt.caseId}) &rarr;
             </button>
           </div>
         </div>
@@ -259,12 +259,12 @@ export const RealLeafletMap: React.FC<RealLeafletMapProps> = ({
     <div className="relative w-full rounded-xl overflow-hidden border border-[#E5E5E3] bg-[#F7F7F5]">
       {/* Top Map Controls Overlay: Regional Jumps & Viewport Fit */}
       <div className="absolute top-3 left-3 z-[400] flex items-center gap-1.5 bg-white/95 backdrop-blur-sm border border-[#E5E5E3] rounded-lg p-1 shadow-xs text-xs text-[#6B6B6B]">
-        <span className="px-2 text-[11px] font-medium text-[#6B6B6B]">Fokus:</span>
+        <span className="px-2 text-[11px] font-medium text-[#6B6B6B]">Focus:</span>
         <button
           onClick={() => handleFlyToRegion(-6.2297, 106.8295, 12)}
           className="px-2.5 py-1 rounded hover:bg-[#F7F7F5] hover:text-[#1A1A1A] transition-colors font-medium"
         >
-          Jabodetabek
+          Greater Jakarta
         </button>
         <button
           onClick={() => handleFlyToRegion(-6.9175, 107.6191, 12)}
@@ -284,7 +284,7 @@ export const RealLeafletMap: React.FC<RealLeafletMapProps> = ({
           title="Reset viewport to include all points"
         >
           <Maximize2 className="w-3 h-3" />
-          <span>Semua</span>
+          <span>Fit All</span>
         </button>
       </div>
 

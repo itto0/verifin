@@ -68,25 +68,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'surveyor' as NavTab,
-      label: 'Kinerja Surveyor',
+      label: 'Surveyor Fleet & SLA',
       icon: Users,
       desc: 'Field surveyor fleet & SLA'
     },
     {
       id: 'icr' as NavTab,
-      label: 'ICR & Agunan BPN',
+      label: 'ICR & Collateral Verification',
       icon: ScanLine,
       desc: 'Handwritten & Sentuh Tanahku'
     },
     {
       id: 'reports' as NavTab,
-      label: 'Laporan & Audit OJK',
+      label: 'Reports & Audit Trail',
       icon: FileCheck,
       desc: 'Compliance & audit logs'
     },
     {
       id: 'master' as NavTab,
-      label: 'Master Data BAF',
+      label: 'Master Data Management',
       icon: Database,
       desc: 'Branches, products & scripts'
     },
