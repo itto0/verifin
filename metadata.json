@@ -1,0 +1,6 @@
+{
+  "name": "VeriFin BAF - Verification & Anti-Fraud System",
+  "description": "Automated verification platform for e-KTP documents, geotagged survey tracking, and tele-verification audio intelligence for PT Bussan Auto Finance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
