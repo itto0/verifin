@@ -12,7 +12,7 @@ import {
  ExternalLink,
  Layers
 } from 'lucide-react';
-import { FinancingCase } from '../../types';
+import { FinancingCase, AuthUser } from '../../types';
 
 interface TopBarProps {
  pageTitle: string;
@@ -20,6 +20,8 @@ interface TopBarProps {
  cases: FinancingCase[];
  selectedCaseId: string;
  onSelectCase: (caseId: string) => void;
+ currentUser?: AuthUser | null;
+ onLogout?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -28,6 +30,8 @@ export const TopBar: React.FC<TopBarProps> = ({
  cases,
  selectedCaseId,
  onSelectCase,
+ currentUser,
+ onLogout,
 }) => {
  const [isProfileOpen, setIsProfileOpen] = useState(false);
  const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -151,11 +155,11 @@ export const TopBar: React.FC<TopBarProps> = ({
  aria-label="User account menu"
  >
  <div className="w-7 h-7 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-xs font-semibold">
- DP
+ {currentUser?.avatarInitials || 'DP'}
  </div>
  <div className="hidden sm:block leading-tight">
- <div className="text-xs font-semibold text-[#1A1A1A]">Dian Pratama</div>
- <div className="text-[11px] text-[#6B6B6B]">Senior verifier</div>
+ <div className="text-xs font-semibold text-[#1A1A1A]">{currentUser?.name || 'Dian Pratama'}</div>
+ <div className="text-[11px] text-[#6B6B6B]">{currentUser?.role || 'Senior verifier'}</div>
  </div>
  <ChevronDown className="w-3.5 h-3.5 text-[#6B6B6B] ml-0.5" />
  </button>
@@ -164,18 +168,35 @@ export const TopBar: React.FC<TopBarProps> = ({
  {isProfileOpen && (
  <div className="absolute right-0 mt-2 w-72 bg-white border border-[#E5E5E3] rounded-xl p-3 z-50 text-xs">
  {/* Profile Card Header */}
- <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] mb-3">
- <div className="font-semibold text-sm text-[#1A1A1A]">Dian Pratama</div>
- <div className="text-[11px] text-[#6B6B6B] mt-0.5">dian.pratama@baf.id</div>
+ <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] mb-2.5">
+ <div className="font-semibold text-sm text-[#1A1A1A]">{currentUser?.name || 'Dian Pratama'}</div>
+ <div className="text-[11px] text-[#6B6B6B] mt-0.5">{currentUser?.email || 'dian.pratama@baf.id'}</div>
  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#E5E5E3] text-[11px] text-[#6B6B6B]">
  <span className="flex items-center gap-1 font-medium text-[#2563EB]">
  <Shield className="w-3 h-3" />
- <span>Level 2 verifier</span>
+ <span>{currentUser?.level || 'Level 2 verifier'}</span>
  </span>
  <span>·</span>
- <span>Jakarta South</span>
+ <span>{currentUser?.branch || 'Jakarta South'}</span>
  </div>
  </div>
+
+ {/* Sign Out action */}
+ {onLogout && (
+ <div className="pt-1 border-t border-[#E5E5E3]">
+ <button
+ type="button"
+ onClick={() => {
+ setIsProfileOpen(false);
+ onLogout();
+ }}
+ className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-[#DC2626] hover:bg-[#DC2626]/10 transition-colors text-left"
+ >
+ <LogOut className="w-3.5 h-3.5" />
+ <span>Sign out / Switch account</span>
+ </button>
+ </div>
+ )}
  </div>
  )}
  </div>

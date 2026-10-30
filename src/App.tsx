@@ -16,16 +16,45 @@ import { IcrDocumentView } from './components/icr/IcrDocumentView';
 import { ReportsAuditView } from './components/reports/ReportsAuditView';
 import { MasterDataView } from './components/master/MasterDataView';
 import { RuleSettingsView } from './components/settings/RuleSettingsView';
+import { LoginView, DEMO_USERS } from './components/auth/LoginView';
 import { mockCases } from './data/mockData';
-import { FinancingCase, CaseStatus, CaseSubPage } from './types';
+import { FinancingCase, CaseStatus, CaseSubPage, AuthUser } from './types';
 
 export default function App() {
+ const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+ try {
+ const saved = localStorage.getItem('baf_veri_fin_user');
+ if (saved) return JSON.parse(saved);
+ } catch {
+ // ignore
+ }
+ return DEMO_USERS[0];
+ });
  const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
  const [cases, setCases] = useState<FinancingCase[]>(mockCases);
  const [selectedCaseId, setSelectedCaseId] = useState<string>('CASE-0941');
  const [detailSubPage, setDetailSubPage] = useState<CaseSubPage>('overview');
  const [searchQuery, setSearchQuery] = useState<string>('');
  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+ // Authentication handlers
+ const handleLogin = (user: AuthUser) => {
+ setCurrentUser(user);
+ try {
+ localStorage.setItem('baf_veri_fin_user', JSON.stringify(user));
+ } catch {
+ // ignore
+ }
+ };
+
+ const handleLogout = () => {
+ setCurrentUser(null);
+ try {
+ localStorage.removeItem('baf_veri_fin_user');
+ } catch {
+ // ignore
+ }
+ };
 
  // Active selected case
  const currentCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
@@ -53,7 +82,7 @@ export default function App() {
  const newLog = {
  id: `A-LOG-${Date.now()}`,
  timestamp: timestampStr,
- actor: 'Dian Pratama (Senior Verifier)',
+ actor: `${currentUser?.name || 'Dian Pratama'} (${currentUser?.role || 'Senior Verifier'})`,
  action: actionName,
  notes: note || 'Manual verifier decision logged.',
  };
@@ -88,6 +117,10 @@ export default function App() {
  settings: 'Risk Engine Rules & Parameters',
  };
 
+ if (!currentUser) {
+ return <LoginView onLogin={handleLogin} />;
+ }
+
  return (
  <div className="min-h-screen bg-[#FFFFFF] text-[#1A1A1A] flex flex-col font-sans">
  {/* 240px Fixed Left Sidebar with BAF official logo */}
@@ -97,12 +130,6 @@ export default function App() {
  pendingCount={pendingCount}
  isOpenMobile={isMobileMenuOpen}
  onCloseMobile={() => setIsMobileMenuOpen(false)}
- selectedCaseId={selectedCaseId}
- activeCaseSubPage={detailSubPage}
- onSelectCaseSubPage={(sub) => {
- setDetailSubPage(sub);
- setCurrentTab('detail');
- }}
  />
 
  {/* Main Content Area (offset by 240px on lg screens) */}
@@ -114,6 +141,8 @@ export default function App() {
  cases={cases}
  selectedCaseId={selectedCaseId}
  onSelectCase={handleSelectCase}
+ currentUser={currentUser}
+ onLogout={handleLogout}
  />
 
  {/* Viewport Content Area with 24-32px padding */}

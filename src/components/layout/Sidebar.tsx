@@ -8,13 +8,8 @@ import {
  Users,
  ScanLine,
  FileCheck,
- Database,
- Sparkles,
- ShieldCheck,
- ChevronRight
+ Database
 } from 'lucide-react';
-import { CaseSubPage } from '../../types';
-
 export type NavTab =
  | 'dashboard'
  | 'queue'
@@ -33,9 +28,6 @@ interface SidebarProps {
  pendingCount: number;
  isOpenMobile: boolean;
  onCloseMobile: () => void;
- selectedCaseId?: string;
- activeCaseSubPage?: CaseSubPage;
- onSelectCaseSubPage?: (subPage: CaseSubPage) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -44,9 +36,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
  pendingCount,
  isOpenMobile,
  onCloseMobile,
- selectedCaseId = 'CASE-0941',
- activeCaseSubPage = 'overview',
- onSelectCaseSubPage,
 }) => {
  const [logoError, setLogoError] = useState(false);
 
@@ -61,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
  id: 'queue' as NavTab,
  label: 'Review Queue',
  icon: ShieldAlert,
- badge: pendingCount > 0 ? pendingCount : undefined,
+ badge: pendingCount > 0 ? String(pendingCount) : undefined,
  desc: 'Pending decisions'
  },
  {
@@ -106,14 +95,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
  icon: Sliders,
  desc: 'Risk engine parameters'
  }
- ];
-
- const caseSubPages: { id: CaseSubPage; label: string; icon: React.ElementType }[] = [
- { id: 'overview', label: '1. Overview & Decision', icon: Sparkles },
- { id: 'ektp', label: '2. e-KTP & Biometrics', icon: ShieldCheck },
- { id: 'geo', label: '3. Geotag & Survey', icon: MapPin },
- { id: 'voice', label: '4. Audio QA & Call', icon: Headphones },
- { id: 'icr', label: '5. ICR & Collateral', icon: ScanLine },
  ];
 
  return (
@@ -178,44 +159,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
  <span>{item.label}</span>
  </div>
  {item.badge !== undefined && (
- <span className="text-[11px] font-semibold tabular-nums px-1.5 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626]">
+ <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#DC2626]/10 text-[#DC2626]">
  {item.badge}
  </span>
  )}
  </button>
-
- {/* If in 'detail' and on 'queue', show nested sub-pages */}
- {item.id === 'queue' && currentTab === 'detail' && (
- <div className="pl-4 pr-1 py-1 space-y-0.5 border-l-2 border-[#E5E5E3] ml-5 my-1">
- <div className="px-2 py-1 text-[10px] text-[#6B6B6B] flex items-center justify-between">
- <span>{selectedCaseId} PAGES</span>
- </div>
- {caseSubPages.map((sub) => {
- const SubIcon = sub.icon;
- const isSubActive = activeCaseSubPage === sub.id;
-
- return (
- <button
- key={sub.id}
- onClick={() => {
- if (onSelectCaseSubPage) {
- onSelectCaseSubPage(sub.id);
- }
- onCloseMobile();
- }}
- className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left ${
- isSubActive
- ? 'bg-[#1A1A1A] text-white font-medium'
- : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F7F7F5]'
- }`}
- >
- <SubIcon className="w-3 h-3 shrink-0" />
- <span className="truncate">{sub.label}</span>
- </button>
- );
- })}
- </div>
- )}
  </div>
  );
  })}
