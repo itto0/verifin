@@ -186,7 +186,7 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  >
  <span className="w-20 shrink-0 text-[#64748B]">RT/RW</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
- <span className=" text-[#0F172A]">004/002</span>
+ <span className=" text-[#0F172A]">{ocrFields.rtRw?.value || '004/002'}</span>
  </div>
 
  {/* Kel/Desa */}
@@ -236,7 +236,7 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  >
  <span className="w-24 shrink-0 text-[#475569]">Status Perkawinan</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
- <span className="uppercase text-[#0F172A]">BELUM KAWIN</span>
+ <span className="uppercase text-[#0F172A]">{ocrFields.statusPerkawinan?.value || 'BELUM KAWIN'}</span>
  </div>
 
  {/* Pekerjaan */}
@@ -260,7 +260,7 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  >
  <span className="w-24 shrink-0 text-[#475569]">Kewarganegaraan</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
- <span className="uppercase font-semibold text-[#0F172A]">WNI</span>
+ <span className="uppercase font-semibold text-[#0F172A]">{ocrFields.kewarganegaraan?.value || 'WNI'}</span>
  </div>
 
  {/* Berlaku Hingga */}
@@ -271,7 +271,7 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  >
  <span className="w-24 shrink-0 text-[#475569]">Berlaku Hingga</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
- <span className="uppercase font-bold text-[#0F172A]">SEUMUR HIDUP</span>
+ <span className="uppercase font-bold text-[#0F172A]">{ocrFields.berlakuHingga?.value || 'SEUMUR HIDUP'}</span>
  </div>
  </div>
 

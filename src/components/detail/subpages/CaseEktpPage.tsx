@@ -237,7 +237,17 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File size exceeds 15MB limit. Please upload a smaller document image.');
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      alert('Failed to read selected image file.');
+      e.target.value = '';
+    };
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
@@ -282,10 +292,14 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
   const { nikValidation, ocrFields, tamperFlags, tamperScore, faceMatchScore, isScreenCaptureDetected, score } = currentDoc;
   const currentCustomerName = ocrFields.nama?.value || caseData.customerName;
 
-  const handleCopyNik = () => {
-    navigator.clipboard.writeText(nikValidation.nik);
-    setCopiedNik(true);
-    setTimeout(() => setCopiedNik(false), 2000);
+  const handleCopyNik = async () => {
+    try {
+      await navigator.clipboard.writeText(nikValidation.nik);
+      setCopiedNik(true);
+      setTimeout(() => setCopiedNik(false), 2000);
+    } catch {
+      setCopiedNik(false);
+    }
   };
 
   return (

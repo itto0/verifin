@@ -247,20 +247,22 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const custom = createCustomVoiceVerification(file.name, {
-        customerName,
-        agentName: voice.agentName || 'Fitri Handayani',
-      });
-      setCustomVoice(custom);
-      setUploadedFileName(file.name);
-      setActivePresetKey('custom');
-      setIsPlaying(false);
-      setCurrentTime(0);
-      triggerProcessing();
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 25 * 1024 * 1024) {
+      alert('Audio file exceeds 25MB limit. Please upload a smaller call recording.');
+      e.target.value = '';
+      return;
+    }
+
+    const custom = createCustomVoiceVerification(file.name, {
+      customerName,
+      agentName: voice.agentName || 'Fitri Handayani',
+    });
+    setCustomVoice(custom);
+    setUploadedFileName(file.name);
+    setActivePresetKey('custom');
+    setIsPlaying(false);
+    setCurrentTime(0);
+    triggerProcessing();
     e.target.value = '';
   };
 

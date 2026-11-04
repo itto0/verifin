@@ -259,7 +259,17 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File size exceeds 15MB limit. Please upload a smaller document image or scan.');
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      alert('Failed to read selected document file.');
+      e.target.value = '';
+    };
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
