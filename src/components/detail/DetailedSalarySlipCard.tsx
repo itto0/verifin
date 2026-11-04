@@ -3,7 +3,6 @@ import {
   FileText,
   ShieldCheck,
   AlertTriangle,
-  CheckCircle2,
   Building2,
   Calendar,
   Sparkles,
@@ -23,12 +22,12 @@ export const DetailedSalarySlipCard: React.FC<DetailedSalarySlipCardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'document' | 'rawScan'>('document');
 
-  const formatCurrency = (val: number): string =>
+  const formatCurrency = (val: number = 0): string =>
     new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       maximumFractionDigits: 0,
-    }).format(val);
+    }).format(val ?? 0);
 
   const getFieldBoxClass = (fieldKey: string) => {
     const isHighlighted = highlightedFieldKey === fieldKey;
@@ -41,6 +40,19 @@ export const DetailedSalarySlipCard: React.FC<DetailedSalarySlipCardProps> = ({
       return 'border-2 border-dashed border-[#DC2626] bg-[#DC2626]/10 transition-all duration-200';
     }
     return 'border border-transparent hover:border-gray-200 transition-all duration-200';
+  };
+
+  const getTakeHomePayClass = () => {
+    const isHighlighted = highlightedFieldKey === 'takeHomePay';
+    const isAnomaly = salaryData.anomalies?.some((a) => a.fieldKey === 'takeHomePay');
+
+    if (isHighlighted) {
+      return 'bg-slate-900 border-2 border-[#2563EB] shadow-[0_0_12px_rgba(37,99,235,0.4)] z-20 text-white';
+    }
+    if (isAnomaly) {
+      return 'bg-[#1A1A1A] border-2 border-dashed border-[#DC2626] text-white';
+    }
+    return 'bg-[#1A1A1A] border border-transparent text-white';
   };
 
   const getStampBadge = () => {
@@ -383,9 +395,7 @@ export const DetailedSalarySlipCard: React.FC<DetailedSalarySlipCardProps> = ({
             {/* TAKE HOME PAY BANNER / ROW */}
             <div
               data-field-key="takeHomePay"
-              className={`p-3 rounded-md bg-[#1A1A1A] text-white flex items-center justify-between ${getFieldBoxClass(
-                'takeHomePay'
-              )}`}
+              className={`p-3 rounded-md flex items-center justify-between transition-all duration-200 ${getTakeHomePayClass()}`}
             >
               <div>
                 <span className="text-[10px] tracking-wider uppercase text-gray-400 font-semibold block">
