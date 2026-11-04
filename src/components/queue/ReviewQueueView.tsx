@@ -1,16 +1,11 @@
 import React, { useState } from 'react';
 import {
  Search,
- Filter,
- ArrowUpDown,
- AlertTriangle,
  CheckCircle2,
  Clock,
  XCircle,
- FileCheck2,
  MapPin,
- Headphones,
- ShieldAlert
+ ChevronRight
 } from 'lucide-react';
 import { FinancingCase, RiskLevel, CaseStatus } from '../../types';
 import { branchList } from '../../data/mockData';
@@ -202,7 +197,6 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
  <th className="py-3 px-6">Risk Score</th>
  <th className="py-3 px-6">Primary Anomaly</th>
  <th className="py-3 px-6">Status</th>
- <th className="py-3 px-6 text-right">Action</th>
  </tr>
  </thead>
  <tbody className="divide-y divide-[#E5E5E3]">
@@ -214,7 +208,7 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
  <tr
  key={c.id}
  onClick={() => onSelectCase(c.id)}
- className="hover:bg-[#F7F7F5]/60 transition-colors cursor-pointer"
+ className="hover:bg-[#F7F7F5] transition-colors cursor-pointer group"
  >
  {/* Column 1: Application ID */}
  <td className="py-4 px-6 whitespace-nowrap">
@@ -288,6 +282,8 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
 
  {/* Column 6: Status */}
  <td className="py-4 px-6 whitespace-nowrap text-xs">
+ <div className="flex items-center justify-between">
+ <div>
  {c.status === 'pending' && (
  <span className="text-[#D97706] font-medium flex items-center gap-1">
  <Clock className="w-3.5 h-3.5" />
@@ -312,19 +308,9 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
  <span>Fraud / Rejected</span>
  </span>
  )}
- </td>
-
- {/* Column 7: Action */}
- <td className="py-4 px-6 text-right whitespace-nowrap">
- <button
- onClick={(e) => {
- e.stopPropagation();
- onSelectCase(c.id);
- }}
- className="px-3 py-1.5 text-xs font-medium text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg transition-colors"
- >
- Audit Case
- </button>
+ </div>
+ <ChevronRight className="w-4 h-4 text-[#9CA3AF] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+ </div>
  </td>
  </tr>
  );
