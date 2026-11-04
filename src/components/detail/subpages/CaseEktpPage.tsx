@@ -1,14 +1,11 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
-  ShieldCheck,
   AlertTriangle,
   FileText,
-  UserCheck,
   CheckCircle2,
   XCircle,
   Eye,
   Layers,
-  Info,
   Camera,
   Copy,
   Check,
