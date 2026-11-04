@@ -3,8 +3,10 @@ import {
   parseAiJsonResponse,
   buildKtpOcrPrompt,
   buildIcrPrompt,
+  buildAudioSttPrompt,
   createDocumentVerificationFromAiResult,
   createIcrSampleFromAiResult,
+  createVoiceVerificationFromAiResult,
 } from './aiService';
 
 describe('aiService - Response Parsing and Payload Builders', () => {
@@ -140,5 +142,67 @@ describe('aiService - Response Parsing and Payload Builders', () => {
     expect(sample.bpnSpatialVerification?.persilNib).toBe('10.02.04.05.04291');
     expect(sample.bpnSpatialVerification?.spatialMatchWithSurveyAddress).toBe(true);
     expect(sample.extractedFields.length).toBe(2);
+  });
+
+  it('builds prompt for audio Speech-to-Text (STT) and OJK QA compliance', () => {
+    const prompt = buildAudioSttPrompt('Ahmad Fauzi');
+    expect(prompt).toContain('STT');
+    expect(prompt).toContain('Ahmad Fauzi');
+    expect(prompt).toContain('diarization');
+    expect(prompt).toContain('transcripts');
+  });
+
+  it('transforms AI STT result into VoiceVerification with real transcribed dialogue and timestamps', () => {
+    const aiStt = {
+      durationSeconds: 45,
+      hesitancyDetected: true,
+      scriptComplianceScore: 82,
+      transcripts: [
+        {
+          speaker: 'agent',
+          startTime: 0,
+          endTime: 8,
+          text: 'Halo selamat siang dengan Bapak Ahmad Fauzi?',
+          hasHesitancy: false,
+        },
+        {
+          speaker: 'customer',
+          startTime: 9,
+          endTime: 22,
+          text: 'Halo... iya betul saya sendiri, ini dari mana ya?',
+          hasHesitancy: true,
+          hesitancyDuration: 2.1,
+          flagReason: 'Jeda hening 2.1 detik di awal respon',
+        },
+      ],
+      voiceFlags: ['Jeda hening akustik 2.1s pada konfirmasi nama'],
+      complianceChecklist: [
+        {
+          item: 'Salam Pembuka & Verifikasi Identitas',
+          isCompliant: true,
+          timestampRef: 0,
+          description: 'Penyebutan nama nasabah dan salam pembuka',
+        },
+      ],
+    };
+
+    const voice = createVoiceVerificationFromAiResult(
+      'rekaman_telepon.mp3',
+      { customerName: 'Ahmad Fauzi', agentName: 'Siti' },
+      aiStt,
+      [20, 40, 60],
+      45
+    );
+
+    expect(voice.callDuration).toBe(45);
+    expect(voice.recordingUrl).toBe('rekaman_telepon.mp3');
+    expect(voice.transcripts.length).toBe(2);
+    expect(voice.transcripts[0].text).toBe('Halo selamat siang dengan Bapak Ahmad Fauzi?');
+    expect(voice.transcripts[1].text).toContain('Halo... iya betul saya sendiri');
+    expect(voice.transcripts[1].hasHesitancy).toBe(true);
+    expect(voice.transcripts[1].hesitancyDuration).toBe(2.1);
+    expect(voice.hesitancyDetected).toBe(true);
+    expect(voice.scriptComplianceScore).toBe(82);
+    expect(voice.waveform).toEqual([20, 40, 60]);
   });
 });

@@ -100,6 +100,9 @@ export interface VoiceVerification {
  transcripts: TranscriptSnippet[];
  voiceFlags: string[];
  score: number; // Voice pillar score (0-100)
+ recordingUrl?: string;
+ waveform?: number[];
+ hesitancyDetected?: boolean;
 }
 
 export interface RiskScoreBreakdown {

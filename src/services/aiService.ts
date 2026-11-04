@@ -135,6 +135,50 @@ Kembalikan HANYA format JSON valid tanpa teks lain:
 }
 
 /**
+ * Build structured system prompt for Audio Speech-to-Text (STT) and OJK QA compliance.
+ */
+export function buildAudioSttPrompt(customerName: string): string {
+  return `Kamu adalah mesin STT (Speech-to-Text) dan QA Audio Verifikasi Pembiayaan PT Bussan Auto Finance (BAF).
+Dengarkan rekaman audio percakapan telepon terlampir secara teliti.
+TUGAS UTAMA:
+1. Lakukan transkripsi percakapan secara akurat kata demi kata dari rekaman suara yang terdengar.
+2. Lakukan diarization pembicara:
+   - "agent" untuk verifikator / CS / penelpon PT Bussan Auto Finance
+   - "customer" untuk nasabah / pemohon (${customerName})
+3. Berikan timestamp detik (startTime dan endTime) yang realistis untuk setiap penggalan kalimat/dialog.
+4. Deteksi apakah ada jeda keraguan akustik (>1.5 detik hening), nada bicara gugup/tertekan, atau bisikan pihak ketiga (whisper coaching).
+5. Audit kepatuhan standar tele-verifikasi OJK dan SOP BAF.
+
+Kembalikan HANYA format JSON valid tanpa penjelasan tambahan:
+{
+  "durationSeconds": number,
+  "transcripts": [
+    {
+      "speaker": "agent" | "customer",
+      "startTime": number,
+      "endTime": number,
+      "text": string,
+      "hasHesitancy": boolean,
+      "hesitancyDuration": number,
+      "flagReason": string
+    }
+  ],
+  "hesitancyDetected": boolean,
+  "voiceFlags": string[],
+  "scriptComplianceScore": number,
+  "complianceChecklist": [
+    {
+      "category": string,
+      "requirement": string,
+      "isCompliant": boolean,
+      "timestampRef": number,
+      "note": string
+    }
+  ]
+}`;
+}
+
+/**
  * Transform OCR JSON result into full DocumentVerification schema with Dukcapil algorithmic validation.
  */
 export function createDocumentVerificationFromAiResult(
@@ -508,6 +552,53 @@ export async function performRealAudioAnalysis(
     }
   }
 
+  // Attempt real AI STT transcription with Gemini multimodal audio
+  try {
+    const audioDataUrl = await fileToBase64DataUrl(file);
+    const prompt = buildAudioSttPrompt(customerName);
+
+    const response = await fetch(`${getAiBaseUrl()}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${AI_CONFIG.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: AI_CONFIG.model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: audioDataUrl } },
+            ],
+          },
+        ],
+        max_tokens: 1800,
+        stream: false,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const rawContent = data.choices?.[0]?.message?.content;
+      if (rawContent) {
+        const aiStt = parseAiJsonResponse<any>(rawContent);
+        return createVoiceVerificationFromAiResult(
+          file.name,
+          { customerName, agentName },
+          aiStt,
+          waveformBars,
+          durationSeconds
+        );
+      }
+    } else {
+      console.warn('AI STT API responded with error status:', response.status);
+    }
+  } catch (aiErr) {
+    console.warn('AI STT API call failed, using acoustic fallback:', aiErr);
+  }
+
   const formatMinSec = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -631,5 +722,115 @@ export async function performRealAudioAnalysis(
       ? [`Jeda hening akustik terdeteksi (${longestPause}s) pada verifikasi ibu kandung`]
       : [],
     score: hasHesitancy ? 68 : 12,
+  };
+}
+
+export async function fileToBase64DataUrl(file: File): Promise<string> {
+  if (typeof FileReader !== 'undefined') {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString('base64');
+  return `data:${file.type || 'audio/wav'};base64,${base64}`;
+}
+
+export function createVoiceVerificationFromAiResult(
+  recordingUrl: string,
+  options: { customerName?: string; agentName?: string },
+  aiStt: any,
+  waveformBars?: number[],
+  fallbackDuration?: number
+): VoiceVerification {
+  const customerName = options.customerName || 'Pemohon BAF';
+  const agentName = options.agentName || 'Fitri Handayani (Agent Verifikasi)';
+  const duration = typeof aiStt?.durationSeconds === 'number' && aiStt.durationSeconds > 0
+    ? aiStt.durationSeconds
+    : (fallbackDuration || 60);
+
+  const formatMinSec = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec % 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const transcripts: TranscriptSnippet[] = Array.isArray(aiStt?.transcripts) && aiStt.transcripts.length > 0
+    ? aiStt.transcripts.map((t: any, index: number) => ({
+        id: `t-${index + 1}`,
+        speaker: t.speaker === 'agent' ? 'agent' : 'customer',
+        startTime: typeof t.startTime === 'number' ? t.startTime : index * 4,
+        endTime: typeof t.endTime === 'number' ? t.endTime : (index + 1) * 4,
+        text: t.text || '',
+        hasHesitancy: Boolean(t.hasHesitancy),
+        hesitancyDuration: typeof t.hesitancyDuration === 'number' ? t.hesitancyDuration : undefined,
+        flagReason: t.flagReason || undefined,
+      }))
+    : [
+        {
+          id: 't-1',
+          speaker: 'customer',
+          startTime: 0,
+          endTime: duration,
+          text: aiStt?.summary || '[Transkrip audio selesai diproses. Tidak terdeteksi ucapan manusia yang jelas dalam rekaman ini.]',
+        },
+      ];
+
+  const hasHesitancy = Boolean(aiStt?.hesitancyDetected) || transcripts.some((t) => t.hasHesitancy);
+  const hesitancyCount = transcripts.filter((t) => t.hasHesitancy).length;
+  const complianceScore = typeof aiStt?.scriptComplianceScore === 'number' ? aiStt.scriptComplianceScore : (hasHesitancy ? 75 : 96);
+
+  const complianceChecklist: ScriptComplianceItem[] = Array.isArray(aiStt?.complianceChecklist) && aiStt.complianceChecklist.length > 0
+    ? aiStt.complianceChecklist.map((c: any, index: number) => ({
+        id: `sc-${index + 1}`,
+        category: c.category || 'Audit Panggilan',
+        requirement: c.requirement || c.item || 'Verifikasi Data',
+        isCompliant: c.isCompliant !== false,
+        timestampRef: typeof c.timestampRef === 'number' ? c.timestampRef : 0,
+        note: c.note || c.description || undefined,
+      }))
+    : [
+        {
+          id: 'sc-1',
+          category: 'Pembuka',
+          requirement: 'Salam Pembuka & Identifikasi Diri Agen',
+          isCompliant: true,
+          timestampRef: 0,
+          note: 'Menyebutkan nama agen dan institusi PT Bussan Auto Finance',
+        },
+        {
+          id: 'sc-2',
+          category: 'Kepatuhan Regulasi',
+          requirement: 'Pemberitahuan Rekaman Sesuai Regulasi OJK',
+          isCompliant: complianceScore >= 80,
+          timestampRef: 0,
+          note: 'Pemberitahuan bahwa panggilan direkam untuk peningkatan mutu layanan',
+        },
+      ];
+
+  const voiceFlags: string[] = Array.isArray(aiStt?.voiceFlags) && aiStt.voiceFlags.length > 0
+    ? aiStt.voiceFlags
+    : (hasHesitancy ? ['Jeda hening/keraguan akustik terdeteksi dalam percakapan'] : []);
+
+  return {
+    callId: `CALL-AUDIO-${Date.now().toString().slice(-4)}`,
+    callDuration: duration,
+    agentName,
+    agentId: 'AGT-042',
+    callTimestamp: new Date().toLocaleDateString('id-ID', { dateStyle: 'medium' }),
+    audioDurationFormatted: formatMinSec(duration),
+    overallHesitancyCount: hesitancyCount,
+    spellingAccuracyScore: 98,
+    scriptComplianceScore: complianceScore,
+    complianceChecklist,
+    transcripts,
+    voiceFlags,
+    score: hasHesitancy || voiceFlags.length > 0 ? 68 : 12,
+    recordingUrl,
+    waveform: waveformBars,
+    hesitancyDetected: hasHesitancy,
   };
 }
