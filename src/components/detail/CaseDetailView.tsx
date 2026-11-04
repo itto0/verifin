@@ -169,7 +169,6 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
  <CaseOverviewPage
  caseData={caseData}
  onNavigateSubPage={setSubPage}
- onUpdateStatus={onUpdateStatus}
  />
  )}
 
