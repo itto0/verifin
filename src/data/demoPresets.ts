@@ -81,7 +81,7 @@ export function validateDukcapilNik(
  */
 export const ocrDemoPresets: Record<string, DocumentVerification> = {
   clean: {
-    ktpImageUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop&q=80',
+    ktpImageUrl: '/ktp_demo_normal.jpg',
     selfieImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&auto=format&fit=crop&q=80',
     slipGajiImageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
     kkImageUrl: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=600&auto=format&fit=crop&q=80',
@@ -121,7 +121,7 @@ export const ocrDemoPresets: Record<string, DocumentVerification> = {
     },
   },
   tampered: {
-    ktpImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80',
+    ktpImageUrl: '/ktp_demo_tampered.jpg',
     selfieImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
     slipGajiImageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
     kkImageUrl: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=600&auto=format&fit=crop&q=80',
@@ -167,7 +167,7 @@ export const ocrDemoPresets: Record<string, DocumentVerification> = {
     },
   },
   screen_capture: {
-    ktpImageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+    ktpImageUrl: '/ktp_demo_tampered.jpg',
     selfieImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
     slipGajiImageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
     tamperScore: 78,

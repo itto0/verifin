@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { ocrDemoPresets, validateDukcapilNik } from '../../../data/demoPresets';
 import { createCustomEktpDocument, DEFAULT_BOUNDING_BOXES } from './CaseEktpPage';
+import { isFullKtpDocument, resolveKtpPortraitUrl } from '../DetailedKtpCard';
 
 describe('CaseEktpPage demo state logic', () => {
   it('correctly switches between OCR preset records', () => {
@@ -99,5 +100,31 @@ describe('CaseEktpPage demo state logic', () => {
       expect(DEFAULT_BOUNDING_BOXES[key].w).toBeGreaterThan(0);
       expect(DEFAULT_BOUNDING_BOXES[key].h).toBeGreaterThan(0);
     }
+  });
+
+  it('identifies full KTP document scans versus portrait avatars', () => {
+    expect(isFullKtpDocument('data:image/jpeg;base64,/9j/4AAQSkZJRg...')).toBe(true);
+    expect(isFullKtpDocument('/ktp_demo_normal.jpg')).toBe(true);
+    expect(isFullKtpDocument('/ktp_demo_tampered.jpg')).toBe(true);
+    expect(isFullKtpDocument('https://example.com/uploads/ktp-scan.png')).toBe(true);
+    expect(isFullKtpDocument('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d')).toBe(false);
+    expect(isFullKtpDocument(undefined)).toBe(false);
+  });
+
+  it('prevents stuffing full KTP document scans into the 3x4 passport portrait slot', () => {
+    const fullScanDoc = 'data:image/jpeg;base64,fullKtpImage';
+    const fallbackPortrait = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80';
+    
+    // When a full document scan is uploaded, it must NOT be used as the 3x4 portrait photo
+    expect(resolveKtpPortraitUrl(fullScanDoc)).toBe(fallbackPortrait);
+
+    // When an actual portrait avatar URL is provided, it should be used
+    const avatarUrl = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2';
+    expect(resolveKtpPortraitUrl(avatarUrl)).toBe(avatarUrl);
+  });
+
+  it('uses full KTP document scans for preset demo records', () => {
+    expect(isFullKtpDocument(ocrDemoPresets.clean.ktpImageUrl)).toBe(true);
+    expect(isFullKtpDocument(ocrDemoPresets.tampered.ktpImageUrl)).toBe(true);
   });
 });

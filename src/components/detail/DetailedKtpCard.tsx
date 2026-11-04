@@ -1,39 +1,181 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DocumentVerification } from '../../types';
-import { AlertTriangle, CheckCircle2, Copy, Shield, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Copy, Shield, Sparkles, Scan, CreditCard, FileText } from 'lucide-react';
 
-interface DetailedKtpCardProps {
- document: DocumentVerification;
- customerName: string;
- showTamperOverlay: boolean;
- hoveredFieldKey?: string | null;
- onFieldHover?: (key: string | null) => void;
+export const isFullKtpDocument = (url?: string): boolean => {
+  if (!url) return false;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('data:image/')) return true;
+  if (/ktp.*(?:demo|scan|upload|jpg|jpeg|png|webp)/i.test(trimmed)) return true;
+  if (trimmed.includes('ktp_demo') || trimmed.includes('ktp-scan')) return true;
+  return false;
+};
+
+export const FALLBACK_PORTRAIT_URL =
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80';
+
+export const resolveKtpPortraitUrl = (url?: string): string => {
+  if (!url) return FALLBACK_PORTRAIT_URL;
+  if (isFullKtpDocument(url)) return FALLBACK_PORTRAIT_URL;
+  return url;
+};
+
+export interface DetailedKtpCardProps {
+  document: DocumentVerification;
+  customerName: string;
+  showTamperOverlay: boolean;
+  hoveredFieldKey?: string | null;
+  onFieldHover?: (key: string | null) => void;
+  defaultViewMode?: 'scan' | 'structured';
 }
 
 export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
- document,
- customerName,
- showTamperOverlay,
- hoveredFieldKey,
- onFieldHover,
+  document,
+  customerName,
+  showTamperOverlay,
+  hoveredFieldKey,
+  onFieldHover,
+  defaultViewMode,
 }) => {
- const { ocrFields, nikValidation, tamperFlags } = document;
- const isHighRisk = document.score >= 70;
+  const { ocrFields, nikValidation, tamperFlags } = document;
+  const isHighRisk = document.score >= 70;
 
- const getFieldHighlight = (key: string) => {
-   if (hoveredFieldKey === key) {
-     return 'bg-blue-500/20 ring-2 ring-blue-500 rounded px-1 -mx-1 shadow-xs transition-all duration-150';
-   }
-   return 'transition-all duration-150 hover:bg-black/5 rounded px-1 -mx-1';
- };
+  const isFullDoc = isFullKtpDocument(document.ktpImageUrl);
+  const [activeMode, setActiveMode] = useState<'scan' | 'structured'>(() => {
+    if (defaultViewMode) return defaultViewMode;
+    return isFullDoc ? 'scan' : 'structured';
+  });
 
- // Portrait photo: realistic Indonesian passport portrait with official red background
- const portraitUrl =
- document.ktpImageUrl ||
- 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80';
+  useEffect(() => {
+    if (isFullDoc) {
+      setActiveMode('scan');
+    }
+  }, [document.ktpImageUrl, isFullDoc]);
 
- return (
- <div className="relative w-full max-w-xl mx-auto rounded-xl shadow-sm border border-[#C5D5E0] bg-[#E3EFF7] overflow-hidden select-none font-sans text-[#1A1A1A]">
+  const getFieldHighlight = (key: string) => {
+    if (hoveredFieldKey === key) {
+      return 'bg-blue-500/20 ring-2 ring-blue-500 rounded px-1 -mx-1 shadow-xs transition-all duration-150';
+    }
+    return 'transition-all duration-150 hover:bg-black/5 rounded px-1 -mx-1';
+  };
+
+  const portraitUrl = resolveKtpPortraitUrl(document.ktpImageUrl);
+
+  return (
+    <div className="space-y-3">
+      {/* View Mode Toggle Header */}
+      <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#1A1A1A]">
+          {activeMode === 'scan' ? (
+            <>
+              <Scan className="w-4 h-4 text-[#2563EB]" />
+              <span>Pratinjau Dokumen Fisik (Full Scan)</span>
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-4 h-4 text-[#2563EB]" />
+              <span>Kartu e-KTP Digital (Structured View)</span>
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 bg-[#F1F3F5] p-1 rounded-lg border border-[#E5E5E3]">
+          <button
+            type="button"
+            onClick={() => setActiveMode('scan')}
+            className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+              activeMode === 'scan'
+                ? 'bg-white text-[#2563EB] shadow-xs border border-[#E5E5E3]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
+            }`}
+          >
+            <Scan className="w-3 h-3" />
+            <span>Dokumen Asli</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMode('structured')}
+            className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5 ${
+              activeMode === 'structured'
+                ? 'bg-white text-[#2563EB] shadow-xs border border-[#E5E5E3]'
+                : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
+            }`}
+          >
+            <CreditCard className="w-3 h-3" />
+            <span>Kartu Digital</span>
+          </button>
+        </div>
+      </div>
+
+      {activeMode === 'scan' ? (
+        <div className="relative w-full max-w-xl mx-auto rounded-xl border border-[#E5E5E3] bg-[#0F172A] overflow-hidden shadow-sm flex flex-col">
+          {/* Full scan container */}
+          <div className="relative p-3 sm:p-4 flex items-center justify-center min-h-[300px] max-h-[460px] bg-slate-950/80">
+            <div className="relative inline-block max-w-full">
+              <img
+                src={document.ktpImageUrl || '/ktp_demo_normal.jpg'}
+                alt="e-KTP Document Full Scan"
+                className="max-h-[380px] w-auto max-w-full object-contain rounded-lg shadow-xl border border-slate-700 select-none"
+              />
+
+              {/* Overlaid Active Bounding Box */}
+              {hoveredFieldKey && ocrFields[hoveredFieldKey]?.boundingBox && (
+                <div
+                  className="absolute border-2 border-cyan-400 bg-cyan-400/25 shadow-[0_0_15px_rgba(6,182,212,0.7)] pointer-events-none transition-all duration-150 z-20 rounded-xs"
+                  style={{
+                    left: `${ocrFields[hoveredFieldKey].boundingBox!.x}%`,
+                    top: `${ocrFields[hoveredFieldKey].boundingBox!.y}%`,
+                    width: `${ocrFields[hoveredFieldKey].boundingBox!.w}%`,
+                    height: `${ocrFields[hoveredFieldKey].boundingBox!.h}%`,
+                  }}
+                >
+                  <div className="absolute -top-6 left-0 bg-cyan-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow flex items-center gap-1 whitespace-nowrap">
+                    <span>{ocrFields[hoveredFieldKey].label}</span>
+                    <span className="font-mono text-cyan-200">
+                      [{ocrFields[hoveredFieldKey].boundingBox!.x}%, {ocrFields[hoveredFieldKey].boundingBox!.y}%]
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Tamper Warning Overlay on Scan */}
+              {showTamperOverlay && isHighRisk && (
+                <div className="absolute inset-0 bg-[#DC2626]/20 border-2 border-dashed border-[#DC2626] rounded-lg flex flex-col items-center justify-center p-2 text-center pointer-events-none backdrop-blur-[0.5px]">
+                  <div className="bg-[#DC2626] text-white text-[11px] font-bold px-3 py-1 rounded shadow-lg flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>Forensic Tamper Anomaly Detected</span>
+                  </div>
+                  <span className="text-[10px] text-white mt-1 drop-shadow font-medium bg-black/60 px-2 py-0.5 rounded">
+                    Ketidakcocokan font OCR-B & batas piksel foto
+                  </span>
+                </div>
+              )}
+
+              {/* Moiré Screen Capture Detected Tag */}
+              {document.isScreenCaptureDetected && (
+                <div className="absolute bottom-2 left-2 bg-amber-500/90 text-slate-900 text-[10px] font-bold px-2 py-1 rounded shadow flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-900" />
+                  <span>Interferensi Moiré LCD Terdeteksi</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Active ROI Coordinate Info Bar */}
+          {hoveredFieldKey && ocrFields[hoveredFieldKey] && (
+            <div className="py-1.5 px-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-300 font-mono">
+              <span className="text-cyan-400 font-semibold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                ROI Active: {ocrFields[hoveredFieldKey].label}
+              </span>
+              <span className="text-slate-400">
+                x: {ocrFields[hoveredFieldKey].boundingBox?.x}%, y: {ocrFields[hoveredFieldKey].boundingBox?.y}%, w: {ocrFields[hoveredFieldKey].boundingBox?.w}%, h: {ocrFields[hoveredFieldKey].boundingBox?.h}%
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative w-full max-w-xl mx-auto rounded-xl shadow-sm border border-[#C5D5E0] bg-[#E3EFF7] overflow-hidden select-none font-sans text-[#1A1A1A]">
  {/* Guilloche Microprint Security Background Pattern */}
  <svg
  className="absolute inset-0 w-full h-full opacity-25 pointer-events-none"
@@ -370,5 +512,7 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
  )}
  </div>
- );
+      )}
+    </div>
+  );
 };
