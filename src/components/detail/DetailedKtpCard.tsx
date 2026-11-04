@@ -6,15 +6,26 @@ interface DetailedKtpCardProps {
  document: DocumentVerification;
  customerName: string;
  showTamperOverlay: boolean;
+ hoveredFieldKey?: string | null;
+ onFieldHover?: (key: string | null) => void;
 }
 
 export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  document,
  customerName,
  showTamperOverlay,
+ hoveredFieldKey,
+ onFieldHover,
 }) => {
  const { ocrFields, nikValidation, tamperFlags } = document;
  const isHighRisk = document.score >= 70;
+
+ const getFieldHighlight = (key: string) => {
+   if (hoveredFieldKey === key) {
+     return 'bg-blue-500/20 ring-2 ring-blue-500 rounded px-1 -mx-1 shadow-xs transition-all duration-150';
+   }
+   return 'transition-all duration-150 hover:bg-black/5 rounded px-1 -mx-1';
+ };
 
  // Portrait photo: realistic Indonesian passport portrait with official red background
  const portraitUrl =
@@ -64,7 +75,11 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
 
  {/* NIK Bar */}
  <div className="my-2 flex items-center justify-between">
- <div className="flex items-baseline gap-2">
+ <div
+  className={`flex items-baseline gap-2 cursor-pointer ${getFieldHighlight('nik')}`}
+  onMouseEnter={() => onFieldHover?.('nik')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="text-[11px] font-bold text-[#1E293B] tracking-wider">
  NIK
  </span>
@@ -102,7 +117,11 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  {/* Demographic Data Columns (8 cols) */}
  <div className="col-span-8 space-y-0.5 text-[10px] sm:text-[11px] leading-tight text-[#1E293B]">
  {/* Nama */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('nama')}`}
+  onMouseEnter={() => onFieldHover?.('nama')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Nama</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="font-semibold uppercase truncate text-[#0F172A]">
@@ -111,7 +130,15 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* Tempat/Tgl Lahir */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${
+   hoveredFieldKey === 'tempatLahir' || hoveredFieldKey === 'tglLahir'
+    ? 'bg-blue-500/20 ring-2 ring-blue-500 rounded px-1 -mx-1 shadow-xs transition-all duration-150'
+    : 'transition-all duration-150 hover:bg-black/5 rounded px-1 -mx-1'
+  }`}
+  onMouseEnter={() => onFieldHover?.('tglLahir')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Tempat/Tgl Lahir</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span
@@ -126,7 +153,11 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* Jenis Kelamin & Gol Darah */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('jenisKelamin')}`}
+  onMouseEnter={() => onFieldHover?.('jenisKelamin')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Jenis Kelamin</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase text-[#0F172A]">
@@ -135,7 +166,11 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* Alamat */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('alamat')}`}
+  onMouseEnter={() => onFieldHover?.('alamat')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Alamat</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase truncate text-[#0F172A]">
@@ -144,14 +179,22 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* RT/RW */}
- <div className="flex items-baseline pl-4">
+ <div
+  className={`flex items-baseline pl-4 cursor-pointer ${getFieldHighlight('rtRw')}`}
+  onMouseEnter={() => onFieldHover?.('rtRw')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-20 shrink-0 text-[#64748B]">RT/RW</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className=" text-[#0F172A]">004/002</span>
  </div>
 
  {/* Kel/Desa */}
- <div className="flex items-baseline pl-4">
+ <div
+  className={`flex items-baseline pl-4 cursor-pointer ${getFieldHighlight('kelDesa')}`}
+  onMouseEnter={() => onFieldHover?.('kelDesa')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-20 shrink-0 text-[#64748B]">Kel/Desa</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase text-[#0F172A]">
@@ -160,7 +203,11 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* Kecamatan */}
- <div className="flex items-baseline pl-4">
+ <div
+  className={`flex items-baseline pl-4 cursor-pointer ${getFieldHighlight('kecamatan')}`}
+  onMouseEnter={() => onFieldHover?.('kecamatan')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-20 shrink-0 text-[#64748B]">Kecamatan</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase text-[#0F172A]">
@@ -169,7 +216,11 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* Agama */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('agama')}`}
+  onMouseEnter={() => onFieldHover?.('agama')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Agama</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase text-[#0F172A]">
@@ -178,14 +229,22 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* Status Perkawinan */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('statusPerkawinan')}`}
+  onMouseEnter={() => onFieldHover?.('statusPerkawinan')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Status Perkawinan</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase text-[#0F172A]">BELUM KAWIN</span>
  </div>
 
  {/* Pekerjaan */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('pekerjaan')}`}
+  onMouseEnter={() => onFieldHover?.('pekerjaan')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Pekerjaan</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase text-[#0F172A]">
@@ -194,14 +253,22 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
 
  {/* Kewarganegaraan */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('kewarganegaraan')}`}
+  onMouseEnter={() => onFieldHover?.('kewarganegaraan')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Kewarganegaraan</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase font-semibold text-[#0F172A]">WNI</span>
  </div>
 
  {/* Berlaku Hingga */}
- <div className="flex items-baseline">
+ <div
+  className={`flex items-baseline cursor-pointer ${getFieldHighlight('berlakuHingga')}`}
+  onMouseEnter={() => onFieldHover?.('berlakuHingga')}
+  onMouseLeave={() => onFieldHover?.(null)}
+ >
  <span className="w-24 shrink-0 text-[#475569]">Berlaku Hingga</span>
  <span className="w-2 shrink-0 text-[#64748B]">:</span>
  <span className="uppercase font-bold text-[#0F172A]">SEUMUR HIDUP</span>
@@ -265,6 +332,21 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
  </div>
  </div>
+
+ {/* Active ROI Highlight Indicator Pill */}
+ {hoveredFieldKey && ocrFields[hoveredFieldKey] && (
+  <div className="py-1 px-2 my-1.5 bg-blue-600/10 border border-blue-400/40 rounded flex items-center justify-between text-[9px] text-blue-900 font-mono">
+   <span className="font-semibold flex items-center gap-1">
+    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+    ROI: {ocrFields[hoveredFieldKey].label}
+   </span>
+   <span>
+    {ocrFields[hoveredFieldKey].boundingBox
+     ? `[x:${ocrFields[hoveredFieldKey].boundingBox?.x}%, y:${ocrFields[hoveredFieldKey].boundingBox?.y}%, w:${ocrFields[hoveredFieldKey].boundingBox?.w}%, h:${ocrFields[hoveredFieldKey].boundingBox?.h}%]`
+     : `Confidence: ${ocrFields[hoveredFieldKey].confidence}%`}
+   </span>
+  </div>
+ )}
 
  {/* Card Footer Bar: Authentic Machine Readable Strip */}
  <div className="pt-1.5 border-t border-[#B8D1E0] flex items-center justify-between text-[8px] text-[#64748B] ">
