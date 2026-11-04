@@ -21,6 +21,7 @@ import { FinancingCase, DocumentVerification, OCRField } from '../../../types';
 import { DetailedKtpCard } from '../DetailedKtpCard';
 import { DetailedConsumerSelfie } from '../DetailedConsumerSelfie';
 import { ocrDemoPresets, validateDukcapilNik } from '../../../data/demoPresets';
+import { performRealKtpOcr } from '../../../services/aiService';
 
 export type OcrPresetKey = 'clean' | 'tampered' | 'screen_capture' | 'custom';
 
@@ -202,6 +203,7 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
   const [activePreset, setActivePreset] = useState<OcrPresetKey>('clean');
   const [customDoc, setCustomDoc] = useState<DocumentVerification | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string>('Scanning e-KTP microtext, OCR-B font conformity, and Dukcapil civil database...');
   const [hoveredFieldKey, setHoveredFieldKey] = useState<string | null>(null);
   const [showTamperHeatmap, setShowTamperHeatmap] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<'ktp' | 'selfie' | 'slip'>('ktp');
@@ -218,7 +220,8 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
     };
   }, []);
 
-  const triggerScanning = () => {
+  const triggerScanning = (msg?: string) => {
+    setScanMessage(msg || 'Scanning e-KTP microtext, OCR-B font conformity, and Dukcapil civil database...');
     setIsScanning(true);
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
@@ -248,16 +251,28 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
       alert('Failed to read selected image file.');
       e.target.value = '';
     };
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
-        const doc = createCustomEktpDocument(dataUrl, {
-          customerName: caseData.customerName,
-          nik: caseData.customerNik,
-        });
-        setCustomDoc(doc);
+        setIsScanning(true);
+        setScanMessage('Menganalisis foto e-KTP dengan AI Multimodal Vision & memverifikasi NIK Dukcapil...');
         setActivePreset('custom');
-        triggerScanning();
+
+        try {
+          const doc = await performRealKtpOcr(dataUrl, {
+            customerName: caseData.customerName,
+          });
+          setCustomDoc(doc);
+        } catch (err: any) {
+          console.warn('Real AI OCR error, using local fallback:', err);
+          const fallbackDoc = createCustomEktpDocument(dataUrl, {
+            customerName: caseData.customerName,
+            nik: caseData.customerNik,
+          });
+          setCustomDoc(fallbackDoc);
+        } finally {
+          setIsScanning(false);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -400,7 +415,7 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
                   <span className="inline-block w-2 h-2 rounded-full bg-blue-600 animate-ping" />
                 </div>
                 <div className="text-[11px] text-blue-700 mt-0.5">
-                  Scanning e-KTP microtext, OCR-B font conformity, and Dukcapil civil database...
+                  {scanMessage}
                 </div>
               </div>
             </div>

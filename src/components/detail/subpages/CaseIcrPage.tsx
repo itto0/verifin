@@ -21,6 +21,7 @@ import { FinancingCase } from '../../../types';
 import { IcrDocumentSample, mockIcrDocuments } from '../../../data/icrData';
 import { icrDemoPresets } from '../../../data/demoPresets';
 import { DetailedIcrDocumentCard } from '../../icr/DetailedIcrDocumentCard';
+import { performRealIcr } from '../../../services/aiService';
 
 export type IcrPresetKey = 'clean_shm' | 'cadastral_mismatch' | 'low_confidence' | 'custom';
 
@@ -224,6 +225,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
   const [activePresetKey, setActivePresetKey] = useState<IcrPresetKey>('clean_shm');
   const [activeDoc, setActiveDoc] = useState<IcrDocumentSample>(icrDemoPresets.clean_shm);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [scanMessage, setScanMessage] = useState<string>('Performing Intelligent Character Recognition (ICR) on handwritten forms and querying ATR/BPN Sentuh Tanahku registry...');
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
   const [hoveredField, setHoveredField] = useState<string | null>(null);
 
@@ -238,7 +240,8 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
     };
   }, []);
 
-  const triggerScanning = () => {
+  const triggerScanning = (msg?: string) => {
+    setScanMessage(msg || 'Performing Intelligent Character Recognition (ICR) on handwritten forms and querying ATR/BPN Sentuh Tanahku registry...');
     setIsScanning(true);
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
@@ -270,17 +273,27 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
       alert('Failed to read selected document file.');
       e.target.value = '';
     };
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
-        const custom = createCustomIcrDocument(dataUrl, file.name, {
-          applicantName: caseData.customerName,
-          caseId: caseData.id,
-        });
-        setActiveDoc(custom);
+        setIsScanning(true);
+        setScanMessage('Membaca tulisan tangan & memvalidasi geospasial ATR/BPN Sentuh Tanahku dengan AI Vision...');
         setActivePresetKey('custom');
         setHighlightedField(null);
-        triggerScanning();
+
+        try {
+          const custom = await performRealIcr(dataUrl, file.name);
+          setActiveDoc(custom);
+        } catch (err: any) {
+          console.warn('Real AI ICR error, using fallback generator:', err);
+          const fallbackCustom = createCustomIcrDocument(dataUrl, file.name, {
+            applicantName: caseData.customerName,
+            caseId: caseData.id,
+          });
+          setActiveDoc(fallbackCustom);
+        } finally {
+          setIsScanning(false);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -387,7 +400,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
                   <span className="inline-block w-2 h-2 rounded-full bg-blue-600 animate-ping" />
                 </div>
                 <div className="text-[11px] text-blue-700 mt-0.5">
-                  Performing Intelligent Character Recognition (ICR) on handwritten forms and querying ATR/BPN Sentuh Tanahku registry...
+                  {scanMessage}
                 </div>
               </div>
             </div>

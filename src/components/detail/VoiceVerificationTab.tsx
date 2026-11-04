@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { VoiceVerification, ScriptComplianceItem, TranscriptSnippet } from '../../types';
 import { voiceDemoPresets } from '../../data/demoPresets';
+import { performRealAudioAnalysis } from '../../services/aiService';
 
 export type VoicePresetKey = 'nominal' | 'hesitant_noncompliant' | 'coaching_suspicion' | 'custom';
 
@@ -214,6 +215,7 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
   const [customVoice, setCustomVoice] = useState<VoiceVerification | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [processMessage, setProcessMessage] = useState<string>('Transcribing multi-speaker Indonesian ASR audio, analyzing acoustic intonation, and auditing OJK script compliance...');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const processTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -226,7 +228,8 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     };
   }, []);
 
-  const triggerProcessing = () => {
+  const triggerProcessing = (msg?: string) => {
+    setProcessMessage(msg || 'Transcribing multi-speaker Indonesian ASR audio, analyzing acoustic intonation, and auditing OJK script compliance...');
     setIsProcessing(true);
     if (processTimeoutRef.current) {
       clearTimeout(processTimeoutRef.current);
@@ -243,7 +246,7 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     triggerProcessing();
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -253,17 +256,30 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
       return;
     }
 
-    const custom = createCustomVoiceVerification(file.name, {
-      customerName,
-      agentName: voice.agentName || 'Fitri Handayani',
-    });
-    setCustomVoice(custom);
     setUploadedFileName(file.name);
     setActivePresetKey('custom');
     setIsPlaying(false);
     setCurrentTime(0);
-    triggerProcessing();
-    e.target.value = '';
+    setIsProcessing(true);
+    setProcessMessage('Mendekode audio riil Web Audio API, menghitung waveform amplitudo RMS, & mendeteksi jeda hening...');
+
+    try {
+      const custom = await performRealAudioAnalysis(file, {
+        customerName,
+        agentName: voice.agentName || 'Fitri Handayani',
+      });
+      setCustomVoice(custom);
+    } catch (err: any) {
+      console.warn('Real audio analysis error, falling back:', err);
+      const fallback = createCustomVoiceVerification(file.name, {
+        customerName,
+        agentName: voice.agentName || 'Fitri Handayani',
+      });
+      setCustomVoice(fallback);
+    } finally {
+      setIsProcessing(false);
+      e.target.value = '';
+    }
   };
 
   const activeVoice: VoiceVerification = useMemo(() => {
@@ -428,7 +444,7 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
                   <span className="inline-block w-2 h-2 rounded-full bg-blue-600 animate-ping" />
                 </div>
                 <div className="text-[11px] text-blue-700 mt-0.5">
-                  Transcribing multi-speaker Indonesian ASR audio, analyzing acoustic intonation, and auditing OJK script compliance...
+                  {processMessage}
                 </div>
               </div>
             </div>
