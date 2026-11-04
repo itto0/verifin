@@ -13,6 +13,8 @@ describe('demoPresets', () => {
     expect(ocrDemoPresets.screen_capture).toBeDefined();
 
     expect(ocrDemoPresets.clean.score).toBeLessThan(30);
+    expect(ocrDemoPresets.clean.salarySlip).toBeDefined();
+    expect(ocrDemoPresets.clean.salarySlip?.companyName).toBe('PT Citra Nusantara Mandiri');
     expect(ocrDemoPresets.tampered.score).toBeGreaterThanOrEqual(70);
     expect(ocrDemoPresets.screen_capture.isScreenCaptureDetected).toBe(true);
   });

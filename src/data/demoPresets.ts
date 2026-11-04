@@ -1,5 +1,6 @@
 import { DocumentVerification, VoiceVerification } from '../types';
 import { IcrDocumentSample } from './icrData';
+import { defaultSalarySlip } from './salarySlipHelper';
 
 /**
  * Validates an Indonesian 16-digit NIK against the recorded birth date and gender
@@ -85,6 +86,7 @@ export const ocrDemoPresets: Record<string, DocumentVerification> = {
     selfieImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&auto=format&fit=crop&q=80',
     slipGajiImageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
     kkImageUrl: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=600&auto=format&fit=crop&q=80',
+    salarySlip: defaultSalarySlip,
     tamperScore: 8,
     faceMatchScore: 97,
     isScreenCaptureDetected: false,
@@ -212,6 +214,8 @@ export const ocrDemoPresets: Record<string, DocumentVerification> = {
     },
   },
 };
+
+export const casePresets = ocrDemoPresets;
 
 /**
  * ICR Presets for surveyor handwriting and BPN Sentuh Tanahku collateral verification:

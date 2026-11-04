@@ -23,11 +23,53 @@ export interface OCRField {
  boundingBox?: { x: number; y: number; w: number; h: number };
 }
 
+export interface SalaryEarnings {
+ gajiPokok: number;
+ tunjanganTransport: number;
+ tunjanganMakan: number;
+ tunjanganKehadiran: number;
+ totalTunjangan: number;
+ grossIncome: number;
+}
+
+export interface SalaryDeductions {
+ bpjsKesehatan: number;
+ bpjsKetenagakerjaan: number;
+ pph21: number;
+ totalPotongan: number;
+}
+
+export interface SalarySlipBreakdown {
+ companyName: string;
+ companyAddress: string;
+ employeeName: string;
+ employeeNik: string;
+ period: string;
+ paymentDate: string;
+ earnings: SalaryEarnings;
+ deductions: SalaryDeductions;
+ takeHomePay: number;
+ declaredIncome: number;
+ monthlyInstallment: number;
+ dsrPercentage: number;
+ isDsrHealthy: boolean;
+ stampStatus: 'verified' | 'suspicious' | 'missing';
+ stampNote?: string;
+ ocrConfidence: number;
+ slipImageUrl?: string;
+ anomalies: Array<{
+  fieldKey: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high';
+ }>;
+}
+
 export interface DocumentVerification {
  ktpImageUrl: string;
  selfieImageUrl: string;
  slipGajiImageUrl?: string;
  kkImageUrl?: string;
+ salarySlip?: SalarySlipBreakdown;
  nikValidation: NIKValidation;
  ocrFields: Record<string, OCRField>;
  tamperScore: number; // 0 - 100
