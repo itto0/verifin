@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'bun:test';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { ocrDemoPresets, validateDukcapilNik } from '../../../data/demoPresets';
-import { createCustomEktpDocument, DEFAULT_BOUNDING_BOXES } from './CaseEktpPage';
+import {
+  createCustomEktpDocument,
+  DEFAULT_BOUNDING_BOXES,
+  CaseEktpPage,
+  resolveActiveSalarySlip,
+} from './CaseEktpPage';
 import { isFullKtpDocument, resolveKtpPortraitUrl } from '../DetailedKtpCard';
+import { mockCases } from '../../../data/mockData';
+import { defaultSalarySlip } from '../../../data/salarySlipHelper';
+import { FinancingCase } from '../../../types';
 
 describe('CaseEktpPage demo state logic', () => {
   it('correctly switches between OCR preset records', () => {
@@ -126,5 +136,134 @@ describe('CaseEktpPage demo state logic', () => {
   it('uses full KTP document scans for preset demo records', () => {
     expect(isFullKtpDocument(ocrDemoPresets.clean.ktpImageUrl)).toBe(true);
     expect(isFullKtpDocument(ocrDemoPresets.tampered.ktpImageUrl)).toBe(true);
+  });
+});
+
+describe('CaseEktpPage Salary Slip Dual-View Integration', () => {
+  const baseCase: FinancingCase = mockCases[0];
+
+  it('computes activeSalarySlip with DSR calculation from caseData and falls back to defaultSalarySlip', () => {
+    // 1. Without salarySlip on document, falls back and computes DSR from caseData
+    const testCase: FinancingCase = {
+      ...baseCase,
+      monthlyInstallment: 2400000,
+      customerName: 'JOKO WIDODO',
+    };
+    const activeSlip = resolveActiveSalarySlip(testCase.document, testCase, 'JOKO WIDODO');
+
+    expect(activeSlip.employeeName).toBe('JOKO WIDODO');
+    expect(activeSlip.monthlyInstallment).toBe(2400000);
+    // DSR = (2,400,000 / 6,850,000) * 100 = 35.04% -> unhealty (> 35.0)
+    expect(activeSlip.dsrPercentage).toBe(35.04);
+    expect(activeSlip.isDsrHealthy).toBe(false);
+
+    // 2. Healthy DSR case
+    const healthyCase: FinancingCase = {
+      ...baseCase,
+      monthlyInstallment: 1395000,
+    };
+    const healthySlip = resolveActiveSalarySlip(healthyCase.document, healthyCase);
+    expect(healthySlip.dsrPercentage).toBe(20.36);
+    expect(healthySlip.isDsrHealthy).toBe(true);
+
+    // 3. When document already contains salarySlip, returns it directly
+    const customSalarySlip = {
+      ...defaultSalarySlip,
+      employeeName: 'CUSTOM WORKER',
+      takeHomePay: 9000000,
+      dsrPercentage: 15.0,
+      isDsrHealthy: true,
+    };
+    const caseWithSlipDoc = {
+      ...testCase.document,
+      salarySlip: customSalarySlip,
+    };
+    const directSlip = resolveActiveSalarySlip(caseWithSlipDoc, testCase);
+    expect(directSlip.employeeName).toBe('CUSTOM WORKER');
+    expect(directSlip.takeHomePay).toBe(9000000);
+  });
+
+  it('renders document selection buttons including ktp, selfie, and slip pills', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, { caseData: baseCase })
+    );
+
+    // Document Selector tabs must contain all 3 document options
+    expect(html).toContain('e-KTP Card');
+    expect(html).toContain('Consumer Selfie');
+    expect(html).toContain('Salary Slip');
+  });
+
+  it('switching selectedDoc to slip displays DetailedSalarySlipCard and SalaryBreakdownTable with DSR calculation', () => {
+    const testCase: FinancingCase = {
+      ...baseCase,
+      monthlyInstallment: 1850000,
+      customerName: 'BUDI SANTOSO',
+    };
+
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: testCase,
+        initialSelectedDoc: 'slip',
+      })
+    );
+
+    // Left column: DetailedSalarySlipCard should be rendered
+    expect(html).toContain('Pratinjau Forensik Slip Gaji');
+    expect(html).toContain('SLIP GAJI KARYAWAN');
+    expect(html).toContain('PT Citra Nusantara Mandiri');
+
+    // Right column: SalaryBreakdownTable should be rendered
+    expect(html).toContain('Analisis Rasio Beban Utang (DSR)');
+    expect(html).toContain('Rasio DSR');
+    expect(html).toContain('27.01%'); // 1,850,000 / 6,850,000 = 27.01%
+    expect(html).toContain('Memenuhi Syarat OJK (DSR ≤ 35%)');
+
+    // KTP specific tamper box and NIK analysis card should NOT be shown
+    expect(html).not.toContain('Dukcapil 16-Digit NIK Structure Analysis');
+    expect(html).not.toContain('Forensic Tamper Detection');
+  });
+
+  it('switching selectedDoc to ktp renders DetailedKtpCard, tamper box, and Dukcapil analysis', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: baseCase,
+        initialSelectedDoc: 'ktp',
+      })
+    );
+
+    // KTP Card and NIK analysis should be rendered
+    expect(html).toContain('Dukcapil 16-Digit NIK Structure Analysis');
+    expect(html).toContain('Forensic Tamper Detection');
+
+    // Salary slip cards should NOT be rendered
+    expect(html).not.toContain('Pratinjau Forensik Slip Gaji');
+    expect(html).not.toContain('Rincian Gaji Bersih &amp; Rasio Beban Angsuran');
+  });
+
+  it('hovering field keys in breakdown table updates highlighted field in salary slip card', () => {
+    // When gajiPokok is hovered, DetailedSalarySlipCard should receive highlightedFieldKey='gajiPokok'
+    const htmlHighlighted = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: baseCase,
+        initialSelectedDoc: 'slip',
+        initialHoveredFieldKey: 'gajiPokok',
+      })
+    );
+
+    // DetailedSalarySlipCard applies high-contrast blue ring/glow for highlighted fields
+    expect(htmlHighlighted).toContain('border-[#2563EB]');
+    expect(htmlHighlighted).toContain('bg-[#2563EB]/15');
+
+    // When no field is hovered
+    const htmlUnhighlighted = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: baseCase,
+        initialSelectedDoc: 'slip',
+        initialHoveredFieldKey: null,
+      })
+    );
+
+    expect(htmlUnhighlighted).not.toContain('bg-[#2563EB]/15');
   });
 });

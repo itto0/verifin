@@ -190,6 +190,10 @@ export interface FinancingCase {
  assignedVerifier?: string;
  decisionNotes?: string;
  decisionTimestamp?: string;
+ vehicle?: {
+  monthlyInstallment?: number;
+  [key: string]: any;
+ };
 }
 
 export interface SurveyorPoint {

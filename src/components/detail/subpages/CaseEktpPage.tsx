@@ -14,9 +14,12 @@ import {
   Loader2,
   ScanLine,
 } from 'lucide-react';
-import { FinancingCase, DocumentVerification, OCRField } from '../../../types';
+import { FinancingCase, DocumentVerification, OCRField, SalarySlipBreakdown } from '../../../types';
 import { DetailedKtpCard } from '../DetailedKtpCard';
 import { DetailedConsumerSelfie } from '../DetailedConsumerSelfie';
+import { DetailedSalarySlipCard } from '../DetailedSalarySlipCard';
+import { SalaryBreakdownTable } from '../SalaryBreakdownTable';
+import { defaultSalarySlip, calculateDsr } from '../../../data/salarySlipHelper';
 import { ocrDemoPresets, validateDukcapilNik } from '../../../data/demoPresets';
 import { performRealKtpOcr } from '../../../services/aiService';
 
@@ -192,18 +195,55 @@ export function createCustomEktpDocument(
   };
 }
 
-interface CaseEktpPageProps {
-  caseData: FinancingCase;
+export function resolveActiveSalarySlip(
+  currentDoc: DocumentVerification,
+  caseData: FinancingCase,
+  currentCustomerName?: string
+): SalarySlipBreakdown {
+  if (currentDoc.salarySlip) {
+    return currentDoc.salarySlip;
+  }
+  const monthlyInstallment =
+    caseData.vehicle?.monthlyInstallment ??
+    caseData.monthlyInstallment ??
+    defaultSalarySlip.monthlyInstallment;
+  const applicantName =
+    currentCustomerName ||
+    currentDoc.ocrFields?.nama?.value ||
+    caseData.customerName ||
+    defaultSalarySlip.employeeName;
+  const { dsrPercentage, isDsrHealthy } = calculateDsr(
+    monthlyInstallment,
+    defaultSalarySlip.takeHomePay
+  );
+
+  return {
+    ...defaultSalarySlip,
+    employeeName: applicantName,
+    monthlyInstallment,
+    dsrPercentage,
+    isDsrHealthy,
+  };
 }
 
-export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
+export interface CaseEktpPageProps {
+  caseData: FinancingCase;
+  initialSelectedDoc?: 'ktp' | 'selfie' | 'slip';
+  initialHoveredFieldKey?: string | null;
+}
+
+export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
+  caseData,
+  initialSelectedDoc = 'ktp',
+  initialHoveredFieldKey = null,
+}) => {
   const [activePreset, setActivePreset] = useState<OcrPresetKey>('clean');
   const [customDoc, setCustomDoc] = useState<DocumentVerification | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string>('Scanning e-KTP microtext, OCR-B font conformity, and Dukcapil civil database...');
-  const [hoveredFieldKey, setHoveredFieldKey] = useState<string | null>(null);
+  const [hoveredFieldKey, setHoveredFieldKey] = useState<string | null>(initialHoveredFieldKey);
   const [showTamperHeatmap, setShowTamperHeatmap] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<'ktp' | 'selfie' | 'slip'>('ktp');
+  const [selectedDoc, setSelectedDoc] = useState<'ktp' | 'selfie' | 'slip'>(initialSelectedDoc);
   const [copiedNik, setCopiedNik] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -303,6 +343,10 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
 
   const { nikValidation, ocrFields, tamperFlags, tamperScore, faceMatchScore, isScreenCaptureDetected, score } = currentDoc;
   const currentCustomerName = ocrFields.nama?.value || caseData.customerName;
+
+  const activeSalarySlip: SalarySlipBreakdown = useMemo(() => {
+    return resolveActiveSalarySlip(currentDoc, caseData, currentCustomerName);
+  }, [currentDoc, caseData, currentCustomerName]);
 
   const handleCopyNik = async () => {
     try {
@@ -512,19 +556,18 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
                   <Camera className="w-3.5 h-3.5" />
                   <span>Consumer Selfie</span>
                 </button>
-                {currentDoc.slipGajiImageUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDoc('slip')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                      selectedDoc === 'slip'
-                        ? 'bg-[#1A1A1A] text-white'
-                        : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
-                    }`}
-                  >
-                    Salary Slip
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedDoc('slip')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                    selectedDoc === 'slip'
+                      ? 'bg-[#1A1A1A] text-white'
+                      : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Salary Slip</span>
+                </button>
               </div>
 
               {selectedDoc === 'ktp' && (
@@ -564,70 +607,79 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
                   customerName={currentCustomerName}
                 />
               ) : (
-                <div className="p-4 bg-[#F7F7F5] border border-[#E5E5E3] rounded-xl text-center space-y-2">
-                  <FileText className="w-8 h-8 text-[#6B6B6B] mx-auto" />
-                  <div className="text-xs font-medium text-[#1A1A1A]">Official Corporate Payroll Slip</div>
-                  <div className="text-[11px] text-[#6B6B6B]">PT Citra Nusantara Mandiri · Verified</div>
-                </div>
+                <DetailedSalarySlipCard
+                  salaryData={activeSalarySlip}
+                  highlightedFieldKey={hoveredFieldKey}
+                />
               )}
             </div>
           </div>
 
           {/* Tamper Detection Box */}
-          <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
-              <div className="text-xs font-semibold text-[#1A1A1A] flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
-                <span>Forensic Tamper Detection</span>
-              </div>
-              <span
-                className={`text-xs font-bold ${
-                  tamperScore > 50 ? 'text-[#DC2626]' : 'text-[#16A34A]'
-                }`}
-              >
-                Tamper Score: {tamperScore}/100
-              </span>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between text-[#6B6B6B]">
-                <span>Screen Capture Detection:</span>
-                <span className={`font-medium ${isScreenCaptureDetected ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>
-                  {isScreenCaptureDetected ? 'Detected (Display Moire Pattern)' : 'Passed (Physical ID Card)'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[#6B6B6B]">
-                <span>Font Microtext Consistency:</span>
-                <span className={`font-medium ${tamperFlags.some(f => f.includes('Font') || f.includes('OCR-B')) ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>
-                  {tamperFlags.some(f => f.includes('Font') || f.includes('OCR-B')) ? 'Font Weight Anomaly' : 'Standard Dukcapil Font'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[#6B6B6B]">
-                <span>Official Garuda Hologram:</span>
-                <span className="text-[#16A34A] font-medium">Reflective Luster Intact</span>
-              </div>
-            </div>
-
-            {tamperFlags.length > 0 && (
-              <div className="p-2.5 rounded-lg bg-[#DC2626]/5 border border-[#DC2626]/20 space-y-1">
-                <div className="text-[11px] font-semibold text-[#DC2626] flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  <span>Tamper Alerts:</span>
+          {selectedDoc !== 'slip' && (
+            <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
+                <div className="text-xs font-semibold text-[#1A1A1A] flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
+                  <span>Forensic Tamper Detection</span>
                 </div>
-                {tamperFlags.map((flag, idx) => (
-                  <div key={idx} className="text-[11px] text-[#DC2626] pl-2 border-l-2 border-[#DC2626]">
-                    {flag}
-                  </div>
-                ))}
+                <span
+                  className={`text-xs font-bold ${
+                    tamperScore > 50 ? 'text-[#DC2626]' : 'text-[#16A34A]'
+                  }`}
+                >
+                  Tamper Score: {tamperScore}/100
+                </span>
               </div>
-            )}
-          </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between text-[#6B6B6B]">
+                  <span>Screen Capture Detection:</span>
+                  <span className={`font-medium ${isScreenCaptureDetected ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>
+                    {isScreenCaptureDetected ? 'Detected (Display Moire Pattern)' : 'Passed (Physical ID Card)'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[#6B6B6B]">
+                  <span>Font Microtext Consistency:</span>
+                  <span className={`font-medium ${tamperFlags.some(f => f.includes('Font') || f.includes('OCR-B')) ? 'text-[#DC2626]' : 'text-[#16A34A]'}`}>
+                    {tamperFlags.some(f => f.includes('Font') || f.includes('OCR-B')) ? 'Font Weight Anomaly' : 'Standard Dukcapil Font'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[#6B6B6B]">
+                  <span>Official Garuda Hologram:</span>
+                  <span className="text-[#16A34A] font-medium">Reflective Luster Intact</span>
+                </div>
+              </div>
+
+              {tamperFlags.length > 0 && (
+                <div className="p-2.5 rounded-lg bg-[#DC2626]/5 border border-[#DC2626]/20 space-y-1">
+                  <div className="text-[11px] font-semibold text-[#DC2626] flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>Tamper Alerts:</span>
+                  </div>
+                  {tamperFlags.map((flag, idx) => (
+                    <div key={idx} className="text-[11px] text-[#DC2626] pl-2 border-l-2 border-[#DC2626]">
+                      {flag}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Right Column (7 cols): Dukcapil Algorithmic Analysis & OCR Table */}
+        {/* Right Column (7 cols): Dukcapil Algorithmic Analysis & OCR Table OR Salary Slip Breakdown */}
         <div className="lg:col-span-7 space-y-4">
-          {/* NIK Breakdown Card */}
-          <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 space-y-4">
+          {selectedDoc === 'slip' ? (
+            <SalaryBreakdownTable
+              salaryData={activeSalarySlip}
+              applicantName={currentCustomerName}
+              onFieldHover={setHoveredFieldKey}
+            />
+          ) : (
+            <>
+              {/* NIK Breakdown Card */}
+              <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E3]">
               <div>
                 <h3 className="text-xs font-semibold text-[#1A1A1A]">
@@ -814,6 +866,8 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
               </table>
             </div>
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>
