@@ -3,6 +3,52 @@ import { icrDemoPresets } from '../../../data/demoPresets';
 import { createCustomIcrDocument, DEFAULT_ICR_BOUNDING_BOXES } from './CaseIcrPage';
 
 describe('CaseIcrPage demo state logic', () => {
+  it('has default preset survey_clean configured as survey_form with 6 extracted fields and verified status', () => {
+    const surveyClean = icrDemoPresets.survey_clean;
+    expect(surveyClean).toBeDefined();
+    expect(surveyClean.type).toBe('survey_form');
+    expect(surveyClean.status).toBe('verified');
+    expect(surveyClean.applicantName).toBe('Budi Santoso');
+    expect(surveyClean.caseId).toBe('CASE-001');
+    expect(surveyClean.overallConfidence).toBe(96);
+    expect(surveyClean.extractedFields.length).toBe(6);
+    expect(surveyClean.extractedFields.every((f) => f.confidence >= 90)).toBe(true);
+    expect(surveyClean.extractedFields.every((f) => !f.isAnomaly)).toBe(true);
+    expect(surveyClean.documentNumber).toBe('SRV-FORM-2026-001');
+
+    const expectedKeys = [
+      'status_kepemilikan',
+      'daya_listrik',
+      'lama_tinggal',
+      'nama_penjamin',
+      'penghasilan_tambahan',
+      'catatan_lingkungan',
+    ];
+    const actualKeys = surveyClean.extractedFields.map((f) => f.fieldKey);
+    expect(actualKeys).toEqual(expectedKeys);
+  });
+
+  it('correctly maps category switching between survey form and bpn certificate', () => {
+    const surveyCategoryPresets = ['survey_clean', 'low_confidence'];
+    for (const key of surveyCategoryPresets) {
+      expect(icrDemoPresets[key].type).toBe('survey_form');
+    }
+
+    const bpnCategoryPresets = ['clean_shm', 'cadastral_mismatch'];
+    for (const key of bpnCategoryPresets) {
+      expect(icrDemoPresets[key].type).toBe('bpn_certificate');
+    }
+
+    const getInitialDocForCategory = (category: 'survey_form' | 'bpn_certificate') => {
+      return category === 'survey_form' ? icrDemoPresets.survey_clean : icrDemoPresets.clean_shm;
+    };
+
+    expect(getInitialDocForCategory('survey_form').type).toBe('survey_form');
+    expect(getInitialDocForCategory('survey_form').id).toBe('ICR-PRESET-CLEAN-SURVEY');
+    expect(getInitialDocForCategory('bpn_certificate').type).toBe('bpn_certificate');
+    expect(getInitialDocForCategory('bpn_certificate').id).toBe('ICR-PRESET-CLEAN');
+  });
+
   it('correctly switches between ICR presets and reflects BPN spatial status', () => {
     let activeDoc = icrDemoPresets.clean_shm;
     expect(activeDoc.bpnSpatialVerification?.sentuhTanahkuStatus).toBe('Terverifikasi BPN');

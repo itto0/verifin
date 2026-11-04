@@ -23,7 +23,8 @@ import { icrDemoPresets } from '../../../data/demoPresets';
 import { DetailedIcrDocumentCard } from '../../icr/DetailedIcrDocumentCard';
 import { performRealIcr } from '../../../services/aiService';
 
-export type IcrPresetKey = 'clean_shm' | 'cadastral_mismatch' | 'low_confidence' | 'custom';
+export type IcrCategory = 'survey_form' | 'bpn_certificate';
+export type IcrPresetKey = 'survey_clean' | 'low_confidence' | 'clean_shm' | 'cadastral_mismatch' | 'custom';
 
 export const DEFAULT_ICR_BOUNDING_BOXES: Record<string, { x: number; y: number; w: number; h: number }> = {
   // Surveyor Form fields (relative % coordinates in document viewer)
@@ -222,8 +223,9 @@ interface CaseIcrPageProps {
 }
 
 export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
-  const [activePresetKey, setActivePresetKey] = useState<IcrPresetKey>('clean_shm');
-  const [activeDoc, setActiveDoc] = useState<IcrDocumentSample>(icrDemoPresets.clean_shm);
+  const [activeCategory, setActiveCategory] = useState<IcrCategory>('survey_form');
+  const [activePresetKey, setActivePresetKey] = useState<IcrPresetKey>('survey_clean');
+  const [activeDoc, setActiveDoc] = useState<IcrDocumentSample>(icrDemoPresets.survey_clean || icrDemoPresets.clean_shm);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanMessage, setScanMessage] = useState<string>('Performing Intelligent Character Recognition (ICR) on handwritten forms and querying ATR/BPN Sentuh Tanahku registry...');
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
@@ -251,7 +253,22 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
     }, 1200);
   };
 
-  const handleSelectPreset = (key: 'clean_shm' | 'cadastral_mismatch' | 'low_confidence') => {
+  const handleCategoryChange = (category: IcrCategory) => {
+    if (category === activeCategory) return;
+    setActiveCategory(category);
+    setHighlightedField(null);
+    if (category === 'survey_form') {
+      setActivePresetKey('survey_clean');
+      setActiveDoc(icrDemoPresets.survey_clean);
+      triggerScanning('Membaca tulisan tangan Formulir Survei Lapangan BAF (CMO) dengan Intelligent Character Recognition...');
+    } else {
+      setActivePresetKey('clean_shm');
+      setActiveDoc(icrDemoPresets.clean_shm);
+      triggerScanning('Memverifikasi sertipikat agunan SHM terhadap basis data kadastral ATR/BPN Sentuh Tanahku...');
+    }
+  };
+
+  const handleSelectPreset = (key: 'survey_clean' | 'low_confidence' | 'clean_shm' | 'cadastral_mismatch') => {
     setActivePresetKey(key);
     setActiveDoc(icrDemoPresets[key]);
     setHighlightedField(null);
@@ -289,6 +306,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
           const fallbackCustom = createCustomIcrDocument(dataUrl, file.name, {
             applicantName: caseData.customerName,
             caseId: caseData.id,
+            type: activeCategory,
           });
           setActiveDoc(fallbackCustom);
         } finally {
@@ -304,85 +322,154 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
 
   return (
     <div className="space-y-6">
-      {/* Interactive Demo Preset Switcher Bar */}
-      <div className="p-3.5 rounded-xl border border-[#E5E5E3] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600/10 flex items-center justify-center text-emerald-600 shrink-0">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-[#1A1A1A] flex items-center gap-1.5">
-              <span>Interactive ICR &amp; ATR/BPN Demo</span>
-              <span className="text-[10px] font-normal text-[#6B6B6B] bg-[#F7F7F5] px-1.5 py-0.5 rounded border border-[#E5E5E3]">
-                Preset Switcher
-              </span>
+      {/* Primary Category Switcher & Interactive Preset Bar */}
+      <div className="p-4 rounded-xl border border-[#E5E5E3] bg-white space-y-3.5 shadow-xs">
+        {/* Prominent Category Toggle Pill Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E5E3]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-600/10 flex items-center justify-center text-[#2563EB] shrink-0">
+              <Layers className="w-4 h-4" />
             </div>
-            <p className="text-[11px] text-[#6B6B6B]">
-              Switch between land certificate &amp; surveyor ICR scenarios or upload custom documents to evaluate Sentuh Tanahku registry cross-checking.
-            </p>
+            <div>
+              <div className="text-xs font-bold text-[#1A1A1A] flex items-center gap-1.5">
+                <span>Document Category</span>
+                <span className="text-[10px] font-normal text-[#6B6B6B] bg-[#F7F7F5] px-1.5 py-0.5 rounded border border-[#E5E5E3]">
+                  Primary Switcher
+                </span>
+              </div>
+              <p className="text-[11px] text-[#6B6B6B]">
+                Pilih jenis dokumen: formulir survei lapangan CMO atau sertipikat agunan tanah ATR/BPN Sentuh Tanahku.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 p-1 bg-[#F7F7F5] rounded-xl border border-[#E5E5E3]">
+            <button
+              type="button"
+              onClick={() => handleCategoryChange('survey_form')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                activeCategory === 'survey_form'
+                  ? 'bg-white text-[#1A1A1A] font-semibold shadow-xs border border-[#E5E5E3]'
+                  : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-white/50'
+              }`}
+            >
+              <span>📋</span>
+              <span>Formulir Survei Lapangan (CMO)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCategoryChange('bpn_certificate')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                activeCategory === 'bpn_certificate'
+                  ? 'bg-white text-[#1A1A1A] font-semibold shadow-xs border border-[#E5E5E3]'
+                  : 'text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-white/50'
+              }`}
+            >
+              <span>🏛️</span>
+              <span>Sertipikat Agunan (ATR/BPN Sentuh Tanahku)</span>
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => handleSelectPreset('clean_shm')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-              activePresetKey === 'clean_shm'
-                ? 'bg-[#16A34A] text-white shadow-xs font-semibold'
-                : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Clean SHM (Verified 1:1)</span>
-          </button>
+        {/* Preset Button Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-600/10 flex items-center justify-center text-emerald-600 shrink-0">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-[#1A1A1A]">
+                {activeCategory === 'survey_form' ? 'Survey Form Demo Presets' : 'BPN Sentuh Tanahku Demo Presets'}
+              </div>
+              <p className="text-[11px] text-[#6B6B6B]">
+                {activeCategory === 'survey_form'
+                  ? 'Uji ekstraksi cerdas tulisan tangan surveyor lapangan BAF.'
+                  : 'Uji pencocokan koordinat persil kadastral pertanahan ATR/BPN.'}
+              </p>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => handleSelectPreset('cadastral_mismatch')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-              activePresetKey === 'cadastral_mismatch'
-                ? 'bg-[#DC2626] text-white shadow-xs font-semibold'
-                : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Cadastral Mismatch (Spatial Discrepancy)</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {activeCategory === 'survey_form' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset('survey_clean')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePresetKey === 'survey_clean'
+                      ? 'bg-[#16A34A] text-white shadow-xs font-semibold'
+                      : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Clean Survey (Verified)</span>
+                </button>
 
-          <button
-            type="button"
-            onClick={() => handleSelectPreset('low_confidence')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-              activePresetKey === 'low_confidence'
-                ? 'bg-[#D97706] text-white shadow-xs font-semibold'
-                : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Handwritten Form (Low Legibility)</span>
-          </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset('low_confidence')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePresetKey === 'low_confidence'
+                      ? 'bg-[#D97706] text-white shadow-xs font-semibold'
+                      : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Handwritten Form (Low Legibility)</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset('clean_shm')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePresetKey === 'clean_shm'
+                      ? 'bg-[#16A34A] text-white shadow-xs font-semibold'
+                      : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Clean SHM (Verified 1:1)</span>
+                </button>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,application/pdf"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
+                <button
+                  type="button"
+                  onClick={() => handleSelectPreset('cadastral_mismatch')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePresetKey === 'cadastral_mismatch'
+                      ? 'bg-[#DC2626] text-white shadow-xs font-semibold'
+                      : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Cadastral Mismatch</span>
+                </button>
+              </>
+            )}
 
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-              activePresetKey === 'custom'
-                ? 'bg-[#2563EB] text-white shadow-xs font-semibold'
-                : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
-            }`}
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Upload Custom Document...</span>
-          </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                activePresetKey === 'custom'
+                  ? 'bg-[#2563EB] text-white shadow-xs font-semibold'
+                  : 'bg-[#F7F7F5] text-[#1A1A1A] border border-[#E5E5E3] hover:bg-[#EFEFEF]'
+              }`}
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Upload Custom Document...</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -420,7 +507,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold uppercase tracking-wider text-[#6B6B6B]">
-              Page 5: ICR Form Reader &amp; Collateral Verification (&quot;Sentuh Tanahku&quot;)
+              Page 5: ICR Form Reader &amp; Collateral Verification (Survey Form &amp; ATR/BPN &apos;Sentuh Tanahku&apos;)
             </span>
             <span className="text-xs text-[#6B6B6B]">·</span>
             <span
@@ -434,7 +521,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
             >
               ICR Confidence: {activeDoc.overallConfidence}% ({activeDoc.status === 'mismatch_flag' ? 'Tamper / Mismatch' : activeDoc.status === 'needs_review' ? 'Needs Review' : 'Verified'})
             </span>
-            {activePresetKey !== 'clean_shm' && (
+            {activePresetKey !== 'survey_clean' && activePresetKey !== 'clean_shm' && (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase">
                 Preset: {activePresetKey.replace('_', ' ')}
               </span>
@@ -626,11 +713,11 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
                   <span>Collateral Asset Verification</span>
                 </div>
                 <span className="text-[10px] text-[#16A34A] bg-[#16A34A]/10 px-2 py-0.5 rounded font-semibold">
-                  Motorcycle BPKB
+                  {activeDoc.type === 'survey_form' ? 'Survey Field Notes' : 'Motorcycle BPKB'}
                 </span>
               </div>
               <p className="text-xs text-[#6B6B6B] leading-relaxed">
-                Unit {caseData.vehicleModel} verified against dealer delivery order and PLN 900 VA meter serial number on site.
+                {activeDoc.summaryNote || `Unit ${caseData.vehicleModel} verified against dealer delivery order and PLN 900 VA meter serial number on site.`}
               </p>
             </div>
           )}

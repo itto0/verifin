@@ -219,11 +219,75 @@ export const casePresets = ocrDemoPresets;
 
 /**
  * ICR Presets for surveyor handwriting and BPN Sentuh Tanahku collateral verification:
+ * - survey_clean: Verified surveyor field inspection form with clean legible handwriting.
  * - clean_shm: Valid SHM certificate matching ATR/BPN land registry and surveyed geolocation.
  * - cadastral_mismatch: BPN spatial mismatch flag (coordinates differ from surveyed property).
  * - low_confidence: Hand-written survey form with blurry handwriting and illegible numbers.
  */
 export const icrDemoPresets: Record<string, IcrDocumentSample> = {
+  survey_clean: {
+    id: 'ICR-PRESET-CLEAN-SURVEY',
+    type: 'survey_form',
+    title: 'Formulir Survei Lapangan BAF (Survei Terverifikasi)',
+    applicantName: 'Budi Santoso',
+    caseId: 'CASE-001',
+    scanDate: '2026-10-27 10:15 WIB',
+    documentNumber: 'SRV-FORM-2026-001',
+    overallConfidence: 96,
+    status: 'verified',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80',
+    summaryNote: 'Formulir survei lapangan CMO terverifikasi bersih. Seluruh isian tulisan tangan jelas, daya listrik 1300 VA cocok dengan foto meteran, dan catatan lingkungan RT/RW mengonfirmasi domisili tetap.',
+    extractedFields: [
+      {
+        fieldKey: 'status_kepemilikan',
+        label: 'Status Tempat Tinggal',
+        extractedValue: 'Milik Sendiri (Keluarga)',
+        normalizedValue: 'MILIK_SENDIRI',
+        confidence: 98,
+        isAnomaly: false,
+      },
+      {
+        fieldKey: 'daya_listrik',
+        label: 'Kapasitas Listrik (PLN)',
+        extractedValue: '1300 VA (Pascabayar)',
+        normalizedValue: '1300_VA',
+        confidence: 95,
+        isAnomaly: false,
+      },
+      {
+        fieldKey: 'lama_tinggal',
+        label: 'Lama Menempati Domisili',
+        extractedValue: '5 Tahun',
+        normalizedValue: '60_BULAN',
+        confidence: 96,
+        isAnomaly: false,
+      },
+      {
+        fieldKey: 'nama_penjamin',
+        label: 'Nama Penjamin / Pasangan',
+        extractedValue: 'SITI AMINAH (Istri)',
+        normalizedValue: 'SITI AMINAH',
+        confidence: 97,
+        isAnomaly: false,
+      },
+      {
+        fieldKey: 'penghasilan_tambahan',
+        label: 'Est. Penghasilan Tambahan / Usaha',
+        extractedValue: 'Rp 3.500.000 (Warung Kelontong)',
+        normalizedValue: '3500000',
+        confidence: 94,
+        isAnomaly: false,
+      },
+      {
+        fieldKey: 'catatan_lingkungan',
+        label: 'Catatan Karakter Lingkungan RT/RW',
+        extractedValue: 'Dikonfirmasi Ketua RT 05 dan tetangga, pemohon berkepribadian baik dan tinggal tetap.',
+        normalizedValue: 'VALID_RT',
+        confidence: 97,
+        isAnomaly: false,
+      },
+    ],
+  },
   clean_shm: {
     id: 'ICR-PRESET-CLEAN',
     type: 'bpn_certificate',
