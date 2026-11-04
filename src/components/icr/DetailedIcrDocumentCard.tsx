@@ -31,9 +31,25 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  const [activeView, setActiveView] = useState<'document' | 'evidence' | 'cadastral'>('document');
  const [showIcrBoxes, setShowIcrBoxes] = useState(true);
 
- const isForm = document.id === 'ICR-DOC-001';
- const isShm = document.id === 'ICR-DOC-002';
- const isShgb = document.id === 'ICR-DOC-003';
+ const isForm =
+  document.id === 'ICR-DOC-001' ||
+  document.id === 'ICR-PRESET-LOWCONF' ||
+  document.id === 'ICR-CUSTOM-FORM' ||
+  document.type === 'survey_form';
+
+ const isShm =
+  document.id === 'ICR-DOC-002' ||
+  document.id === 'ICR-PRESET-CLEAN' ||
+  document.id === 'ICR-CUSTOM-SHM' ||
+  (document.type === 'bpn_certificate' && document.status === 'verified');
+
+ const isShgb =
+  !isShm && (
+    document.id === 'ICR-DOC-003' ||
+    document.id === 'ICR-PRESET-MISMATCH' ||
+    document.id === 'ICR-CUSTOM-MISMATCH' ||
+    document.type === 'bpn_certificate'
+  );
 
  return (
  <div className="bg-white border border-[#E5E5E3] rounded-xl overflow-hidden shadow-xs flex flex-col">
@@ -97,8 +113,42 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  {/* VIEW 1: PHYSICAL DOCUMENT SCAN WITH AUTHENTIC RELATED DATA */}
  {activeView === 'document' && (
  <div className="w-full max-w-lg bg-white rounded-lg shadow-md border border-[#D1D5DB] overflow-hidden text-[#1A1A1A] font-sans relative select-none">
+ {/* 1-CUSTOM: UPLOADED IMAGE SCAN */}
+ {document.thumbnailUrl?.startsWith('data:image/') && (
+ <div className="p-4 sm:p-5 text-[11px] leading-tight space-y-3 bg-[#FAF8F5]">
+ <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
+ <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1A1A1A]">
+ <FileText className="w-4 h-4 text-blue-600" />
+ <span>Pratinjau Dokumen Unggahan</span>
+ </div>
+ <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+ {document.type === 'survey_form' ? 'Formulir Survei Lapangan' : 'Sertipikat Hak Milik'}
+ </span>
+ </div>
+ <div className="relative rounded-lg border border-[#E5E5E3] overflow-hidden bg-slate-900 flex items-center justify-center min-h-[300px]">
+ <img
+ src={document.thumbnailUrl}
+ alt="Uploaded Document"
+ className="max-h-[420px] w-auto object-contain"
+ />
+ {showIcrBoxes && highlightedFieldKey && (
+ <div className="absolute inset-0 bg-black/25 pointer-events-none flex items-center justify-center">
+ <div className="border-2 border-blue-400 bg-blue-600/40 backdrop-blur-xs px-3.5 py-1.5 rounded-lg text-white text-xs font-bold animate-pulse shadow-lg flex items-center gap-2">
+ <Sparkles className="w-4 h-4 text-yellow-300" />
+ <span>Field Highlight: {highlightedFieldKey}</span>
+ </div>
+ </div>
+ )}
+ </div>
+ <div className="text-[11px] text-[#6B6B6B] flex items-center justify-between">
+ <span>No. Dokumen: <strong className="text-[#1A1A1A]">{document.documentNumber}</strong></span>
+ <span>ICR Confidence: <strong className="text-emerald-600">{document.overallConfidence}%</strong></span>
+ </div>
+ </div>
+ )}
+
  {/* 1A: BAF FIELD SURVEY FORM (RIAN HENDRAWAN - CASE-0941) */}
- {isForm && (
+ {!document.thumbnailUrl?.startsWith('data:image/') && isForm && (
  <div className="p-4 sm:p-5 text-[11px] leading-tight space-y-3 bg-[#FAF8F5]">
  {/* Official BAF Header */}
  <div className="border-b-2 border-[#1E3A8A] pb-2 flex items-center justify-between">
@@ -157,7 +207,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  {/* Field 1: Status Tempat Tinggal */}
- <div className="relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between">
+ <div className={`relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between transition-all rounded px-1 ${
+ highlightedFieldKey === 'status_kepemilikan' ? 'ring-2 ring-blue-500 bg-blue-50/80 shadow-xs' : ''
+ }`}>
  <span className="text-[#475569]">Status Rumah:</span>
  <span className="font-medium font-serif italic text-blue-900 bg-blue-50/50 px-2 py-0.5 rounded border border-blue-200">
  [✓] Kontrak / Sewa Bulanan
@@ -172,7 +224,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  {/* Field 2: Daya Listrik (PLN) - Flagged */}
- <div className="relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between">
+ <div className={`relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between transition-all rounded px-1 ${
+ highlightedFieldKey === 'daya_listrik' ? 'ring-2 ring-blue-500 bg-amber-50/90 shadow-xs' : ''
+ }`}>
  <span className="text-[#475569]">Daya Listrik (PLN):</span>
  <span className="font-medium font-serif italic text-blue-900 bg-amber-50/80 px-2 py-0.5 rounded border border-amber-300">
  900 VA (Token)
@@ -190,7 +244,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  {/* Field 3: Lama Tinggal */}
- <div className="relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between">
+ <div className={`relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between transition-all rounded px-1 ${
+ highlightedFieldKey === 'lama_tinggal' ? 'ring-2 ring-blue-500 bg-blue-50/80 shadow-xs' : ''
+ }`}>
  <span className="text-[#475569]">Lama Menempati:</span>
  <span className="font-medium font-serif italic text-blue-900 px-2 py-0.5">
  1 Tahun 4 Bulan
@@ -205,7 +261,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  {/* Field 4: Nama Penjamin */}
- <div className="relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between">
+ <div className={`relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between transition-all rounded px-1 ${
+ highlightedFieldKey === 'nama_penjamin' ? 'ring-2 ring-blue-500 bg-blue-50/80 shadow-xs' : ''
+ }`}>
  <span className="text-[#475569]">Nama Penjamin:</span>
  <span className="font-medium font-serif italic text-blue-900 px-2 py-0.5">
  Hasan Basri (Paman)
@@ -220,7 +278,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  {/* Field 5: Penghasilan Tambahan - Flagged */}
- <div className="relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between">
+ <div className={`relative py-1 border-b border-dashed border-[#E2E8F0] flex items-center justify-between transition-all rounded px-1 ${
+ highlightedFieldKey === 'penghasilan_tambahan' ? 'ring-2 ring-blue-500 bg-amber-50/90 shadow-xs' : ''
+ }`}>
  <span className="text-[#475569]">Est. Pendapatan Usaha:</span>
  <span className="font-medium font-serif italic text-blue-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-300">
  Rp 2.500.000 / bln
@@ -238,7 +298,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  {/* Field 6: Catatan RT/RW */}
- <div className="py-1">
+ <div className={`py-1 transition-all rounded px-1 ${
+ highlightedFieldKey === 'catatan_lingkungan' ? 'ring-2 ring-blue-500 bg-blue-50/80 shadow-xs' : ''
+ }`}>
  <span className="text-[#475569] block mb-0.5">Catatan Verifikasi RT:</span>
  <p className="font-serif italic text-blue-950 bg-slate-50 p-1.5 rounded border border-[#E2E8F0] text-[10px]">
  &ldquo;Dikonfirmasi ketua RT 04 (Bpk. Mamat) konsumen aktif berdomisili di alamat Jl. Melati Kranji.&rdquo;
@@ -271,7 +333,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  )}
 
  {/* 1B: BPN SERTIPIKAT HAK MILIK (BAGUS PRASETYO - CASE-0943) */}
- {isShm && (
+ {!document.thumbnailUrl?.startsWith('data:image/') && isShm && (
  <div className="p-4 sm:p-5 text-[11px] leading-tight space-y-3 bg-[#FDFEFA] border-4 border-[#15803D]/30 m-2 rounded-lg">
  {/* Garuda Pancasila Header */}
  <div className="text-center pb-2 border-b-2 border-[#15803D]">
@@ -289,14 +351,18 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <div className="font-serif italic text-[13px] font-bold text-[#14532D] mt-1 tracking-widest uppercase">
  SERTIPIKAT HAK MILIK
  </div>
- <div className=" text-xs font-semibold text-[#166534]">
+ <div className={`text-xs font-semibold text-[#166534] transition-all rounded px-1.5 py-0.5 inline-block ${
+ highlightedFieldKey === 'shm_nomor' ? 'ring-2 ring-blue-500 bg-blue-50/90 shadow-xs' : ''
+ }`}>
  NO. 01294 / KEBON JERUK
  </div>
  </div>
 
  {/* Spatial NIB & Registry */}
  <div className="grid grid-cols-2 gap-2 text-[10px] bg-emerald-50/50 p-2 rounded border border-emerald-200">
- <div>
+ <div className={`transition-all rounded p-1 ${
+ highlightedFieldKey === 'nib' ? 'ring-2 ring-blue-500 bg-blue-50/90 shadow-xs' : ''
+ }`}>
  <span className="text-[#64748B]">NIB Bidang: </span>
  <strong className=" font-semibold text-[#0F172A]">09.01.05.02.04581</strong>
  </div>
@@ -304,7 +370,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <span className="text-[#64748B]">Surat Ukur: </span>
  <strong className=" text-[#0F172A]">No. 342/KJ/2018</strong>
  </div>
- <div>
+ <div className={`transition-all rounded p-1 ${
+ highlightedFieldKey === 'luas_tanah' ? 'ring-2 ring-blue-500 bg-blue-50/90 shadow-xs' : ''
+ }`}>
  <span className="text-[#64748B]">Luas Tanah: </span>
  <strong className="font-semibold text-[#0F172A]">142 m² (Seratus empat puluh dua)</strong>
  </div>
@@ -315,7 +383,9 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  {/* Pemegang Hak Row */}
- <div className="relative p-2.5 bg-white rounded border border-[#CBD5E1] space-y-1">
+ <div className={`relative p-2.5 bg-white rounded border border-[#CBD5E1] space-y-1 transition-all ${
+ highlightedFieldKey === 'nama_pemilik' ? 'ring-2 ring-blue-500 bg-blue-50/90 shadow-xs' : ''
+ }`}>
  <div className="text-[10px] font-bold text-[#15803D]">
  PEMEGANG HAK YANG SAH:
  </div>
@@ -357,7 +427,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  )}
 
  {/* 1C: BPN SERTIPIKAT HAK GUNA BANGUNAN (TAMPERED FRAUD - CASE-0946) */}
- {isShgb && (
+ {!document.thumbnailUrl?.startsWith('data:image/') && isShgb && (
  <div className="p-4 sm:p-5 text-[11px] leading-tight space-y-3 bg-[#FEF2F2] border-4 border-[#DC2626]/40 m-2 rounded-lg">
  {/* Garuda Header */}
  <div className="text-center pb-2 border-b-2 border-[#DC2626]">
@@ -372,25 +442,33 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <div className="font-serif italic text-xs font-bold text-[#991B1B] mt-0.5 tracking-wider uppercase">
  SERTIPIKAT HAK GUNA BANGUNAN (SHGB)
  </div>
- <div className=" text-[10px] font-semibold text-[#7F1D1D]">
+ <div className={`text-[10px] font-semibold text-[#7F1D1D] transition-all rounded px-1.5 py-0.5 inline-block ${
+ highlightedFieldKey === 'shm_nomor' ? 'ring-2 ring-blue-500 bg-white/90 shadow-xs' : ''
+ }`}>
  NO. 08492 / GAMBIR, JAKARTA PUSAT
  </div>
  </div>
 
  {/* Spatial Record */}
  <div className="grid grid-cols-2 gap-2 text-[10px] bg-red-100/60 p-2 rounded border border-red-300">
- <div>
+ <div className={`transition-all rounded p-1 ${
+ highlightedFieldKey === 'nib' ? 'ring-2 ring-blue-500 bg-white/90 shadow-xs' : ''
+ }`}>
  <span className="text-[#7F1D1D]">NIB Tertera: </span>
  <strong className=" font-semibold text-[#0F172A]">09.02.01.03.01199</strong>
  </div>
- <div>
+ <div className={`transition-all rounded p-1 ${
+ highlightedFieldKey === 'luas_tanah' ? 'ring-2 ring-blue-500 bg-white/90 shadow-xs' : ''
+ }`}>
  <span className="text-[#7F1D1D]">Luas Bangunan: </span>
  <strong className="font-semibold text-[#0F172A]">210 m² (Ruko 3 Lantai)</strong>
  </div>
  </div>
 
  {/* Tampered Pemegang Hak Row */}
- <div className="relative p-2.5 bg-white rounded border-2 border-dashed border-[#DC2626] space-y-1">
+ <div className={`relative p-2.5 bg-white rounded border-2 border-dashed border-[#DC2626] space-y-1 transition-all ${
+ highlightedFieldKey === 'nama_pemilik' ? 'ring-2 ring-blue-500 shadow-md' : ''
+ }`}>
  <div className="text-[10px] font-bold text-[#991B1B] flex items-center justify-between">
  <span>NAMA PEMEGANG HAK (FISIK SERTIPIKAT):</span>
  <span className="bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
