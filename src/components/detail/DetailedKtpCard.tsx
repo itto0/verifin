@@ -118,26 +118,6 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
                 className="max-h-[380px] w-auto max-w-full object-contain rounded-lg shadow-xl border border-slate-700 select-none"
               />
 
-              {/* Overlaid Active Bounding Box */}
-              {hoveredFieldKey && ocrFields[hoveredFieldKey]?.boundingBox && (
-                <div
-                  className="absolute border-2 border-cyan-400 bg-cyan-400/25 shadow-[0_0_15px_rgba(6,182,212,0.7)] pointer-events-none transition-all duration-150 z-20 rounded-xs"
-                  style={{
-                    left: `${ocrFields[hoveredFieldKey].boundingBox!.x}%`,
-                    top: `${ocrFields[hoveredFieldKey].boundingBox!.y}%`,
-                    width: `${ocrFields[hoveredFieldKey].boundingBox!.w}%`,
-                    height: `${ocrFields[hoveredFieldKey].boundingBox!.h}%`,
-                  }}
-                >
-                  <div className="absolute -top-6 left-0 bg-cyan-600 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow flex items-center gap-1 whitespace-nowrap">
-                    <span>{ocrFields[hoveredFieldKey].label}</span>
-                    <span className="font-mono text-cyan-200">
-                      [{ocrFields[hoveredFieldKey].boundingBox!.x}%, {ocrFields[hoveredFieldKey].boundingBox!.y}%]
-                    </span>
-                  </div>
-                </div>
-              )}
-
               {/* Tamper Warning Overlay on Scan */}
               {showTamperOverlay && isHighRisk && (
                 <div className="absolute inset-0 bg-[#DC2626]/20 border-2 border-dashed border-[#DC2626] rounded-lg flex flex-col items-center justify-center p-2 text-center pointer-events-none backdrop-blur-[0.5px]">
@@ -160,19 +140,6 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
               )}
             </div>
           </div>
-
-          {/* Active ROI Coordinate Info Bar */}
-          {hoveredFieldKey && ocrFields[hoveredFieldKey] && (
-            <div className="py-1.5 px-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-300 font-mono">
-              <span className="text-cyan-400 font-semibold flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                ROI Active: {ocrFields[hoveredFieldKey].label}
-              </span>
-              <span className="text-slate-400">
-                x: {ocrFields[hoveredFieldKey].boundingBox?.x}%, y: {ocrFields[hoveredFieldKey].boundingBox?.y}%, w: {ocrFields[hoveredFieldKey].boundingBox?.w}%, h: {ocrFields[hoveredFieldKey].boundingBox?.h}%
-              </span>
-            </div>
-          )}
         </div>
       ) : (
         <div className="relative w-full max-w-xl mx-auto rounded-xl shadow-sm border border-[#C5D5E0] bg-[#E3EFF7] overflow-hidden select-none font-sans text-[#1A1A1A]">
@@ -474,21 +441,6 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
  </div>
  </div>
  </div>
-
- {/* Active ROI Highlight Indicator Pill */}
- {hoveredFieldKey && ocrFields[hoveredFieldKey] && (
-  <div className="py-1 px-2 my-1.5 bg-blue-600/10 border border-blue-400/40 rounded flex items-center justify-between text-[9px] text-blue-900 font-mono">
-   <span className="font-semibold flex items-center gap-1">
-    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-    ROI: {ocrFields[hoveredFieldKey].label}
-   </span>
-   <span>
-    {ocrFields[hoveredFieldKey].boundingBox
-     ? `[x:${ocrFields[hoveredFieldKey].boundingBox?.x}%, y:${ocrFields[hoveredFieldKey].boundingBox?.y}%, w:${ocrFields[hoveredFieldKey].boundingBox?.w}%, h:${ocrFields[hoveredFieldKey].boundingBox?.h}%]`
-     : `Confidence: ${ocrFields[hoveredFieldKey].confidence}%`}
-   </span>
-  </div>
- )}
 
  {/* Card Footer Bar: Authentic Machine Readable Strip */}
  <div className="pt-1.5 border-t border-[#B8D1E0] flex items-center justify-between text-[8px] text-[#64748B] ">

@@ -29,7 +29,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  highlightedFieldKey,
 }) => {
  const [activeView, setActiveView] = useState<'document' | 'evidence' | 'cadastral'>('document');
- const [showIcrBoxes, setShowIcrBoxes] = useState(true);
 
  const isForm =
   document.id === 'ICR-DOC-001' ||
@@ -92,20 +91,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </button>
  )}
  </div>
-
- {activeView === 'document' && (
- <button
- onClick={() => setShowIcrBoxes(!showIcrBoxes)}
- className={`px-2 py-1 rounded text-[11px] font-medium border transition-colors flex items-center gap-1 ${
- showIcrBoxes
- ? 'bg-[#2563EB]/10 text-[#2563EB] border-[#2563EB]/30'
- : 'bg-white text-[#6B6B6B] border-[#E5E5E3] hover:text-[#1A1A1A]'
- }`}
- >
- <Sparkles className="w-3 h-3" />
- <span>{showIcrBoxes ? 'Hide ICR Boxes' : 'Show ICR Boxes'}</span>
- </button>
- )}
  </div>
 
  {/* Main Document / Photo Display Area */}
@@ -131,14 +116,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  alt="Uploaded Document"
  className="max-h-[420px] w-auto object-contain"
  />
- {showIcrBoxes && highlightedFieldKey && (
- <div className="absolute inset-0 bg-black/25 pointer-events-none flex items-center justify-center">
- <div className="border-2 border-blue-400 bg-blue-600/40 backdrop-blur-xs px-3.5 py-1.5 rounded-lg text-white text-xs font-bold animate-pulse shadow-lg flex items-center gap-2">
- <Sparkles className="w-4 h-4 text-yellow-300" />
- <span>Field Highlight: {highlightedFieldKey}</span>
- </div>
- </div>
- )}
  </div>
  <div className="text-[11px] text-[#6B6B6B] flex items-center justify-between">
  <span>No. Dokumen: <strong className="text-[#1A1A1A]">{document.documentNumber}</strong></span>
@@ -214,13 +191,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <span className="font-medium font-serif italic text-blue-900 bg-blue-50/50 px-2 py-0.5 rounded border border-blue-200">
  [✓] Kontrak / Sewa Bulanan
  </span>
- {showIcrBoxes && (
- <div className="absolute right-0 inset-y-0.5 w-44 border border-emerald-500 bg-emerald-500/10 rounded pointer-events-none flex items-center justify-end pr-1">
- <span className="text-[8px] text-emerald-700 bg-white/90 px-1 rounded">
- ICR 94%
- </span>
- </div>
- )}
  </div>
 
  {/* Field 2: Daya Listrik (PLN) - Flagged */}
@@ -231,16 +201,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <span className="font-medium font-serif italic text-blue-900 bg-amber-50/80 px-2 py-0.5 rounded border border-amber-300">
  900 VA (Token)
  </span>
- {showIcrBoxes && (
- <div className="absolute right-0 inset-y-0.5 w-40 border-2 border-dashed border-amber-500 bg-amber-500/15 rounded pointer-events-none flex items-center justify-between px-1">
- <span className="text-[8px] font-bold text-amber-800 bg-white/90 px-1 rounded">
- ICR 76%
- </span>
- <span className="text-[8px] font-semibold text-amber-800">
- Konfirmasi Meteran
- </span>
- </div>
- )}
  </div>
 
  {/* Field 3: Lama Tinggal */}
@@ -251,13 +211,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <span className="font-medium font-serif italic text-blue-900 px-2 py-0.5">
  1 Tahun 4 Bulan
  </span>
- {showIcrBoxes && (
- <div className="absolute right-0 inset-y-0.5 w-32 border border-emerald-500 bg-emerald-500/10 rounded pointer-events-none flex items-center justify-end pr-1">
- <span className="text-[8px] text-emerald-700 bg-white/90 px-1 rounded">
- ICR 91%
- </span>
- </div>
- )}
  </div>
 
  {/* Field 4: Nama Penjamin */}
@@ -268,13 +221,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <span className="font-medium font-serif italic text-blue-900 px-2 py-0.5">
  Hasan Basri (Paman)
  </span>
- {showIcrBoxes && (
- <div className="absolute right-0 inset-y-0.5 w-36 border border-emerald-500 bg-emerald-500/10 rounded pointer-events-none flex items-center justify-end pr-1">
- <span className="text-[8px] text-emerald-700 bg-white/90 px-1 rounded">
- ICR 88%
- </span>
- </div>
- )}
  </div>
 
  {/* Field 5: Penghasilan Tambahan - Flagged */}
@@ -285,16 +231,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <span className="font-medium font-serif italic text-blue-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-300">
  Rp 2.500.000 / bln
  </span>
- {showIcrBoxes && (
- <div className="absolute right-0 inset-y-0.5 w-44 border-2 border-dashed border-amber-500 bg-amber-500/15 rounded pointer-events-none flex items-center justify-between px-1">
- <span className="text-[8px] font-bold text-amber-800 bg-white/90 px-1 rounded">
- ICR 71%
- </span>
- <span className="text-[8px] font-semibold text-amber-800">
- Coretan Tip-ex
- </span>
- </div>
- )}
  </div>
 
  {/* Field 6: Catatan RT/RW */}
@@ -395,13 +331,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <div className="text-[9px] text-[#64748B]">
  Lahir: 23-06-1992 · NIK: 3174052306920005 (Cocok 100% dengan KTP Pemohon)
  </div>
-
- {showIcrBoxes && (
- <div className="absolute right-2 top-2 px-2 py-0.5 rounded bg-emerald-100 border border-emerald-400 text-emerald-800 text-[9px] font-bold flex items-center gap-1">
- <CheckCircle2 className="w-3 h-3 text-emerald-600" />
- <span>ICR Conf 99% · BPN Validated</span>
- </div>
- )}
  </div>
 
  {/* Sentuh Tanahku Barcode / QR Section */}
@@ -491,12 +420,6 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <strong>DATABASE ATR/BPN ASLI:</strong> Terdaftar atas nama{' '}
  <span className="font-bold underline">PT CITRA GRAHA ABADI</span> (Bukan Hendra Irawan).
  </div>
-
- {showIcrBoxes && (
- <div className="absolute -top-3 right-3 px-2 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold shadow-xs">
- [!] ICR Anomaly Score: 95/100
- </div>
- )}
  </div>
 
  {/* Distorted Seal */}

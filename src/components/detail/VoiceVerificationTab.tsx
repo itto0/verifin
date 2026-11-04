@@ -216,9 +216,19 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [processMessage, setProcessMessage] = useState<string>('Transcribing multi-speaker Indonesian ASR audio, analyzing acoustic intonation, and auditing OJK script compliance...');
+  const [audioObjectUrl, setAudioObjectUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const processTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (audioObjectUrl) {
+        URL.revokeObjectURL(audioObjectUrl);
+      }
+    };
+  }, [audioObjectUrl]);
 
   useEffect(() => {
     return () => {
@@ -240,6 +250,14 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
   };
 
   const handleSelectPreset = (key: 'nominal' | 'hesitant_noncompliant' | 'coaching_suspicion') => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    if (audioObjectUrl) {
+      URL.revokeObjectURL(audioObjectUrl);
+      setAudioObjectUrl(null);
+    }
     setActivePresetKey(key);
     setIsPlaying(false);
     setCurrentTime(0);
@@ -255,6 +273,16 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
       e.target.value = '';
       return;
     }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    if (audioObjectUrl) {
+      URL.revokeObjectURL(audioObjectUrl);
+    }
+    const newObjectUrl = URL.createObjectURL(file);
+    setAudioObjectUrl(newObjectUrl);
 
     setUploadedFileName(file.name);
     setActivePresetKey('custom');
@@ -300,8 +328,22 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
 
   const duration = activeVoice.callDuration > 0 ? activeVoice.callDuration : 180;
 
-  // Simulated audio playback progress
+  // Real audio element speed & mute sync
   useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  // Audio playback progress (timer for presets without local audio file)
+  useEffect(() => {
+    if (audioObjectUrl) return; // Driven by HTMLAudioElement onTimeUpdate
     if (isPlaying) {
       timerRef.current = setInterval(() => {
         setCurrentTime((prev) => {
@@ -318,17 +360,41 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, duration, playbackSpeed]);
+  }, [isPlaying, duration, playbackSpeed, audioObjectUrl]);
 
-  const togglePlay = () => setIsPlaying(!isPlaying);
+  const togglePlay = () => {
+    if (audioRef.current && audioObjectUrl) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch((err) => {
+          console.warn('Audio play error:', err);
+          setIsPlaying(true);
+        });
+      }
+    } else {
+      setIsPlaying(!isPlaying);
+    }
+  };
 
   const handleSeek = (newTime: number) => {
-    setCurrentTime(Math.max(0, Math.min(newTime, duration)));
+    const clamped = Math.max(0, Math.min(newTime, duration));
+    setCurrentTime(clamped);
+    if (audioRef.current && audioObjectUrl) {
+      audioRef.current.currentTime = clamped;
+    }
   };
 
   const handleReset = () => {
     setIsPlaying(false);
     setCurrentTime(0);
+    if (audioRef.current && audioObjectUrl) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -343,6 +409,24 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {audioObjectUrl && (
+        <audio
+          ref={audioRef}
+          src={audioObjectUrl}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              setCurrentTime(audioRef.current.currentTime);
+            }
+          }}
+          onEnded={() => {
+            setIsPlaying(false);
+            setCurrentTime(0);
+          }}
+          onError={(e) => {
+            console.warn('Audio playback error:', e);
+          }}
+        />
+      )}
       {/* Interactive Demo Preset Switcher Bar */}
       <div className="p-3.5 rounded-xl border border-[#E5E5E3] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-2.5">

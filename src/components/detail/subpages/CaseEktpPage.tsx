@@ -781,11 +781,6 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({ caseData }) => {
                           <div className="flex items-center gap-1.5">
                             {isHovered && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />}
                             <span>{field.label}</span>
-                            {field.boundingBox && (
-                              <span className="text-[9px] font-mono text-[#6B6B6B] bg-[#E5E5E3]/60 px-1 rounded">
-                                [{field.boundingBox.x}%,{field.boundingBox.y}%]
-                              </span>
-                            )}
                           </div>
                         </td>
                         <td className="py-2.5 px-3 text-[#1A1A1A]">{field.value}</td>
