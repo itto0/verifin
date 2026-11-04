@@ -2,10 +2,29 @@ import { DocumentVerification, OCRField, VoiceVerification, TranscriptSnippet, S
 import { IcrDocumentSample } from '../data/icrData';
 import { validateDukcapilNik } from '../data/demoPresets';
 
+/**
+ * Resolves the AI endpoint base URL.
+ * In a browser environment, automatically uses the Vite reverse proxy `/api/ai`
+ * to eliminate CORS restrictions when communicating with https://or.flux.id/v1.
+ */
+export function getAiBaseUrl(): string {
+  const envUrl =
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AI_BASE_URL) ||
+    (typeof process !== 'undefined' && process.env?.VITE_AI_BASE_URL);
+
+  if (typeof window !== 'undefined') {
+    if (!envUrl || envUrl.includes('or.flux.id') || envUrl.startsWith('/')) {
+      return '/api/ai';
+    }
+  }
+
+  return envUrl || 'https://or.flux.id/v1';
+}
+
 export const AI_CONFIG = {
-  baseUrl: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AI_BASE_URL) ||
-    (typeof process !== 'undefined' && process.env?.VITE_AI_BASE_URL) ||
-    'https://or.flux.id/v1',
+  get baseUrl() {
+    return getAiBaseUrl();
+  },
   apiKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AI_API_KEY) ||
     (typeof process !== 'undefined' && process.env?.VITE_AI_API_KEY) ||
     'sk-2611b35609b00d24-0f5ce9-9683a361',
