@@ -267,3 +267,52 @@ describe('CaseEktpPage Salary Slip Dual-View Integration', () => {
     expect(htmlUnhighlighted).not.toContain('bg-[#2563EB]/15');
   });
 });
+
+describe('CaseEktpPage OCR Extracted Fields Table & Biometric Updates', () => {
+  const baseCase: FinancingCase = mockCases[0];
+
+  it('renders 2-column OCR Extracted Field Values table without confidence scores', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: baseCase,
+        initialSelectedDoc: 'ktp',
+      })
+    );
+
+    // Section heading and subtitle
+    expect(html).toContain('OCR Extracted Field Values');
+    expect(html).not.toContain('OCR Extracted Field Values &amp; Confidence');
+    expect(html).not.toContain('OCR Extracted Field Values & Confidence');
+    expect(html).toContain('Extracted textual fields from KTP document scan');
+
+    // 2-column table headers
+    expect(html).toContain('Field / Keterangan');
+    expect(html).toContain('Extracted Value');
+    expect(html).not.toContain('Confidence');
+    expect(html).not.toContain('>Verification<');
+
+    // Preset pills check
+    expect(html).toContain('Clean (Valid)');
+    expect(html).not.toContain('Clean (100% Valid)');
+
+    // Qualitative biometric badge check
+    expect(html).toContain('Verified Match');
+    expect(html).not.toContain('% Verified');
+  });
+
+  it('renders demographic field rows without percentage badges', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: baseCase,
+        initialSelectedDoc: 'ktp',
+      })
+    );
+
+    // Should render extracted values
+    expect(html).toContain(ocrDemoPresets.clean.ocrFields.nik.value);
+    expect(html).toContain(ocrDemoPresets.clean.ocrFields.nama.value);
+
+    // Demographic field rows must render extracted value without confidence percentage badges
+    expect(html).not.toMatch(/\d+%\s*<\/span>\s*<\/td>/);
+  });
+});

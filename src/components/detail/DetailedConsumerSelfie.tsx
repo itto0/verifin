@@ -105,7 +105,7 @@ export const DetailedConsumerSelfie: React.FC<DetailedConsumerSelfieProps> = ({
  <div className="flex justify-between items-start">
  <div className="w-6 h-6 border-t-2 border-l-2 border-[#2563EB] rounded-tl" />
  <div className="bg-black/60 backdrop-blur-xs text-[10px] text-white px-2 py-0.5 rounded ">
- Live Feed · 100% Face In Frame
+ Live Feed · Face In Frame
  </div>
  <div className="w-6 h-6 border-t-2 border-r-2 border-[#2563EB] rounded-tr" />
  </div>
@@ -139,7 +139,7 @@ export const DetailedConsumerSelfie: React.FC<DetailedConsumerSelfieProps> = ({
  : 'bg-red-50 text-[#DC2626] border border-red-200'
  }`}
  >
- {faceMatchScore}% Match Confidence ({isMatchValid ? 'Verified Match' : 'Mismatch Alert'})
+ {isMatchValid ? 'Verified Biometric Match' : 'Biometric Mismatch Alert'}
  </span>
  </div>
 
@@ -182,7 +182,7 @@ export const DetailedConsumerSelfie: React.FC<DetailedConsumerSelfieProps> = ({
  <div className="text-[11px] min-w-0">
  <div className="font-semibold text-[#1A1A1A] truncate">2. Consumer Live Selfie</div>
  <div className="text-[#6B6B6B] mt-0.5">CameraX front camera</div>
- <div className="text-[10px] text-[#16A34A] mt-1">Live depth: 99.4%</div>
+ <div className="text-[10px] text-[#16A34A] mt-1">Live depth: Active</div>
  </div>
  </div>
  </div>

@@ -390,7 +390,7 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Clean (100% Valid)</span>
+            <span>Clean (Valid)</span>
           </button>
 
           <button
@@ -499,12 +499,12 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
         <div className="flex items-center gap-4 shrink-0 bg-white p-3 rounded-xl border border-[#E5E5E3]">
           <div>
             <div className="text-[11px] text-[#6B6B6B]">Biometric Face Match</div>
-            <div
-              className={`text-base font-bold ${
-                faceMatchScore >= 80 ? 'text-[#16A34A]' : 'text-[#DC2626]'
-              }`}
-            >
-              {faceMatchScore}% {faceMatchScore >= 80 ? 'Verified' : 'Mismatch'}
+            <div className="text-sm font-semibold">
+              {currentDoc.faceMatchScore >= 80 ? (
+                <span className="text-emerald-700 font-medium">Verified Match</span>
+              ) : (
+                <span className="text-red-700 font-medium">Biometric Mismatch</span>
+              )}
             </div>
           </div>
           <div className="w-px h-8 bg-[#E5E5E3]" />
@@ -788,10 +788,10 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E3]">
               <div>
                 <h3 className="text-xs font-semibold text-[#1A1A1A]">
-                  OCR Extracted Field Values &amp; Confidence
+                  OCR Extracted Field Values
                 </h3>
                 <p className="text-[11px] text-[#6B6B6B] mt-0.5">
-                  Bilingual OCR Engine confidence levels · Hover/click rows to highlight coordinates on card
+                  Extracted textual fields from KTP document scan
                 </p>
               </div>
               <span className="text-[11px] text-[#6B6B6B]">
@@ -803,10 +803,12 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#E5E5E3] text-[#6B6B6B] bg-[#F7F7F5]/50">
-                    <th className="py-2.5 px-3 font-semibold">Field Name</th>
-                    <th className="py-2.5 px-3 font-semibold">Extracted Value</th>
-                    <th className="py-2.5 px-3 font-semibold text-center">Confidence</th>
-                    <th className="py-2.5 px-3 font-semibold text-right">Verification</th>
+                    <th className="text-left py-2 px-3 font-semibold text-[#6B6B6B] w-2/5">
+                      Field / Keterangan
+                    </th>
+                    <th className="text-left py-2 px-3 font-semibold text-[#6B6B6B] w-3/5">
+                      Extracted Value
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E5E3]">
@@ -832,31 +834,15 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
                             <span>{field.label}</span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 text-[#1A1A1A]">{field.value}</td>
-                        <td className="py-2.5 px-3 text-center">
-                          <span
-                            className={`text-[11px] px-1.5 py-0.5 rounded ${
-                              field.confidence >= 95
-                                ? 'bg-[#16A34A]/10 text-[#16A34A]'
-                                : field.confidence >= 80
-                                ? 'bg-[#D97706]/10 text-[#D97706]'
-                                : 'bg-[#DC2626]/10 text-[#DC2626]'
-                            }`}
-                          >
-                            {field.confidence}%
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          {field.isAnomaly ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DC2626]">
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                              <span>{field.anomalyReason || 'Anomaly'}</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#16A34A]">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Clean</span>
-                            </span>
+                        <td className="py-2.5 px-3 font-medium text-[#1A1A1A] font-mono">
+                          <div>{field.value}</div>
+                          {field.isAnomaly && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#DC2626] bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
+                                <AlertTriangle className="w-3 h-3 shrink-0" />
+                                <span>{field.anomalyReason || 'Inkonsistensi Nilai'}</span>
+                              </span>
+                            </div>
                           )}
                         </td>
                       </tr>

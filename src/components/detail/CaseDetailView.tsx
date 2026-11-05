@@ -58,7 +58,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
  id: 'ektp',
  label: '2. e-KTP',
  statusColor: caseData.document.score >= 70 ? 'bg-[#DC2626]' : 'bg-[#16A34A]',
- title: `Biometrics: ${caseData.document.faceMatchScore}% Match`
+ title: `Biometrics: ${caseData.document.faceMatchScore >= 80 ? 'Verified' : 'Review Needed'}`
  },
  {
  id: 'geo',
