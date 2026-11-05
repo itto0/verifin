@@ -6,7 +6,7 @@ export const isFullKtpDocument = (url?: string): boolean => {
   if (!url) return false;
   const trimmed = url.trim();
   if (trimmed.startsWith('data:image/')) return true;
-  if (/ktp.*(?:demo|scan|upload|jpg|jpeg|png|webp)/i.test(trimmed)) return true;
+  if (/ktp.*(?:demo|scan|upload|jpg|jpeg|png|webp|jfif)/i.test(trimmed)) return true;
   if (trimmed.includes('ktp_demo') || trimmed.includes('ktp-scan')) return true;
   return false;
 };
@@ -57,7 +57,7 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
         <div className="relative p-3 sm:p-4 flex items-center justify-center min-h-[300px] max-h-[460px] bg-slate-950/80">
           <div className="relative inline-block max-w-full">
             <img
-              src={document.ktpImageUrl || '/ktp_demo_normal.jpg'}
+              src={document.ktpImageUrl || '/ktp_demo_normal.jfif'}
               alt={`e-KTP Document Full Scan - ${customerName}`}
               className="max-h-[380px] w-auto max-w-full object-contain rounded-lg shadow-xl border border-slate-700 select-none"
             />

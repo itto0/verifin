@@ -228,7 +228,7 @@ export function resolveActiveSalarySlip(
 
 export interface CaseEktpPageProps {
   caseData: FinancingCase;
-  initialSelectedDoc?: 'ktp' | 'selfie' | 'slip';
+  initialSelectedDoc?: 'ktp' | 'selfie' | 'slip' | 'kk';
   initialHoveredFieldKey?: string | null;
 }
 
@@ -243,7 +243,7 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
   const [scanMessage, setScanMessage] = useState<string>('Scanning e-KTP microtext, OCR-B font conformity, and Dukcapil civil database...');
   const [hoveredFieldKey, setHoveredFieldKey] = useState<string | null>(initialHoveredFieldKey);
   const [showTamperHeatmap, setShowTamperHeatmap] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<'ktp' | 'selfie' | 'slip'>(initialSelectedDoc);
+  const [selectedDoc, setSelectedDoc] = useState<'ktp' | 'selfie' | 'slip' | 'kk'>(initialSelectedDoc);
   const [copiedNik, setCopiedNik] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -568,6 +568,21 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
                   <FileText className="w-3.5 h-3.5" />
                   <span>Salary Slip</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDoc('kk')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                    selectedDoc === 'kk'
+                      ? 'bg-[#1A1A1A] text-white'
+                      : 'bg-[#F7F7F5] text-[#6B6B6B] hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Kartu Keluarga</span>
+                  {caseData.document.kkImageUrl && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  )}
+                </button>
               </div>
 
               {selectedDoc === 'ktp' && (
@@ -606,17 +621,48 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
                   document={currentDoc}
                   customerName={currentCustomerName}
                 />
-              ) : (
+              ) : selectedDoc === 'slip' ? (
                 <DetailedSalarySlipCard
                   salaryData={activeSalarySlip}
                   highlightedFieldKey={hoveredFieldKey}
                 />
+              ) : (
+                <div className="bg-white border border-[#E5E5E3] rounded-xl overflow-hidden shadow-xs flex flex-col">
+                  <div className="p-3.5 bg-white border-b border-[#E5E5E3] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 text-[#2563EB]" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs sm:text-sm font-bold text-[#1A1A1A] leading-tight">
+                          Scan Asli Kartu Keluarga (KK)
+                        </h3>
+                        <p className="text-[11px] text-[#6B6B6B] mt-0.5">
+                          Dokumen pembanding verifikasi susunan keluarga Dukcapil
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/30">
+                      Dukcapil Verified
+                    </span>
+                  </div>
+                  <div className="relative p-3 sm:p-4 flex flex-col items-center justify-center min-h-[340px] bg-slate-950/80">
+                    <img
+                      src={caseData.document.kkImageUrl || '/kartu_keluarga_normal.jfif'}
+                      alt="Kartu Keluarga"
+                      className="max-h-[380px] w-auto max-w-full object-contain rounded-lg shadow-xl border border-slate-700"
+                    />
+                    <div className="mt-2 text-center text-[11px] text-slate-400 font-mono">
+                      Scan Dokumen Resmi Dukcapil · Terverifikasi NIK Kepala Keluarga
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
 
           {/* Tamper Detection Box */}
-          {selectedDoc !== 'slip' && (
+          {selectedDoc !== 'slip' && selectedDoc !== 'kk' && (
             <div className="bg-white border border-[#E5E5E3] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-[#E5E5E3]">
                 <div className="text-xs font-semibold text-[#1A1A1A] flex items-center gap-1.5">
@@ -670,7 +716,41 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
 
         {/* Right Column (7 cols): Dukcapil Algorithmic Analysis & OCR Table OR Salary Slip Breakdown */}
         <div className="lg:col-span-7 space-y-4">
-          {selectedDoc === 'slip' ? (
+          {selectedDoc === 'kk' ? (
+            <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E3]">
+                <div>
+                  <h3 className="text-xs font-semibold text-[#1A1A1A]">Data Hasil Ekstraksi KK</h3>
+                  <p className="text-[11px] text-[#6B6B6B] mt-0.5">Dukcapil Family Card Verification &amp; Registry Match</p>
+                </div>
+                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Dukcapil Active
+                </span>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg">
+                  <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Nomor Kartu Keluarga (NKK)</div>
+                  <div className="text-sm font-bold font-mono text-[#1A1A1A] mt-0.5">3174010502120005</div>
+                </div>
+                <div className="p-3 bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg">
+                  <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Nama Kepala Keluarga</div>
+                  <div className="text-sm font-bold text-[#1A1A1A] mt-0.5">{(caseData.customerName || 'AHMAD FAUZI').toUpperCase()}</div>
+                </div>
+                <div className="p-3 bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg">
+                  <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Alamat Terdaftar</div>
+                  <div className="text-xs text-[#1A1A1A] mt-0.5 leading-relaxed">
+                    {caseData.geo?.targetAddress || 'JL TEBET BARAT DALAM VII NO 14, RT 005 / RW 003, KEL. TEBET BARAT, KEC. TEBET'}
+                  </div>
+                </div>
+                <div className="p-3 bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg">
+                  <div className="text-[10px] text-[#6B6B6B] uppercase font-semibold">Kesesuaian dengan e-KTP</div>
+                  <div className="text-xs text-emerald-600 font-semibold mt-0.5 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> 100% Identik (Alamat &amp; NIK)
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : selectedDoc === 'slip' ? (
             <SalaryBreakdownTable
               salaryData={activeSalarySlip}
               applicantName={currentCustomerName}

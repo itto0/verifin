@@ -115,6 +115,7 @@ describe('CaseEktpPage demo state logic', () => {
   it('identifies full KTP document scans versus portrait avatars', () => {
     expect(isFullKtpDocument('data:image/jpeg;base64,/9j/4AAQSkZJRg...')).toBe(true);
     expect(isFullKtpDocument('/ktp_demo_normal.jpg')).toBe(true);
+    expect(isFullKtpDocument('/ktp_demo_normal.jfif')).toBe(true);
     expect(isFullKtpDocument('/ktp_demo_tampered.jpg')).toBe(true);
     expect(isFullKtpDocument('https://example.com/uploads/ktp-scan.png')).toBe(true);
     expect(isFullKtpDocument('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d')).toBe(false);
@@ -324,3 +325,63 @@ describe('CaseEktpPage OCR Extracted Fields Table & Biometric Updates', () => {
     expect(html).not.toMatch(/\d+%\s*<\/span>\s*<\/td>/);
   });
 });
+
+describe('CaseEktpPage Kartu Keluarga (KK) Integration', () => {
+  const baseCase: FinancingCase = mockCases[0];
+
+  it('renders Kartu Keluarga tab button in document selector tabs', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, { caseData: baseCase })
+    );
+
+    expect(html).toContain('Kartu Keluarga');
+  });
+
+  it('switching selectedDoc to kk displays KK document preview and extracted Dukcapil metadata', () => {
+    const testCase: FinancingCase = {
+      ...baseCase,
+      document: {
+        ...baseCase.document,
+        kkImageUrl: '/kartu_keluarga_normal.jpg',
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: testCase,
+        initialSelectedDoc: 'kk' as any,
+      })
+    );
+
+    // Left column: KK original scan container
+    expect(html).toContain('Scan Asli Kartu Keluarga (KK)');
+    expect(html).toContain('Dukcapil Verified');
+    expect(html).toContain('/kartu_keluarga_normal.jpg');
+
+    // Right column: Data Hasil Ekstraksi KK
+    expect(html).toContain('Data Hasil Ekstraksi KK');
+    expect(html).toContain('Nomor Kartu Keluarga (NKK)');
+    expect(html).toContain('AHMAD FAUZI');
+    expect(html).toContain('100% Identik (Alamat &amp; NIK)');
+  });
+
+  it('falls back to /kartu_keluarga_normal.jfif when kkImageUrl is not provided', () => {
+    const testCase: FinancingCase = {
+      ...baseCase,
+      document: {
+        ...baseCase.document,
+        kkImageUrl: undefined,
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      React.createElement(CaseEktpPage, {
+        caseData: testCase,
+        initialSelectedDoc: 'kk' as any,
+      })
+    );
+
+    expect(html).toContain('src="/kartu_keluarga_normal.jfif"');
+  });
+});
+

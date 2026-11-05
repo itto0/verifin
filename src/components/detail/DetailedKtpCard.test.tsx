@@ -64,4 +64,20 @@ describe('DetailedKtpCard bounding box removal', () => {
     // Blue coordinate reticle box should NOT be rendered
     expect(html).not.toContain('border-[#2563EB] bg-[#2563EB]/25');
   });
+
+  it('renders /ktp_demo_normal.jfif as fallback when ktpImageUrl is undefined', () => {
+    const docWithoutKtp = {
+      ...ocrDemoPresets.clean,
+      ktpImageUrl: undefined as any,
+    };
+    const html = renderToStaticMarkup(
+      <DetailedKtpCard
+        document={docWithoutKtp}
+        customerName="BUDI SANTOSO"
+        showTamperOverlay={false}
+      />
+    );
+
+    expect(html).toContain('src="/ktp_demo_normal.jfif"');
+  });
 });
