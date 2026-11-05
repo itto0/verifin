@@ -32,6 +32,7 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({
 }) => {
   const { geo, customerName } = caseData;
   const [selectedPhoto, setSelectedPhoto] = useState<SurveyPhoto | null>(initialSelectedPhoto);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   return (
     <div className="space-y-6">
@@ -154,8 +155,12 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({
  </div>
  <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
  <div className="text-[10px] text-[#6B6B6B]">Visit Timestamp</div>
- <div className="font-semibold text-[#1A1A1A] mt-0.5">{geo.surveyTimestamp.split(' ')[1]} WIB</div>
- <div className="text-[10px] text-[#6B6B6B] ">{geo.surveyTimestamp.split(' ')[0]}</div>
+ <div className="font-semibold text-[#1A1A1A] mt-0.5">
+   {(geo.surveyTimestamp.includes(' ') ? geo.surveyTimestamp.split(' ')[1] : geo.surveyTimestamp) + ' WIB'}
+ </div>
+ <div className="text-[10px] text-[#6B6B6B] ">
+   {geo.surveyTimestamp.includes(' ') ? geo.surveyTimestamp.split(' ')[0] : ''}
+ </div>
  </div>
  <div className="p-2.5 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3]">
  <div className="text-[10px] text-[#6B6B6B]">Survey Duration</div>
@@ -254,10 +259,11 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({
  className="rounded-lg border border-[#E5E5E3] overflow-hidden bg-white hover:border-[#2563EB] transition-all cursor-pointer group flex flex-col justify-between"
  >
  <div className="relative aspect-video bg-slate-950 overflow-hidden flex flex-col justify-between p-2.5 text-white">
- {photo.imageUrl ? (
+ {photo.imageUrl && !failedImages[photo.id] ? (
  <img
  src={photo.imageUrl}
  alt={photo.caption}
+ onError={() => setFailedImages((prev) => ({ ...prev, [photo.id]: true }))}
  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
  />
  ) : (
@@ -278,7 +284,9 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({
  <Camera className="w-3 h-3 text-[#16A34A]" />
  <span>CameraX In-App Verified</span>
  </span>
- <span className="text-cyan-300 text-[9px]">{photo.timestamp.split(' ')[1]} WIB</span>
+ <span className="text-cyan-300 text-[9px]">
+ {(photo.timestamp.includes(' ') ? photo.timestamp.split(' ')[1] : photo.timestamp) + ' WIB'}
+ </span>
  </div>
 
  {/* Subtle gradient overlay */}
@@ -325,10 +333,11 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({
  >
  {/* Photo Preview Pane */}
  <div className="relative flex-1 bg-black flex items-center justify-center min-h-[360px] p-4">
- {selectedPhoto.imageUrl ? (
+ {selectedPhoto.imageUrl && !failedImages[selectedPhoto.id] ? (
  <img
  src={selectedPhoto.imageUrl}
  alt={selectedPhoto.caption}
+ onError={() => setFailedImages((prev) => ({ ...prev, [selectedPhoto.id]: true }))}
  className="max-h-[72vh] w-auto max-w-full object-contain rounded"
  />
  ) : (

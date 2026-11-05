@@ -75,4 +75,25 @@ describe('CaseGeoPage Survey Photos & Lightbox Viewer', async () => {
     expect(html).toContain('Genuine CameraX Hardware Signature (Passed)');
     expect(html).toContain('src="/survey_house_front.jfif"');
   });
+
+  it('should format timestamp resiliently when timestamp has no space', () => {
+    const caseItem = {
+      ...mockCases[0],
+      geo: {
+        ...mockCases[0].geo,
+        surveyTimestamp: '14:15:00',
+        surveyPhotos: [
+          {
+            ...mockCases[0].geo.surveyPhotos[0],
+            timestamp: '14:15:22',
+          },
+        ],
+      },
+    };
+    const html = renderToStaticMarkup(<CaseGeoPage caseData={caseItem} />);
+
+    expect(html).toContain('14:15:22 WIB');
+    expect(html).toContain('14:15:00 WIB');
+    expect(html).not.toContain('undefined WIB');
+  });
 });

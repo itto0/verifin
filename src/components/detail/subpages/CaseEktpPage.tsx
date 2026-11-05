@@ -245,6 +245,7 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
   const [showTamperHeatmap, setShowTamperHeatmap] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<'ktp' | 'selfie' | 'slip' | 'kk'>(initialSelectedDoc);
   const [copiedNik, setCopiedNik] = useState(false);
+  const [kkImageFailed, setKkImageFailed] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -647,11 +648,22 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
                     </span>
                   </div>
                   <div className="relative p-3 sm:p-4 flex flex-col items-center justify-center min-h-[340px] bg-slate-950/80">
-                    <img
-                      src={caseData.document.kkImageUrl || '/kartu_keluarga_normal.jfif'}
-                      alt="Kartu Keluarga"
-                      className="max-h-[380px] w-auto max-w-full object-contain rounded-lg shadow-xl border border-slate-700"
-                    />
+                    {!kkImageFailed ? (
+                      <img
+                        src={caseData.document.kkImageUrl || '/kartu_keluarga_normal.jfif'}
+                        alt="Kartu Keluarga"
+                        onError={() => setKkImageFailed(true)}
+                        className="max-h-[380px] w-auto max-w-full object-contain rounded-lg shadow-xl border border-slate-700"
+                      />
+                    ) : (
+                      <div className="text-center p-8 text-slate-400">
+                        <FileText className="w-12 h-12 text-slate-500 mx-auto mb-2 opacity-60" />
+                        <p className="text-xs font-semibold text-slate-300">Gambar Kartu Keluarga Tidak Tersedia</p>
+                        <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
+                          Gagal memuat scan dokumen fisik KK. Verifikasi tetap dapat ditinjau melalui data ekstraksi Dukcapil.
+                        </p>
+                      </div>
+                    )}
                     <div className="mt-2 text-center text-[11px] text-slate-400 font-mono">
                       Scan Dokumen Resmi Dukcapil · Terverifikasi NIK Kepala Keluarga
                     </div>
