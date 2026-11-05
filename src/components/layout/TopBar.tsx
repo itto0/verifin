@@ -22,6 +22,9 @@ interface TopBarProps {
  onSelectCase: (caseId: string) => void;
  currentUser?: AuthUser | null;
  onLogout?: () => void;
+ backendOnline?: boolean | null;
+ onRefreshBackend?: () => void;
+ isRefreshing?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -32,6 +35,9 @@ export const TopBar: React.FC<TopBarProps> = ({
  onSelectCase,
  currentUser,
  onLogout,
+ backendOnline,
+ onRefreshBackend,
+ isRefreshing,
 }) => {
  const [isProfileOpen, setIsProfileOpen] = useState(false);
  const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -69,6 +75,35 @@ export const TopBar: React.FC<TopBarProps> = ({
 
  {/* Right Zone: Strictly Bell Icon & Dropdown Profile */}
  <div className="flex items-center gap-3 shrink-0">
+ {/* Backend Connectivity Status Pill */}
+ {backendOnline !== undefined && (
+ <button
+ onClick={onRefreshBackend}
+ title={
+ backendOnline
+ ? 'VeriFin Backend API online (port 8074). Click to refresh live metrics.'
+ : 'Backend API offline or mock mode active. Click to test connection.'
+ }
+ className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+ backendOnline
+ ? 'bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/30 hover:bg-[#16A34A]/20'
+ : 'bg-[#D97706]/10 text-[#D97706] border-[#D97706]/30 hover:bg-[#D97706]/20'
+ }`}
+ >
+ <span
+ className={`w-2 h-2 rounded-full ${
+ backendOnline ? 'bg-[#16A34A] animate-pulse' : 'bg-[#D97706]'
+ }`}
+ />
+ <span className="font-semibold">
+ {backendOnline ? 'API Connected' : 'Offline Mode'}
+ </span>
+ <span className={`text-[11px] ${isRefreshing ? 'animate-spin' : ''}`}>
+ ↻
+ </span>
+ </button>
+ )}
+
  {/* Bell Icon Notification Trigger & Dropdown */}
  <div className="relative" ref={notifRef}>
  <button

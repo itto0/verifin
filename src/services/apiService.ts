@@ -1,6 +1,5 @@
 import { AuthUser, FinancingCase } from '../types';
-import { mockCases } from '../data/mockData';
-import { DEMO_USERS } from '../components/auth/LoginView';
+import { mockCases, DEMO_USERS } from '../data/mockData';
 
 const AUTH_TOKEN_KEY = 'baf_access_token';
 let inMemoryToken: string | null = null;

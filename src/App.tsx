@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar, NavTab } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { DashboardView } from './components/dashboard/DashboardView';
@@ -18,6 +18,7 @@ import { MasterDataView } from './components/master/MasterDataView';
 import { RuleSettingsView } from './components/settings/RuleSettingsView';
 import { LoginView, DEMO_USERS } from './components/auth/LoginView';
 import { mockCases } from './data/mockData';
+import { checkBackendHealth, getDashboardSummary, getApplications, clearAuthToken } from './services/apiService';
 import { FinancingCase, CaseStatus, CaseSubPage, AuthUser } from './types';
 
 export default function App() {
@@ -36,6 +37,30 @@ export default function App() {
  const [detailSubPage, setDetailSubPage] = useState<CaseSubPage>('overview');
  const [searchQuery, setSearchQuery] = useState<string>('');
  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+ const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+ const [dashboardSummary, setDashboardSummary] = useState<any>(null);
+ const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+ const refreshBackendData = useCallback(async () => {
+  setIsRefreshing(true);
+  try {
+   const health = await checkBackendHealth();
+   setBackendOnline(health.online);
+   if (currentUser) {
+    const summary = await getDashboardSummary();
+    if (summary) setDashboardSummary(summary);
+    await getApplications();
+   }
+  } catch {
+   setBackendOnline(false);
+  } finally {
+   setIsRefreshing(false);
+  }
+ }, [currentUser]);
+
+ useEffect(() => {
+  refreshBackendData();
+ }, [refreshBackendData]);
 
  // Authentication handlers
  const handleLogin = (user: AuthUser) => {
@@ -48,6 +73,7 @@ export default function App() {
  };
 
  const handleLogout = () => {
+ clearAuthToken();
  setCurrentUser(null);
  try {
  localStorage.removeItem('baf_veri_fin_user');
@@ -143,6 +169,9 @@ export default function App() {
  onSelectCase={handleSelectCase}
  currentUser={currentUser}
  onLogout={handleLogout}
+ backendOnline={backendOnline}
+ onRefreshBackend={refreshBackendData}
+ isRefreshing={isRefreshing}
  />
 
  {/* Viewport Content Area with 24-32px padding */}
@@ -153,6 +182,7 @@ export default function App() {
  onSelectCase={handleSelectCase}
  onNavigateToQueue={() => setCurrentTab('queue')}
  onNavigateToGis={() => setCurrentTab('gis')}
+ summary={dashboardSummary}
  />
  )}
 

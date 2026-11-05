@@ -1,4 +1,37 @@
-import { FinancingCase, RiskEngineRules, SurveyorPoint } from '../types';
+import { FinancingCase, RiskEngineRules, SurveyorPoint, AuthUser } from '../types';
+
+export const DEMO_USERS: AuthUser[] = [
+  {
+    id: 'USR-001',
+    name: 'Dian Pratama',
+    email: 'dian.pratama@baf.id',
+    role: 'Senior Verifier',
+    level: 'Level 2 Verifier',
+    branch: 'Jakarta South Hub',
+    avatarInitials: 'DP',
+    employeeNik: 'BAF-EMP-8842'
+  },
+  {
+    id: 'USR-002',
+    name: 'Budi Santoso',
+    email: 'budi.santoso@baf.id',
+    role: 'Risk Lead & Fraud Specialist',
+    level: 'Supervisory Lead',
+    branch: 'Head Office (Risk Engine)',
+    avatarInitials: 'BS',
+    employeeNik: 'BAF-EMP-4019'
+  },
+  {
+    id: 'USR-003',
+    name: 'Rina Anggraini',
+    email: 'rina.anggraini@baf.id',
+    role: 'Branch Verification Officer',
+    level: 'Level 1 Underwriter',
+    branch: 'Kota Bekasi Branch',
+    avatarInitials: 'RA',
+    employeeNik: 'BAF-EMP-9174'
+  }
+];
 
 export const initialRules: RiskEngineRules = {
  weightEktp: 30,

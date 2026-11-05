@@ -1,53 +1,24 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { AuthUser } from '../../types';
+import { DEMO_USERS } from '../../data/mockData';
+import { login } from '../../services/apiService';
+
+export { DEMO_USERS };
 
 interface LoginViewProps {
   onLogin: (user: AuthUser) => void;
 }
 
-export const DEMO_USERS: AuthUser[] = [
-  {
-    id: 'USR-001',
-    name: 'Dian Pratama',
-    email: 'dian.pratama@baf.id',
-    role: 'Senior Verifier',
-    level: 'Level 2 Verifier',
-    branch: 'Jakarta South Hub',
-    avatarInitials: 'DP',
-    employeeNik: 'BAF-EMP-8842'
-  },
-  {
-    id: 'USR-002',
-    name: 'Budi Santoso',
-    email: 'budi.santoso@baf.id',
-    role: 'Risk Lead & Fraud Specialist',
-    level: 'Supervisory Lead',
-    branch: 'Head Office (Risk Engine)',
-    avatarInitials: 'BS',
-    employeeNik: 'BAF-EMP-4019'
-  },
-  {
-    id: 'USR-003',
-    name: 'Rina Anggraini',
-    email: 'rina.anggraini@baf.id',
-    role: 'Branch Verification Officer',
-    level: 'Level 1 Underwriter',
-    branch: 'Kota Bekasi Branch',
-    avatarInitials: 'RA',
-    employeeNik: 'BAF-EMP-9174'
-  }
-];
-
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [email, setEmail] = useState('dian.pratama@baf.id');
-  const [password, setPassword] = useState('••••••••••••');
+  const [password, setPassword] = useState('BafSecure2026!');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [logoError, setLogoError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -64,25 +35,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const matched = DEMO_USERS.find(
-        (u) => u.email.toLowerCase() === trimmedEmail || u.employeeNik.toLowerCase() === trimmedEmail
-      );
-
-      const authenticatedUser: AuthUser = matched || {
-        id: `USR-${Date.now().toString().slice(-4)}`,
-        name: trimmedEmail.split('@')[0].replace('.', ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-        email: trimmedEmail.includes('@') ? trimmedEmail : `${trimmedEmail}@baf.id`,
-        role: 'Senior Verifier',
-        level: 'Level 2 Verifier',
-        branch: 'Jakarta South Hub',
-        avatarInitials: trimmedEmail.slice(0, 2).toUpperCase(),
-        employeeNik: 'BAF-EMP-7710'
-      };
-
+    try {
+      const { user: authenticatedUser } = await login(trimmedEmail, password);
       setIsLoading(false);
       onLogin(authenticatedUser);
-    }, 350);
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMessage(err.message || 'Login failed');
+    }
   };
 
   const handleSelectDemoUser = (user: AuthUser) => {

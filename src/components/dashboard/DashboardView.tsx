@@ -14,6 +14,7 @@ interface DashboardViewProps {
  onSelectCase: (caseId: string) => void;
  onNavigateToQueue: () => void;
  onNavigateToGis: () => void;
+ summary?: any;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -21,10 +22,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
  onSelectCase,
  onNavigateToQueue,
  onNavigateToGis,
+ summary,
 }) => {
  const pendingCases = cases.filter((c) => c.status === 'pending');
  const highRiskCases = cases.filter((c) => c.riskScore.level === 'high');
  const approvedCases = cases.filter((c) => c.status === 'approved');
+ const processedToday = summary?.processed_today ?? 148;
+ const processedGrowth = summary?.processed_growth_pct != null ? `+${summary.processed_growth_pct}% vs yesterday` : '+18% vs yesterday';
+ const branchCount = summary?.active_branches_count != null ? `${summary.active_branches_count} branches` : '9 branches';
+ const stpRate = summary?.straight_through_rate != null ? `${summary.straight_through_rate}%` : '78.4%';
+ const autoApproved = summary?.auto_approved_count != null ? `${summary.auto_approved_count} auto-approved` : '114 auto-approved';
+ const pendingReviewCount = summary?.pending_manual_review ?? pendingCases.length;
+ const avgSla = summary?.avg_sla_minutes != null ? `SLA: ${summary.avg_sla_minutes} min` : 'SLA: 4.2 min';
+ const fraudCasesCount = summary?.fraud_blocked_cases != null ? `${summary.fraud_blocked_cases} cases` : `${highRiskCases.length} cases`;
+ const fraudAmount = summary?.fraud_blocked_amount_rp != null ? `Rp ${(summary.fraud_blocked_amount_rp / 1_000_000).toLocaleString('id-ID')} Jt` : 'Rp 2.8 B';
 
  return (
  <div className="space-y-6">
@@ -57,11 +68,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
  <FileText className="w-4 h-4 text-[#2563EB]" />
  </div>
  <div className="mt-3 text-2xl font-bold text-[#1A1A1A] tabular-nums ">
- 148
+ {processedToday}
  </div>
  <div className="mt-2 text-xs text-[#6B6B6B] flex items-center justify-between">
- <span className="text-[#16A34A] font-medium">+18% vs yesterday</span>
- <span>9 branches</span>
+ <span className="text-[#16A34A] font-medium">{processedGrowth}</span>
+ <span>{branchCount}</span>
  </div>
  </div>
 
@@ -72,8 +83,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
  <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
  </div>
  <div className="mt-3 flex items-baseline justify-between">
- <span className="text-2xl font-bold text-[#16A34A] tabular-nums ">78.4%</span>
- <span className="text-[11px] text-[#6B6B6B]">114 auto-approved</span>
+ <span className="text-2xl font-bold text-[#16A34A] tabular-nums ">{stpRate}</span>
+ <span className="text-[11px] text-[#6B6B6B]">{autoApproved}</span>
  </div>
  <div className="mt-2 text-xs text-[#6B6B6B]">
  Zero-touch instant verification
@@ -88,10 +99,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
  </div>
  <div className="mt-3 flex items-baseline justify-between">
  <span className="text-2xl font-bold text-[#D97706] tabular-nums ">
- {pendingCases.length}
+ {pendingReviewCount}
  </span>
  <span className="text-xs font-semibold text-[#16A34A] ">
- SLA: 4.2 min
+ {avgSla}
  </span>
  </div>
  <div className="mt-2 text-xs text-[#6B6B6B]">
@@ -107,10 +118,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
  </div>
  <div className="mt-3 flex items-baseline justify-between">
  <span className="text-2xl font-bold text-[#DC2626] tabular-nums ">
- {highRiskCases.length} cases
+ {fraudCasesCount}
  </span>
  <span className="text-[11px] font-semibold text-[#16A34A] bg-[#16A34A]/10 px-1.5 py-0.5 rounded">
- Rp 2.8 B
+ {fraudAmount}
  </span>
  </div>
  <div className="mt-2 text-xs text-[#6B6B6B]">
