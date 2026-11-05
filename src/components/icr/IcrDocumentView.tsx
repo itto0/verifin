@@ -96,17 +96,17 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
  </div>
 
  <div className="mt-3 pt-2 border-t border-[#E5E5E3] flex items-center justify-between text-xs">
- <span className="text-[#6B6B6B]">ICR Confidence:</span>
+ <span className="text-[#6B6B6B]">Status:</span>
  <span
- className={` font-bold ${
- doc.overallConfidence >= 90
+ className={`font-medium ${
+ doc.status === 'verified'
  ? 'text-[#16A34A]'
- : doc.overallConfidence >= 70
+ : doc.status === 'needs_review'
  ? 'text-[#D97706]'
  : 'text-[#DC2626]'
  }`}
  >
- {doc.overallConfidence}%
+ {doc.status === 'verified' ? 'Terverifikasi' : 'Perlu Tinjauan'}
  </span>
  </div>
  </button>
@@ -249,13 +249,6 @@ export const IcrDocumentView: React.FC<IcrDocumentViewProps> = ({ onSelectCase }
  <div className="flex items-center justify-between text-xs mb-1.5">
  <span className="font-semibold text-[#1A1A1A]">{field.label}</span>
  <div className="flex items-center gap-2">
- <span
- className={` text-[11px] font-semibold ${
- isLowConfidence ? 'text-[#D97706]' : 'text-[#16A34A]'
- }`}
- >
- {field.confidence}% Confidence
- </span>
  {field.isAnomaly && (
  <span className="px-1.5 py-0.5 rounded bg-red-100 text-[#DC2626] text-[10px] font-semibold">
  Anomaly

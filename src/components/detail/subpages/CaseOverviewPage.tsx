@@ -193,7 +193,7 @@ export const CaseOverviewPage: React.FC<CaseOverviewPageProps> = ({
             <div className="flex items-center justify-between text-[#6B6B6B]">
               <span>Face Match:</span>
               <span className={`font-medium ${document.faceMatchScore >= 80 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
-                {document.faceMatchScore}%
+                {document.faceMatchScore >= 80 ? 'Verified' : 'Mismatch'}
               </span>
             </div>
             <div className="flex items-center justify-between text-[#6B6B6B]">
@@ -352,8 +352,8 @@ export const CaseOverviewPage: React.FC<CaseOverviewPageProps> = ({
 
           <div className="space-y-1.5 text-xs">
             <div className="flex items-center justify-between text-[#6B6B6B]">
-              <span>ICR Confidence:</span>
-              <span className=" text-[#16A34A] font-medium">96.8% Average</span>
+              <span>Status ICR:</span>
+              <span className="text-[#16A34A] font-medium">Terverifikasi</span>
             </div>
             <div className="flex items-center justify-between text-[#6B6B6B]">
               <span>Sentuh Tanahku:</span>

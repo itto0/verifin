@@ -217,6 +217,39 @@ describe('CaseIcrPage ICR Field Survey & Collateral UI Rendering', () => {
     expect(customHtml).toContain('Terverifikasi');
     expect(customHtml).not.toContain('ICR Confidence:');
 
+    // Custom uploaded doc preview with mismatch status renders Tamper / Mismatch
+    const mismatchDoc = createCustomIcrDocument(
+      'data:image/png;base64,mockmismatch',
+      'sertipikat_tanah_sengketa_mismatch.png',
+      {
+        applicantName: 'BUDI SANTOSO',
+        caseId: 'CASE-0945',
+        type: 'bpn_certificate',
+        forceMismatch: true,
+      }
+    );
+    const mismatchHtml = renderToStaticMarkup(
+      React.createElement(DetailedIcrDocumentCard, {
+        document: mismatchDoc,
+        onSelectCase: () => {},
+      })
+    );
+    expect(mismatchHtml).toContain('Status:');
+    expect(mismatchHtml).toContain('Tamper / Mismatch');
+
+    // Custom uploaded doc with needs_review status
+    const reviewDoc = {
+      ...customDoc,
+      status: 'needs_review' as const,
+    };
+    const reviewHtml = renderToStaticMarkup(
+      React.createElement(DetailedIcrDocumentCard, {
+        document: reviewDoc,
+        onSelectCase: () => {},
+      })
+    );
+    expect(reviewHtml).toContain('Needs Review');
+
     // BPN SHM certificate
     const shmDoc = icrDemoPresets.clean_shm;
     const shmHtml = renderToStaticMarkup(

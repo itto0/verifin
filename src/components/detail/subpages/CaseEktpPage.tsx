@@ -500,7 +500,7 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
           <div>
             <div className="text-[11px] text-[#6B6B6B]">Biometric Face Match</div>
             <div className="text-sm font-semibold">
-              {currentDoc.faceMatchScore >= 80 ? (
+              {faceMatchScore >= 80 ? (
                 <span className="text-emerald-700 font-medium">Verified Match</span>
               ) : (
                 <span className="text-red-700 font-medium">Biometric Mismatch</span>

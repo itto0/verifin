@@ -119,7 +119,24 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
  <div className="text-[11px] text-[#6B6B6B] flex items-center justify-between">
  <span>No. Dokumen: <strong className="text-[#1A1A1A]">{document.documentNumber}</strong></span>
- <span>Status: <strong className="text-emerald-600 font-medium">Terverifikasi</strong></span>
+ <span>
+ Status:{' '}
+ <strong
+ className={`font-medium ${
+ document.status === 'mismatch_flag'
+ ? 'text-[#DC2626]'
+ : document.status === 'needs_review'
+ ? 'text-[#D97706]'
+ : 'text-[#16A34A]'
+ }`}
+ >
+ {document.status === 'mismatch_flag'
+ ? 'Tamper / Mismatch'
+ : document.status === 'needs_review'
+ ? 'Needs Review'
+ : 'Terverifikasi'}
+ </strong>
+ </span>
  </div>
  </div>
  )}
