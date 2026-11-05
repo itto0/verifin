@@ -326,7 +326,7 @@ export const CaseEktpPage: React.FC<CaseEktpPageProps> = ({
       baseDoc = caseData.document;
     }
 
-    // Enrich fields with bounding boxes for coordinate reticles
+    // Enrich fields with bounding boxes for data schema compatibility
     const enrichedFields: Record<string, OCRField> = {};
     for (const [key, field] of Object.entries(baseDoc.ocrFields)) {
       enrichedFields[key] = {

@@ -24,7 +24,9 @@ export interface DetailedKtpCardProps {
   document: DocumentVerification;
   customerName: string;
   showTamperOverlay: boolean;
+  /** @deprecated Bounding boxes have been removed from the physical scan viewer; this prop is retained for caller compatibility */
   hoveredFieldKey?: string | null;
+  /** @deprecated Bounding boxes have been removed from the physical scan viewer; this prop is retained for caller compatibility */
   onFieldHover?: (key: string | null) => void;
 }
 

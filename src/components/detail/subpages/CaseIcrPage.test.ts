@@ -172,6 +172,10 @@ describe('CaseIcrPage ICR Field Survey & Collateral UI Rendering', () => {
     expect(html).toContain('Kapasitas Listrik (PLN)');
     expect(html).toContain('1300 VA (Pascabayar)');
 
+    // Extracted fields subtext should be updated without bounding box mentions
+    expect(html).toContain('Click or hover any row to inspect field');
+    expect(html).not.toContain('pinpoint bounding box');
+
     // Extracted fields must not render % Confidence badges
     expect(html).not.toContain('% Confidence');
     expect(html).not.toMatch(/\d+%\s*Confidence/i);

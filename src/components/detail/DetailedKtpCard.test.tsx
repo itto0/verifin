@@ -46,7 +46,8 @@ describe('DetailedKtpCard bounding box removal', () => {
     // Tamper warning banner should still be present
     expect(html).toContain('Forensic Tamper Anomaly Detected');
 
-    // Dashed red bounding box divs should NOT be rendered
+    // Dashed red bounding box divs and inline coordinate styles should NOT be rendered
+    expect(html).not.toMatch(/style="[^"]*(top|left):\s*\d+%/);
     expect(html).not.toContain('border-dashed border-[#DC2626] bg-[#DC2626]/20');
   });
 
