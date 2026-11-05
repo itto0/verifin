@@ -299,7 +299,7 @@ export const icrDemoPresets: Record<string, IcrDocumentSample> = {
     overallConfidence: 96,
     status: 'verified',
     thumbnailUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80',
-    summaryNote: 'Validasi OCR dan pencocokan koordinat persil bidang tanah Sentuh Tanahku (Kementerian ATR/BPN) cocok 100%.',
+    summaryNote: 'Validasi OCR dan pencocokan koordinat persil bidang tanah Sentuh Tanahku (Kementerian ATR/BPN) terverifikasi cocok.',
     extractedFields: [
       {
         fieldKey: 'shm_nomor',
@@ -435,7 +435,7 @@ export const icrDemoPresets: Record<string, IcrDocumentSample> = {
     overallConfidence: 62,
     status: 'needs_review',
     thumbnailUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80',
-    summaryNote: 'Terdapat 3 isian tulisan tangan dengan keyakinan di bawah 75% pada bagian daya listrik, penghasilan, dan status sewa rumah.',
+    summaryNote: 'Terdapat 3 isian tulisan tangan yang terindikasi anomali pada bagian daya listrik, penghasilan, dan status sewa rumah.',
     extractedFields: [
       {
         fieldKey: 'status_kepemilikan',

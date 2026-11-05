@@ -155,7 +155,7 @@ export function createCustomIcrDocument(
     thumbnailUrl: fileUrl,
     summaryNote: isMismatch
       ? 'Anomali Kadastral: Pemegang hak pada sertipikat tidak cocok dengan pemohon kredit, atau persil tanah berada di luar area survei.'
-      : 'Pemeriksaan basis data kadastral Kementerian ATR/BPN Sentuh Tanahku: Data kepemilikan dan letak persil cocok 100%.',
+      : 'Pemeriksaan basis data kadastral Kementerian ATR/BPN Sentuh Tanahku: Data kepemilikan dan letak persil terverifikasi cocok.',
     extractedFields: [
       {
         fieldKey: 'shm_nomor',
@@ -220,12 +220,23 @@ export function createCustomIcrDocument(
 
 interface CaseIcrPageProps {
   caseData: FinancingCase;
+  initialCategory?: IcrCategory;
+  initialPresetKey?: IcrPresetKey;
 }
 
-export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
-  const [activeCategory, setActiveCategory] = useState<IcrCategory>('survey_form');
-  const [activePresetKey, setActivePresetKey] = useState<IcrPresetKey>('survey_clean');
-  const [activeDoc, setActiveDoc] = useState<IcrDocumentSample>(icrDemoPresets.survey_clean || icrDemoPresets.clean_shm);
+export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({
+  caseData,
+  initialCategory = 'survey_form',
+  initialPresetKey,
+}) => {
+  const [activeCategory, setActiveCategory] = useState<IcrCategory>(initialCategory);
+  const [activePresetKey, setActivePresetKey] = useState<IcrPresetKey>(
+    initialPresetKey || (initialCategory === 'bpn_certificate' ? 'clean_shm' : 'survey_clean')
+  );
+  const [activeDoc, setActiveDoc] = useState<IcrDocumentSample>(
+    (initialPresetKey && icrDemoPresets[initialPresetKey]) ||
+      (initialCategory === 'bpn_certificate' ? icrDemoPresets.clean_shm : icrDemoPresets.survey_clean)
+  );
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanMessage, setScanMessage] = useState<string>('Performing Intelligent Character Recognition (ICR) on handwritten forms and querying ATR/BPN Sentuh Tanahku registry...');
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
@@ -431,7 +442,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
                   }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Clean SHM (Verified 1:1)</span>
+                  <span>Clean SHM (Verified)</span>
                 </button>
 
                 <button
@@ -519,7 +530,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
                   : 'bg-[#16A34A]/10 text-[#16A34A]'
               }`}
             >
-              ICR Confidence: {activeDoc.overallConfidence}% ({activeDoc.status === 'mismatch_flag' ? 'Tamper / Mismatch' : activeDoc.status === 'needs_review' ? 'Needs Review' : 'Verified'})
+              Status: {activeDoc.status === 'mismatch_flag' ? 'Tamper / Mismatch' : activeDoc.status === 'needs_review' ? 'Needs Review' : 'Verified'}
             </span>
             {activePresetKey !== 'survey_clean' && activePresetKey !== 'clean_shm' && (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase">
@@ -611,17 +622,6 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({ caseData }) => {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-[#1A1A1A]">{field.label}</span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                        field.confidence >= 90
-                          ? 'bg-[#16A34A]/10 text-[#16A34A]'
-                          : field.confidence >= 70
-                          ? 'bg-[#D97706]/10 text-[#D97706]'
-                          : 'bg-[#DC2626]/10 text-[#DC2626]'
-                      }`}
-                    >
-                      {field.confidence}% Confidence
-                    </span>
                   </div>
 
                   <div className="text-[11px] text-[#1A1A1A] font-semibold">

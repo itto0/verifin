@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'bun:test';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { icrDemoPresets } from '../../../data/demoPresets';
-import { createCustomIcrDocument, DEFAULT_ICR_BOUNDING_BOXES } from './CaseIcrPage';
+import { mockCases } from '../../../data/mockData';
+import {
+  createCustomIcrDocument,
+  DEFAULT_ICR_BOUNDING_BOXES,
+  CaseIcrPage,
+} from './CaseIcrPage';
+import { DetailedIcrDocumentCard } from '../../icr/DetailedIcrDocumentCard';
 
 describe('CaseIcrPage demo state logic', () => {
   it('has default preset survey_clean configured as survey_form with 6 extracted fields and verified status', () => {
@@ -139,5 +147,85 @@ describe('CaseIcrPage demo state logic', () => {
       expect(DEFAULT_ICR_BOUNDING_BOXES[key].w).toBeGreaterThan(0);
       expect(DEFAULT_ICR_BOUNDING_BOXES[key].h).toBeGreaterThan(0);
     }
+  });
+
+  it('updates summary notes to remove percentage match and confidence claims', () => {
+    expect(icrDemoPresets.clean_shm.summaryNote).toContain('terverifikasi cocok');
+    expect(icrDemoPresets.clean_shm.summaryNote).not.toContain('cocok 100%');
+
+    expect(icrDemoPresets.low_confidence.summaryNote).toContain('yang terindikasi anomali');
+    expect(icrDemoPresets.low_confidence.summaryNote).not.toContain('keyakinan di bawah 75%');
+  });
+});
+
+describe('CaseIcrPage ICR Field Survey & Collateral UI Rendering', () => {
+  const baseCase = mockCases[0];
+
+  it('renders extracted fields list without % Confidence badges', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseIcrPage, {
+        caseData: baseCase,
+      })
+    );
+
+    // Should render field labels and extracted values
+    expect(html).toContain('Kapasitas Listrik (PLN)');
+    expect(html).toContain('1300 VA (Pascabayar)');
+
+    // Extracted fields must not render % Confidence badges
+    expect(html).not.toContain('% Confidence');
+    expect(html).not.toMatch(/\d+%\s*Confidence/i);
+  });
+
+  it('renders Clean SHM preset button as Clean SHM (Verified) without 1:1', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseIcrPage, {
+        caseData: baseCase,
+        initialCategory: 'bpn_certificate',
+      })
+    );
+
+    expect(html).toContain('Clean SHM (Verified)');
+    expect(html).not.toContain('Clean SHM (Verified 1:1)');
+  });
+
+  it('renders header status badge cleanly without ICR Confidence', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CaseIcrPage, {
+        caseData: baseCase,
+      })
+    );
+
+    expect(html).toContain('Status: Verified');
+    expect(html).not.toContain('ICR Confidence:');
+  });
+
+  it('renders DetailedIcrDocumentCard without confidence percentage and 100% match badge', () => {
+    // Custom uploaded doc preview
+    const customDoc = createCustomIcrDocument(
+      'data:image/jpeg;base64,mockupload',
+      'custom_survey.jpg',
+      { applicantName: 'Budi Santoso', type: 'survey_form' }
+    );
+    const customHtml = renderToStaticMarkup(
+      React.createElement(DetailedIcrDocumentCard, {
+        document: customDoc,
+        onSelectCase: () => {},
+      })
+    );
+    expect(customHtml).toContain('Status:');
+    expect(customHtml).toContain('Terverifikasi');
+    expect(customHtml).not.toContain('ICR Confidence:');
+
+    // BPN SHM certificate
+    const shmDoc = icrDemoPresets.clean_shm;
+    const shmHtml = renderToStaticMarkup(
+      React.createElement(DetailedIcrDocumentCard, {
+        document: shmDoc,
+        onSelectCase: () => {},
+      })
+    );
+    expect(shmHtml).toContain('(Cocok dengan KTP Pemohon)');
+    expect(shmHtml).not.toContain('(Cocok 100% dengan KTP Pemohon)');
   });
 });

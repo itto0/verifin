@@ -119,7 +119,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
  <div className="text-[11px] text-[#6B6B6B] flex items-center justify-between">
  <span>No. Dokumen: <strong className="text-[#1A1A1A]">{document.documentNumber}</strong></span>
- <span>ICR Confidence: <strong className="text-emerald-600">{document.overallConfidence}%</strong></span>
+ <span>Status: <strong className="text-emerald-600 font-medium">Terverifikasi</strong></span>
  </div>
  </div>
  )}
@@ -329,7 +329,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  BAGUS PRASETYO
  </div>
  <div className="text-[9px] text-[#64748B]">
- Lahir: 23-06-1992 · NIK: 3174052306920005 (Cocok 100% dengan KTP Pemohon)
+ Lahir: 23-06-1992 · NIK: 3174052306920005 (Cocok dengan KTP Pemohon)
  </div>
  </div>
 
