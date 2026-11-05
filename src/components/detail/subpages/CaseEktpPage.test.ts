@@ -146,6 +146,10 @@ describe('CaseEktpPage Salary Slip Dual-View Integration', () => {
     // 1. Without salarySlip on document, falls back and computes DSR from caseData
     const testCase: FinancingCase = {
       ...baseCase,
+      document: {
+        ...baseCase.document,
+        salarySlip: undefined,
+      },
       monthlyInstallment: 2400000,
       customerName: 'JOKO WIDODO',
     };
@@ -160,6 +164,10 @@ describe('CaseEktpPage Salary Slip Dual-View Integration', () => {
     // 2. Healthy DSR case
     const healthyCase: FinancingCase = {
       ...baseCase,
+      document: {
+        ...baseCase.document,
+        salarySlip: undefined,
+      },
       monthlyInstallment: 1395000,
     };
     const healthySlip = resolveActiveSalarySlip(healthyCase.document, healthyCase);

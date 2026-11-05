@@ -82,7 +82,7 @@ export function validateDukcapilNik(
  */
 export const ocrDemoPresets: Record<string, DocumentVerification> = {
   clean: {
-    ktpImageUrl: '/ktp_demo_normal.jpg',
+    ktpImageUrl: '/ktp_demo_normal.jfif',
     selfieImageUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&auto=format&fit=crop&q=80',
     slipGajiImageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
     kkImageUrl: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=600&auto=format&fit=crop&q=80',

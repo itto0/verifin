@@ -9,6 +9,7 @@ export interface IcrDocumentSample {
  overallConfidence: number; // 0 - 100
  status: 'verified' | 'needs_review' | 'mismatch_flag';
  thumbnailUrl: string;
+ imageUrl?: string;
  summaryNote: string;
  extractedFields: {
  fieldKey: string;
@@ -45,6 +46,7 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  overallConfidence: 74,
  status: 'needs_review',
  thumbnailUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80',
+ imageUrl: '/survey_form_cmo.jfif',
  summaryNote: 'Terdapat 2 isian tulisan tangan dengan keyakinan di bawah 80% pada bagian daya listrik & penghasilan penjamin.',
  extractedFields: [
  {
@@ -110,6 +112,7 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  overallConfidence: 96,
  status: 'verified',
  thumbnailUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80',
+ imageUrl: '/sertipikat_tanah_bpn.jfif',
  summaryNote: 'Validasi OCR dan pencocokan koordinat persil bidang tanah Sentuh Tanahku (Kementerian ATR/BPN) cocok 100%.',
  extractedFields: [
  {
@@ -177,6 +180,7 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  overallConfidence: 62,
  status: 'mismatch_flag',
  thumbnailUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
+ imageUrl: '/slip_gaji_normal.jfif',
  summaryNote: 'PERINGATAN ANOMALI: Nama pemegang hak pada sertipikat BPN berbeda dengan data pengajuan dan NIB terdaftar di wilayah lain.',
  extractedFields: [
  {

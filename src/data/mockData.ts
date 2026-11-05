@@ -1,4 +1,5 @@
 import { FinancingCase, RiskEngineRules, SurveyorPoint, AuthUser } from '../types';
+import { defaultSalarySlip } from './salarySlipHelper';
 
 export const DEMO_USERS: AuthUser[] = [
   {
@@ -79,10 +80,19 @@ export const mockCases: FinancingCase[] = [
  ]
  },
  document: {
- ktpImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80',
- selfieImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
- slipGajiImageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
- kkImageUrl: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=600&auto=format&fit=crop&q=80',
+ ktpImageUrl: '/ktp_demo_normal.jfif',
+ selfieImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80',
+ slipGajiImageUrl: '/slip_gaji_normal.jfif',
+ kkImageUrl: '/kartu_keluarga_normal.jfif',
+ salarySlip: {
+  ...defaultSalarySlip,
+  employeeName: 'AHMAD FAUZI',
+  employeeNik: '3174012005850001',
+  monthlyInstallment: 1395000,
+  dsrPercentage: 20.36,
+  isDsrHealthy: true,
+  slipImageUrl: '/slip_gaji_normal.jfif',
+ },
  tamperScore: 12,
  faceMatchScore: 96,
  isScreenCaptureDetected: false,
@@ -130,23 +140,25 @@ export const mockCases: FinancingCase[] = [
  surveyPhotos: [
  {
  id: 'PHT-01',
- caption: 'Tampak Depan Rumah Konsumen',
- timestamp: '2026-10-27 11:30:12',
- lat: -6.2385,
- lng: 106.8534,
+ caption: 'Tampak Depan Rumah (Nomor Rumah Jelas)',
+ timestamp: '2026-03-28 10:14:32',
+ lat: -6.229728,
+ lng: 106.845612,
  isFromInAppCamera: true,
  hasExifTamper: false,
- photoType: 'house_front'
+ photoType: 'house_front',
+ imageUrl: '/survey_house_front.jfif',
  },
  {
  id: 'PHT-02',
- caption: 'Foto Meteran Listrik PLN (KWH)',
- timestamp: '2026-10-27 11:31:05',
- lat: -6.2385,
- lng: 106.8534,
+ caption: 'Meteran Listrik PLN (KWH & Segel)',
+ timestamp: '2026-03-28 10:16:05',
+ lat: -6.229731,
+ lng: 106.845608,
  isFromInAppCamera: true,
  hasExifTamper: false,
- photoType: 'electricity_meter'
+ photoType: 'electricity_meter',
+ imageUrl: '/survey_pln_meter.jfif',
  },
  {
  id: 'PHT-03',

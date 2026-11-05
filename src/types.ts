@@ -80,6 +80,18 @@ export interface DocumentVerification {
  score: number; // Document pillar score (0-100)
 }
 
+export interface SurveyPhoto {
+ id: string;
+ caption: string;
+ timestamp: string;
+ lat: number;
+ lng: number;
+ isFromInAppCamera: boolean;
+ hasExifTamper: boolean;
+ photoType: 'house_front' | 'electricity_meter' | 'selfie_with_applicant' | 'road_access' | 'street_view';
+ imageUrl?: string;
+}
+
 export interface GeoSurvey {
  surveyorName: string;
  surveyorId: string;
@@ -93,16 +105,7 @@ export interface GeoSurvey {
  distanceStatus: 'green' | 'yellow' | 'red'; // <=200m green, 201-1000m yellow, >1000m red
  isMockLocationDetected: boolean;
  mockLocationReason?: string;
- surveyPhotos: {
- id: string;
- caption: string;
- timestamp: string;
- lat: number;
- lng: number;
- isFromInAppCamera: boolean;
- hasExifTamper: boolean;
- photoType: 'house_front' | 'electricity_meter' | 'selfie_with_applicant' | 'street_view';
- }[];
+ surveyPhotos: SurveyPhoto[];
  score: number; // Geo pillar score (0-100)
 }
 
