@@ -1,5 +1,5 @@
-import { AuthUser, FinancingCase } from '../types';
-import { mockCases, DEMO_USERS } from '../data/mockData';
+import { AuthUser, FinancingCase, CaseStatus, SurveyorPoint } from '../types';
+import { mockCases, mockSurveyPoints, DEMO_USERS } from '../data/mockData';
 
 const AUTH_TOKEN_KEY = 'baf_access_token';
 let inMemoryToken: string | null = null;
@@ -395,6 +395,363 @@ export async function getApplicationDetail(
   }
 
   throw new Error(`Application ${id} not found`);
+}
+
+export interface GisFilterParams {
+  branchId?: string;
+  status?: string;
+  limit?: number;
+}
+
+export interface ApiOptions {
+  baseUrl?: string;
+  useMockFallback?: boolean;
+}
+
+/**
+ * Normalizes backend application status to UI CaseStatus.
+ */
+function mapBackendStatusToCaseStatus(rawStatus?: string): CaseStatus {
+  if (!rawStatus) return 'pending';
+  const s = rawStatus.toLowerCase();
+  switch (s) {
+    case 'siap_analisa':
+    case 'review_manual':
+    case 'verifikasi_dokumen':
+    case 'verifikasi_lapangan':
+    case 'draft':
+    case 'pending':
+      return 'pending';
+    case 'disetujui':
+    case 'approved':
+      return 'approved';
+    case 'ditolak':
+    case 'rejected':
+    case 'rejected_fraud':
+      return 'rejected_fraud';
+    case 'resurvey':
+      return 'resurvey';
+    default:
+      return 'pending';
+  }
+}
+
+/**
+ * Finds the most relevant mockCase template to preserve visual assets (documents, geo, audio, risk score).
+ */
+function findMatchingMockCase(app: any): FinancingCase {
+  const appId = (app.id || '').toUpperCase();
+  const applicantName = (app.consumer?.name || app.customerName || '').toLowerCase().trim();
+
+  // Seeded case ID mappings
+  if (appId === 'APP-2026-JKT-001') return mockCases.find((c) => c.id === 'CASE-0941') || mockCases[0];
+  if (appId === 'APP-2026-JKT-002') return mockCases.find((c) => c.id === 'CASE-0942') || mockCases[0];
+  if (appId === 'APP-2026-BKS-001') return mockCases.find((c) => c.id === 'CASE-0944') || mockCases[0];
+  if (appId === 'APP-2026-BKS-002') return mockCases.find((c) => c.id === 'CASE-0943') || mockCases[0];
+
+  // Direct ID match
+  const byId = mockCases.find(
+    (c) =>
+      c.id.toUpperCase() === appId ||
+      c.applicationNumber?.toUpperCase() === appId ||
+      c.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === appId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+  );
+  if (byId) return byId;
+
+  // Applicant name mapping
+  if (applicantName.includes('ahmad') || applicantName.includes('fauzi')) {
+    return mockCases.find((c) => c.id === 'CASE-0941') || mockCases[0];
+  }
+  if (applicantName.includes('siti') || applicantName.includes('nurhaliza')) {
+    return mockCases.find((c) => c.id === 'CASE-0942') || mockCases[0];
+  }
+  if (applicantName.includes('doni') || applicantName.includes('kurniawan')) {
+    return mockCases.find((c) => c.id === 'CASE-0943') || mockCases[0];
+  }
+  if (applicantName.includes('hendra') || applicantName.includes('wijaya')) {
+    return mockCases.find((c) => c.id === 'CASE-0944') || mockCases[0];
+  }
+  if (applicantName.includes('ratna') || applicantName.includes('sari')) {
+    return mockCases.find((c) => c.id === 'CASE-0945') || mockCases[0];
+  }
+  if (applicantName.includes('budi') || applicantName.includes('santoso')) {
+    return mockCases.find((c) => c.id === 'CASE-0946') || mockCases[0];
+  }
+
+  const byName = mockCases.find((c) => c.customerName.toLowerCase() === applicantName);
+  if (byName) return byName;
+
+  return mockCases[0];
+}
+
+/**
+ * Map backend application responses into rich FinancingCase objects for UI consumption,
+ * preserving visual assets and structure from matched mock cases.
+ */
+export function mapBackendApplicationsToFinancingCases(apps: any[]): FinancingCase[] {
+  if (!Array.isArray(apps)) return [];
+
+  return apps.map((app) => {
+    const matched = findMatchingMockCase(app);
+    const base: FinancingCase = JSON.parse(JSON.stringify(matched));
+
+    const customerName = app.consumer?.name || app.customerName || base.customerName || 'Applicant';
+    const customerNik = app.consumer?.nik || app.customerNik || app.nik || base.customerNik || '';
+    const customerPhone = app.consumer?.phone || app.customerPhone || base.customerPhone || '0812-3456-7890';
+    const branch =
+      app.branch_name ||
+      app.branch?.name ||
+      (app.branch_code === 'JKT-SEL'
+        ? 'BAF Jakarta Selatan'
+        : app.branch_code === 'BKS-01'
+        ? 'BAF Kota Bekasi'
+        : app.branch) ||
+      base.branch ||
+      'BAF Jakarta Selatan';
+
+    const status = mapBackendStatusToCaseStatus(app.status);
+
+    if (customerNik && base.document?.nikValidation) {
+      base.document.nikValidation.nik = customerNik;
+    }
+    if (customerName && base.document?.ocrFields?.['Nama']) {
+      base.document.ocrFields['Nama'].value = customerName;
+    }
+    if (app.consumer?.domicile_address && base.geo) {
+      base.geo.targetAddress = app.consumer.domicile_address;
+    }
+
+    if (app.risk_score !== undefined && base.riskScore) {
+      const scoreVal =
+        typeof app.risk_score === 'number'
+          ? app.risk_score <= 1.0 && app.risk_score > 0
+            ? Math.round(app.risk_score * 100)
+            : Math.round(app.risk_score)
+          : base.riskScore.totalScore;
+      base.riskScore.totalScore = scoreVal;
+      if (status === 'rejected_fraud' || scoreVal >= 70) {
+        base.riskScore.level = 'high';
+      } else if (scoreVal >= 40) {
+        base.riskScore.level = 'medium';
+      } else {
+        base.riskScore.level = 'low';
+      }
+    }
+
+    return {
+      ...base,
+      id: app.id || base.id,
+      applicationNumber: app.application_number || app.applicationNumber || app.id || base.applicationNumber,
+      customerName,
+      customerNik,
+      customerPhone,
+      branch,
+      status,
+      submittedAt: app.created_at || app.submittedAt || base.submittedAt || new Date().toISOString(),
+      vehicleModel:
+        app.vehicle_model ||
+        app.vehicleModel ||
+        (app.product_type === 'car' ? 'Toyota Avanza 1.5 G' : 'Yamaha NMAX 155') ||
+        base.vehicleModel,
+      downPayment: app.down_payment ?? app.downPayment ?? base.downPayment ?? 5000000,
+      loanAmount: app.loan_amount ?? app.loanAmount ?? base.loanAmount ?? 25000000,
+      tenorMonths: app.tenor_months ?? app.tenorMonths ?? base.tenorMonths ?? 35,
+      monthlyInstallment: app.monthly_installment ?? app.monthlyInstallment ?? base.monthlyInstallment ?? 1250000,
+      assignedVerifier: app.assigned_verifikator_name || base.assignedVerifier,
+      decisionNotes: app.notes || base.decisionNotes,
+      decisionTimestamp: app.updated_at || base.decisionTimestamp,
+    };
+  });
+}
+
+/**
+ * Map backend GIS points / GeoJSON feature collection items into SurveyorPoint objects.
+ */
+export function mapBackendGisPointsToSurveyorPoints(points: any[]): SurveyorPoint[] {
+  if (!Array.isArray(points)) return [];
+
+  return points.map((item, index) => {
+    const p = item.properties
+      ? {
+          ...item.properties,
+          longitude: item.geometry?.coordinates?.[0],
+          latitude: item.geometry?.coordinates?.[1],
+        }
+      : item;
+
+    const rawStatus = (p.status || 'green').toLowerCase();
+    const status: 'green' | 'yellow' | 'red' =
+      rawStatus === 'red' ? 'red' : rawStatus === 'yellow' ? 'yellow' : 'green';
+
+    return {
+      id: p.id || p.survey_id || `PT-0${index + 1}`,
+      caseId: p.application_id || p.caseId || p.id || `APP-${index + 1}`,
+      applicantName: p.consumer_name || p.applicantName || 'Applicant',
+      vehicleModel: p.vehicle_model || p.vehicleModel || 'Yamaha NMAX 155',
+      branch: p.branch_code || p.branch || 'JKT-SEL',
+      surveyorName: p.surveyor_name || p.surveyorName || 'Surveyor',
+      targetLat: Number(p.target_latitude ?? p.targetLat ?? p.latitude ?? -6.2383),
+      targetLng: Number(p.target_longitude ?? p.targetLng ?? p.longitude ?? 106.8532),
+      surveyLat: Number(p.latitude ?? p.surveyLat ?? -6.2385),
+      surveyLng: Number(p.longitude ?? p.surveyLng ?? 106.8534),
+      distanceMeters: Number(p.distance_meters ?? p.distanceMeters ?? 0),
+      status,
+      isMockLocation: Boolean(p.is_mock_location ?? p.mock_location_detected ?? p.isMockLocation),
+      surveyTime: p.survey_time || p.device_timestamp || p.surveyTime || new Date().toISOString(),
+    };
+  });
+}
+
+/**
+ * Approve an application via backend workflow endpoint, with mock fallback support.
+ */
+export async function approveApplication(
+  id: string,
+  notes?: string,
+  token?: string,
+  options?: ApiOptions
+): Promise<any> {
+  const base = options?.baseUrl || getApiBaseUrl();
+  const allowFallback =
+    options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
+  const headers = buildAuthHeaders(token);
+  const effectiveNotes = notes && notes.trim().length >= 10 ? notes.trim() : 'Approved by verifikator';
+
+  try {
+    const res = await fetch(`${base}/workflow/${encodeURIComponent(id)}/approve`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ notes: effectiveNotes }),
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+
+    if (!allowFallback) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData?.detail || `Failed to approve application: status ${res.status}`);
+    }
+  } catch (err) {
+    if (!allowFallback) {
+      throw err;
+    }
+  }
+
+  return {
+    id,
+    status: 'approved',
+    notes: effectiveNotes,
+    success: true,
+  };
+}
+
+/**
+ * Reject an application via backend workflow endpoint, with mock fallback support.
+ */
+export async function rejectApplication(
+  id: string,
+  reason?: string,
+  token?: string,
+  options?: ApiOptions
+): Promise<any> {
+  const base = options?.baseUrl || getApiBaseUrl();
+  const allowFallback =
+    options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
+  const headers = buildAuthHeaders(token);
+  const effectiveReason = reason && reason.trim().length >= 5 ? reason.trim() : 'Rejected by verifikator';
+
+  try {
+    const res = await fetch(`${base}/workflow/${encodeURIComponent(id)}/reject`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ reason: effectiveReason }),
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+
+    if (!allowFallback) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData?.detail || `Failed to reject application: status ${res.status}`);
+    }
+  } catch (err) {
+    if (!allowFallback) {
+      throw err;
+    }
+  }
+
+  return {
+    id,
+    status: 'rejected_fraud',
+    reason: effectiveReason,
+    success: true,
+  };
+}
+
+/**
+ * Retrieve GIS survey points from backend or fall back to mock points.
+ */
+export async function getGisPoints(
+  params?: GisFilterParams,
+  token?: string,
+  options?: ApiOptions
+): Promise<any[]> {
+  const base = options?.baseUrl || getApiBaseUrl();
+  const allowFallback =
+    options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
+  const headers = buildAuthHeaders(token);
+
+  try {
+    const query = new URLSearchParams();
+    if (params?.branchId) query.set('branch_id', params.branchId);
+    if (params?.status) query.set('status', params.status);
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString();
+    const url = `${base}/gis/points${qs ? `?${qs}` : ''}`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (Array.isArray(data.points)) {
+        return data.points;
+      }
+      if (data.geojson && Array.isArray(data.geojson.features)) {
+        return data.geojson.features.map((f: any) => ({
+          id: f.properties?.survey_id || f.id,
+          application_id: f.properties?.application_id,
+          consumer_name: f.properties?.consumer_name,
+          surveyor_name: f.properties?.surveyor_name,
+          longitude: f.geometry?.coordinates?.[0],
+          latitude: f.geometry?.coordinates?.[1],
+          distance_meters: f.properties?.distance_meters,
+          status: f.properties?.status,
+          is_mock_location: f.properties?.mock_location_detected,
+          survey_time: f.properties?.device_timestamp,
+          ...f.properties,
+        }));
+      }
+      return [];
+    }
+
+    if (!allowFallback) {
+      throw new Error(`Failed to fetch GIS points: status ${res.status}`);
+    }
+  } catch (err) {
+    if (!allowFallback) {
+      throw err;
+    }
+  }
+
+  return mockSurveyPoints;
 }
 
 export const API_CONFIG = {

@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
+import { describe, expect, it, test, beforeEach, afterEach } from 'bun:test';
 import {
   getApiBaseUrl,
   getAuthToken,
@@ -14,6 +14,11 @@ import {
   getApplicationDetail,
   isMockFallbackEnabled,
   API_CONFIG,
+  approveApplication,
+  rejectApplication,
+  getGisPoints,
+  mapBackendApplicationsToFinancingCases,
+  mapBackendGisPointsToSurveyorPoints,
 } from './apiService';
 import { mockCases } from '../data/mockData';
 import { DEMO_USERS } from '../components/auth/LoginView';
@@ -324,5 +329,174 @@ describe('apiService - Applications and Detail', () => {
         useMockFallback: true,
       })
     ).rejects.toThrow('Application NON-EXISTENT-ID not found');
+  });
+});
+
+describe('Workflow & GIS Services', () => {
+  test('mapBackendApplicationsToFinancingCases converts backend items to FinancingCase', () => {
+    const rawApps = [
+      {
+        id: 'APP-2026-JKT-001',
+        product_type: 'motorcycle',
+        status: 'siap_analisa',
+        risk_score: 0.15,
+        consumer: {
+          name: 'Ahmad Fauzi',
+          nik: '317401******0001',
+          domicile_address: 'Jl. Tebet Barat Dalam No. 12',
+        },
+      },
+    ];
+    const cases = mapBackendApplicationsToFinancingCases(rawApps);
+    expect(cases.length).toBe(1);
+    expect(cases[0].id).toBe('APP-2026-JKT-001');
+    expect(cases[0].customerName).toBe('Ahmad Fauzi');
+    expect(cases[0].status).toBe('pending');
+    expect(cases[0].document).toBeDefined();
+    expect(cases[0].geo).toBeDefined();
+    expect(cases[0].voice).toBeDefined();
+  });
+
+  test('mapBackendApplicationsToFinancingCases handles status mapping and fallback defaults', () => {
+    const rawApps = [
+      { id: 'APP-01', status: 'siap_analisa', consumer: { name: 'Siti Nurhaliza' } },
+      { id: 'APP-02', status: 'review_manual', consumer: { name: 'Hendra Wijaya' } },
+      { id: 'APP-03', status: 'disetujui', consumer: { name: 'Doni Kurniawan' } },
+      { id: 'APP-04', status: 'ditolak', consumer: { name: 'Ratna Sari' } },
+      { id: 'APP-05', status: 'unknown_status', consumer: { name: 'Unknown User' } },
+    ];
+    const mapped = mapBackendApplicationsToFinancingCases(rawApps);
+    expect(mapped[0].status).toBe('pending');
+    expect(mapped[1].status).toBe('pending');
+    expect(mapped[2].status).toBe('approved');
+    expect(mapped[3].status).toBe('rejected_fraud');
+    expect(mapped[4].status).toBe('pending');
+    // Verify default structure preserved for unknown applicant
+    expect(mapped[4].document).toBeDefined();
+    expect(mapped[4].riskScore).toBeDefined();
+  });
+
+  test('mapBackendGisPointsToSurveyorPoints converts GIS payload to SurveyorPoint list', () => {
+    const rawPoints = [
+      {
+        id: 'PT-01',
+        application_id: 'APP-2026-JKT-001',
+        consumer_name: 'Ahmad Fauzi',
+        surveyor_name: 'Bambang Sudirgo',
+        latitude: -6.2385,
+        longitude: 106.8534,
+        target_latitude: -6.2383,
+        target_longitude: 106.8532,
+        distance_meters: 32.0,
+        status: 'GREEN',
+        is_mock_location: false,
+        survey_time: '2026-11-05T08:30:00Z',
+      },
+    ];
+    const pts = mapBackendGisPointsToSurveyorPoints(rawPoints);
+    expect(pts.length).toBe(1);
+    expect(pts[0].caseId).toBe('APP-2026-JKT-001');
+    expect(pts[0].status).toBe('green');
+    expect(pts[0].isMockLocation).toBe(false);
+  });
+
+  test('getGisPoints returns survey points from backend or fallback', async () => {
+    const points = await getGisPoints();
+    expect(Array.isArray(points)).toBe(true);
+    expect(points.length).toBeGreaterThan(0);
+  });
+
+  test('getGisPoints throws error when backend is offline and fallback is disabled', async () => {
+    await expect(
+      getGisPoints(undefined, undefined, {
+        baseUrl: 'http://127.0.0.1:59999/api/v1',
+        useMockFallback: false,
+      })
+    ).rejects.toThrow();
+  });
+
+  test('approveApplication executes against backend or mock fallback', async () => {
+    const res = await approveApplication('APP-2026-JKT-001', 'Verified and approved');
+    expect(res).toBeDefined();
+    expect(res.status === 'approved' || res.status === 'disetujui' || res.success === true).toBe(true);
+  });
+
+  test('approveApplication executes against live backend with fallback support', async () => {
+    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
+      baseUrl: 'http://localhost:8074/api/v1',
+    });
+    const res = await approveApplication('APP-2026-JKT-001', 'Verified and approved by Dian Pratama', token, {
+      baseUrl: 'http://localhost:8074/api/v1',
+    });
+    expect(res).toBeDefined();
+    expect(res.status === 'approved' || res.status === 'disetujui' || res.success === true).toBe(true);
+  });
+
+  test('approveApplication throws error when backend is offline and fallback is disabled', async () => {
+    await expect(
+      approveApplication('APP-2026-JKT-001', 'Verified and approved', undefined, {
+        baseUrl: 'http://127.0.0.1:59999/api/v1',
+        useMockFallback: false,
+      })
+    ).rejects.toThrow();
+  });
+
+  test('rejectApplication executes against backend or mock fallback', async () => {
+    const res = await rejectApplication('APP-2026-BKS-002', 'Fake GPS flagged');
+    expect(res).toBeDefined();
+    expect(res.status === 'rejected_fraud' || res.status === 'ditolak' || res.success === true).toBe(true);
+  });
+
+  test('rejectApplication throws error when backend is offline and fallback is disabled', async () => {
+    await expect(
+      rejectApplication('APP-2026-BKS-002', 'Fake GPS flagged', undefined, {
+        baseUrl: 'http://127.0.0.1:59999/api/v1',
+        useMockFallback: false,
+      })
+    ).rejects.toThrow();
+  });
+
+  test('getGisPoints retrieves GIS points with live token from backend', async () => {
+    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
+      baseUrl: 'http://localhost:8074/api/v1',
+    });
+    const points = await getGisPoints(undefined, token, {
+      baseUrl: 'http://localhost:8074/api/v1',
+      useMockFallback: false,
+    });
+    expect(Array.isArray(points)).toBe(true);
+    expect(points.length).toBeGreaterThan(0);
+  });
+
+  test('maps live backend GIS points to SurveyorPoint format', async () => {
+    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
+      baseUrl: 'http://localhost:8074/api/v1',
+    });
+    const rawPoints = await getGisPoints(undefined, token, {
+      baseUrl: 'http://localhost:8074/api/v1',
+      useMockFallback: false,
+    });
+    const surveyorPoints = mapBackendGisPointsToSurveyorPoints(rawPoints);
+    expect(surveyorPoints.length).toBeGreaterThan(0);
+    expect(surveyorPoints[0].caseId).toBeDefined();
+    expect(['green', 'yellow', 'red']).toContain(surveyorPoints[0].status);
+  });
+
+  test('maps live backend applications to FinancingCase array', async () => {
+    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
+      baseUrl: 'http://localhost:8074/api/v1',
+    });
+    const rawApps = await getApplications(token, {
+      baseUrl: 'http://localhost:8074/api/v1',
+      useMockFallback: false,
+    });
+    const cases = mapBackendApplicationsToFinancingCases(rawApps);
+    expect(cases.length).toBeGreaterThan(0);
+    expect(cases[0].id).toBeDefined();
+    expect(cases[0].customerName).toBeDefined();
+    expect(cases[0].document).toBeDefined();
+    expect(cases[0].geo).toBeDefined();
+    expect(cases[0].voice).toBeDefined();
+    expect(cases[0].riskScore).toBeDefined();
   });
 });

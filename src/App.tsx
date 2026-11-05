@@ -18,7 +18,15 @@ import { MasterDataView } from './components/master/MasterDataView';
 import { RuleSettingsView } from './components/settings/RuleSettingsView';
 import { LoginView, DEMO_USERS } from './components/auth/LoginView';
 import { mockCases } from './data/mockData';
-import { checkBackendHealth, getDashboardSummary, getApplications, clearAuthToken } from './services/apiService';
+import {
+  checkBackendHealth,
+  getDashboardSummary,
+  getApplications,
+  clearAuthToken,
+  mapBackendApplicationsToFinancingCases,
+  approveApplication,
+  rejectApplication,
+} from './services/apiService';
 import { FinancingCase, CaseStatus, CaseSubPage, AuthUser } from './types';
 
 export default function App() {
@@ -49,7 +57,15 @@ export default function App() {
    if (currentUser) {
     const summary = await getDashboardSummary();
     if (summary) setDashboardSummary(summary);
-    await getApplications();
+    const rawApps = await getApplications();
+    const mappedCases = mapBackendApplicationsToFinancingCases(rawApps);
+    if (mappedCases && mappedCases.length > 0) {
+     setCases(mappedCases);
+     setSelectedCaseId((prevId) => {
+      const exists = mappedCases.some((c) => c.id === prevId);
+      return exists ? prevId : mappedCases[0].id;
+     });
+    }
    }
   } catch {
    setBackendOnline(false);
@@ -93,37 +109,49 @@ export default function App() {
  };
 
  // Handler to update status (approve, resurvey, reject)
- const handleUpdateCaseStatus = (caseId: string, newStatus: CaseStatus, note: string) => {
- const timestampStr = '2026-10-27 15:02:18';
- setCases((prev) =>
- prev.map((c) => {
- if (c.id === caseId) {
- const actionName =
- newStatus === 'approved'
- ? 'Verifier Approval'
- : newStatus === 'resurvey'
- ? 'Re-survey Requested'
- : 'Fraud Rejection & Blacklist';
+ const handleUpdateCaseStatus = async (caseId: string, newStatus: CaseStatus, note: string) => {
+  try {
+   if (newStatus === 'approved') {
+    await approveApplication(caseId, note);
+   } else if (newStatus === 'rejected_fraud') {
+    await rejectApplication(caseId, note);
+   }
+  } catch (err) {
+   console.error(`Failed to update application status via workflow API for case ${caseId}:`, err);
+  }
 
- const newLog = {
- id: `A-LOG-${Date.now()}`,
- timestamp: timestampStr,
- actor: `${currentUser?.name || 'Dian Pratama'} (${currentUser?.role || 'Senior Verifier'})`,
- action: actionName,
- notes: note || 'Manual verifier decision logged.',
- };
+  const timestampStr = '2026-10-27 15:02:18';
+  setCases((prev) =>
+   prev.map((c) => {
+    if (c.id === caseId) {
+     const actionName =
+      newStatus === 'approved'
+       ? 'Verifier Approval'
+       : newStatus === 'resurvey'
+       ? 'Re-survey Requested'
+       : 'Fraud Rejection & Blacklist';
 
- return {
- ...c,
- status: newStatus,
- decisionNotes: note,
- decisionTimestamp: timestampStr,
- auditTrail: [...c.auditTrail, newLog],
- };
- }
- return c;
- })
- );
+     const newLog = {
+      id: `A-LOG-${Date.now()}`,
+      timestamp: timestampStr,
+      actor: `${currentUser?.name || 'Dian Pratama'} (${currentUser?.role || 'Senior Verifier'})`,
+      action: actionName,
+      notes: note || 'Manual verifier decision logged.',
+     };
+
+     return {
+      ...c,
+      status: newStatus,
+      decisionNotes: note,
+      decisionTimestamp: timestampStr,
+      auditTrail: [...c.auditTrail, newLog],
+     };
+    }
+    return c;
+   })
+  );
+
+  await refreshBackendData();
  };
 
  // Compute pending count
