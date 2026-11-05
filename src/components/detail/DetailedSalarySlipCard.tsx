@@ -94,7 +94,7 @@ export const DetailedSalarySlipCard: React.FC<DetailedSalarySlipCardProps> = ({
               Pratinjau Forensik Slip Gaji (Corporate Payroll Scan)
             </h3>
             <p className="text-[11px] text-[#6B6B6B] mt-0.5">
-              Inspeksi keaslian dokumen, koordinat bounding box OCR, dan verifikasi stempel
+              Inspeksi keaslian dokumen, ekstraksi OCR, dan verifikasi stempel
             </p>
           </div>
         </div>

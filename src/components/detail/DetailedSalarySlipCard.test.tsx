@@ -17,6 +17,8 @@ describe('DetailedSalarySlipCard component', () => {
     expect(html).not.toContain('OCR Confidence');
     // Stamp badge for verified
     expect(html).toContain('Stempel Asli Terverifikasi');
+    expect(html).toContain('Inspeksi keaslian dokumen, ekstraksi OCR, dan verifikasi stempel');
+    expect(html).not.toContain('bounding box');
   });
 
   it('renders company name, employee name, NIK, period, and payment date', () => {

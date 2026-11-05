@@ -595,7 +595,7 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({
                   ICR Handwritten Extracted Fields
                 </h3>
                 <p className="text-[11px] text-[#6B6B6B] mt-0.5">
-                  Click or hover any row to pinpoint bounding box
+                  Click or hover any row to inspect field
                 </p>
               </div>
               <span className="text-[10px] text-[#6B6B6B]">
