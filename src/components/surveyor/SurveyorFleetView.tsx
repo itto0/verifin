@@ -294,7 +294,7 @@ export const SurveyorFleetView: React.FC<SurveyorFleetViewProps> = ({
  <span className="font-semibold">Integrity Violation Alert:</span>
  <p className="mt-0.5 text-[11px] leading-relaxed">
  Surveyor device detected running mock location provider (Fake GPS) on applications
- for Rian Hendrawan (CASE-0941) &amp; Hendra Irawan (CASE-0946). Immediate supervisor
+ for Doni Kurniawan (CASE-0943) &amp; Hendra Irawan (CASE-0946). Immediate supervisor
  field audit recommended.
  </p>
  </div>

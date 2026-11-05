@@ -131,17 +131,17 @@ export const TopBar: React.FC<TopBarProps> = ({
  <div className="space-y-2 max-h-64 overflow-y-auto">
  <div
  onClick={() => {
- onSelectCase('CASE-0941');
+ onSelectCase('CASE-0943');
  setIsNotifOpen(false);
  }}
  className="p-2 rounded-lg bg-[#DC2626]/5 border border-[#DC2626]/20 cursor-pointer hover:bg-[#DC2626]/10 transition-colors"
  >
  <div className="flex items-center justify-between text-[#DC2626] font-semibold">
- <span>CASE-0941 (Rian Hendrawan)</span>
- <span className="text-[10px] ">14:18 WIB</span>
+ <span>CASE-0943 (Doni Kurniawan)</span>
+ <span className="text-[10px] ">12:10 WIB</span>
  </div>
  <p className="text-[11px] text-[#1A1A1A] mt-1">
- Mock GPS detected (1,420m radius) &amp; e-KTP font mismatch.
+ Mock GPS detected (Fake GPS flagged) &amp; Android Mock Location active.
  </p>
  </div>
  <div
@@ -161,17 +161,32 @@ export const TopBar: React.FC<TopBarProps> = ({
  </div>
  <div
  onClick={() => {
- onSelectCase('CASE-0943');
+ onSelectCase('CASE-0944');
  setIsNotifOpen(false);
  }}
  className="p-2 rounded-lg bg-[#F7F7F5] border border-[#E5E5E3] cursor-pointer hover:bg-slate-100 transition-colors"
  >
  <div className="flex items-center justify-between text-[#D97706] font-semibold">
- <span>CASE-0943 (Bagus Prasetyo)</span>
- <span className="text-[10px] ">12:12 WIB</span>
+ <span>CASE-0944 (Hendra Wijaya)</span>
+ <span className="text-[10px] ">11:20 WIB</span>
  </div>
  <p className="text-[11px] text-[#1A1A1A] mt-1">
- Yellow zone survey radius (430m) requires review.
+ Yellow zone survey radius (445m) requires review.
+ </p>
+ </div>
+ <div
+ onClick={() => {
+ onSelectCase('CASE-0941');
+ setIsNotifOpen(false);
+ }}
+ className="p-2 rounded-lg bg-[#16A34A]/5 border border-[#16A34A]/20 cursor-pointer hover:bg-[#16A34A]/10 transition-colors"
+ >
+ <div className="flex items-center justify-between text-[#16A34A] font-semibold">
+ <span>CASE-0941 (Ahmad Fauzi)</span>
+ <span className="text-[10px] ">14:15 WIB</span>
+ </div>
+ <p className="text-[11px] text-[#1A1A1A] mt-1">
+ Clean verification approved: 32m survey distance &amp; e-KTP valid.
  </p>
  </div>
  </div>

@@ -132,7 +132,7 @@ export const mockSystemAuditEntries: SystemAuditEntry[] = [
  actor: 'Dian Pratama (Senior Verifier)',
  targetRef: 'CASE-0944',
  action: 'Re-survey Requested',
- details: 'Foto fisik rumah di Surabaya buram akibat hujan lebat, ditugaskan ulang ke Dimas Wicaksono.',
+ details: 'Foto fisik rumah di Bekasi Utara buram akibat hujan lebat, ditugaskan ulang ke Agus Setiawan.',
  ipAddress: '192.168.10.45',
  integrityHash: 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb',
  },

@@ -58,7 +58,7 @@ export function createCustomIcrDocument(
     options?.forceMismatch ||
     fileName.toLowerCase().includes('mismatch') ||
     fileName.toLowerCase().includes('sengketa');
-  const applicantName = options?.applicantName || 'Bagus Prasetyo';
+  const applicantName = options?.applicantName || 'Doni Kurniawan';
   const caseId = options?.caseId || 'CASE-CUSTOM';
 
   const lowerName = fileName.toLowerCase();

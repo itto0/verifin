@@ -119,7 +119,7 @@ describe('aiService - Response Parsing and Payload Builders', () => {
         {
           key: 'nama_pemegang_hak',
           label: 'Nama Pemegang Hak',
-          extractedValue: 'Rian Hendrawan',
+          extractedValue: 'Ahmad Fauzi',
           confidence: 97,
           isHandwritten: false,
         },
@@ -130,10 +130,10 @@ describe('aiService - Response Parsing and Payload Builders', () => {
         areaM2: 145,
         location: 'Kel. Duren Jaya, Kec. Bekasi Timur',
         issuedDate: '12-05-2017',
-        ownerName: 'Rian Hendrawan',
+        ownerName: 'Ahmad Fauzi',
       },
       spatialMatchWithSurveyAddress: true,
-      summary: 'Sertipikat Hak Milik atas nama Rian Hendrawan valid dan terverifikasi di ATR/BPN.',
+      summary: 'Sertipikat Hak Milik atas nama Ahmad Fauzi valid dan terverifikasi di ATR/BPN.',
     };
 
     const sample = createIcrSampleFromAiResult('custom-shm', 'sertipikat.jpg', 'data:image/jpeg;base64,shm', aiIcr);

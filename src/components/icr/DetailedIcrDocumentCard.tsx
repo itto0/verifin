@@ -141,7 +141,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
  )}
 
- {/* 1A: BAF FIELD SURVEY FORM (RIAN HENDRAWAN - CASE-0941) */}
+ {/* 1A: BAF FIELD SURVEY FORM (AHMAD FAUZI - CASE-0941) */}
  {!document.thumbnailUrl?.startsWith('data:image/') && isForm && (
  <div className="p-4 sm:p-5 text-[11px] leading-tight space-y-3 bg-[#FAF8F5]">
  {/* Official BAF Header */}
@@ -178,11 +178,11 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <div className="grid grid-cols-2 gap-2 text-[10px] bg-white p-2 rounded border border-[#E2E8F0]">
  <div>
  <span className="text-[#64748B]">Nama Pemohon: </span>
- <strong className="font-semibold text-[#0F172A]">RIAN HENDRAWAN</strong>
+ <strong className="font-semibold text-[#0F172A]">{document.applicantName?.toUpperCase() || 'AHMAD FAUZI'}</strong>
  </div>
  <div>
  <span className="text-[#64748B]">NIK: </span>
- <strong className=" font-semibold text-[#0F172A]">3275031208940003</strong>
+ <strong className=" font-semibold text-[#0F172A]">3174012005850001</strong>
  </div>
  <div>
  <span className="text-[#64748B]">Unit Dimohon: </span>
@@ -265,7 +265,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <div className="pt-2 flex items-center justify-between text-[9px] text-[#475569]">
  <div className="text-center">
  <div>Pemohon Kredit,</div>
- <div className="font-serif italic text-blue-900 mt-3 font-semibold">Rian Hendrawan</div>
+ <div className="font-serif italic text-blue-900 mt-3 font-semibold">{document.applicantName || 'Ahmad Fauzi'}</div>
  <div className="border-t border-[#94A3B8] w-24 mx-auto mt-0.5">Tanda Tangan</div>
  </div>
 
@@ -285,7 +285,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
  )}
 
- {/* 1B: BPN SERTIPIKAT HAK MILIK (BAGUS PRASETYO - CASE-0943) */}
+ {/* 1B: BPN SERTIPIKAT HAK MILIK (DONI KURNIAWAN - CASE-0943) */}
  {!document.thumbnailUrl?.startsWith('data:image/') && isShm && (
  <div className="p-4 sm:p-5 text-[11px] leading-tight space-y-3 bg-[#FDFEFA] border-4 border-[#15803D]/30 m-2 rounded-lg">
  {/* Garuda Pancasila Header */}
@@ -472,7 +472,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
 
  {/* Photo Canvas Display */}
  <div className="relative aspect-[4/3] bg-slate-950 flex items-center justify-center overflow-hidden">
- {/* Evidence 1: Rian Hendrawan - PLN Electricity Meter & House Front */}
+ {/* Evidence 1: Ahmad Fauzi - PLN Electricity Meter & House Front */}
  {isForm && (
  <div className="w-full h-full relative flex flex-col justify-between p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
  {/* Visual SVG illustration of the PLN meter box & house front */}
@@ -519,7 +519,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
  )}
 
- {/* Evidence 2: Bagus Prasetyo - Land Parcel Frontage at Kebon Jeruk */}
+ {/* Evidence 2: Doni Kurniawan - Land Parcel Frontage at Kebon Jeruk */}
  {isShm && (
  <div className="w-full h-full relative flex flex-col justify-between p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
  <div className="absolute inset-0 flex items-center justify-center opacity-85">

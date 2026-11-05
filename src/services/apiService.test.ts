@@ -19,6 +19,7 @@ import {
   getGisPoints,
   mapBackendApplicationsToFinancingCases,
   mapBackendGisPointsToSurveyorPoints,
+  findMatchingMockCase,
 } from './apiService';
 import { mockCases } from '../data/mockData';
 import { DEMO_USERS } from '../components/auth/LoginView';
@@ -309,7 +310,7 @@ describe('apiService - Applications and Detail', () => {
 
     expect(app).toBeDefined();
     expect(app.id).toBe('CASE-0941');
-    expect(app.customerName).toBe('Rian Hendrawan');
+    expect(app.customerName).toBe('Ahmad Fauzi');
   });
 
   it('retrieves application detail from mockCases fallback by applicationNumber', async () => {
@@ -498,5 +499,64 @@ describe('Workflow & GIS Services', () => {
     expect(cases[0].geo).toBeDefined();
     expect(cases[0].voice).toBeDefined();
     expect(cases[0].riskScore).toBeDefined();
+  });
+});
+
+describe('apiService - findMatchingMockCase Alignment', () => {
+  it('maps seeded application IDs to corresponding core cases', () => {
+    expect(findMatchingMockCase({ id: 'APP-2026-JKT-001' }).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ id: 'APP-2026-JKT-002' }).id).toBe('CASE-0942');
+    expect(findMatchingMockCase({ id: 'APP-2026-BKS-001' }).id).toBe('CASE-0944');
+    expect(findMatchingMockCase({ id: 'APP-2026-BKS-002' }).id).toBe('CASE-0943');
+  });
+
+  it('maps synchronized customer names to corresponding cases', () => {
+    expect(findMatchingMockCase({ customerName: 'Ahmad Fauzi' }).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ customerName: 'Siti Nurhaliza' }).id).toBe('CASE-0942');
+    expect(findMatchingMockCase({ customerName: 'Hendra Wijaya' }).id).toBe('CASE-0944');
+    expect(findMatchingMockCase({ customerName: 'Doni Kurniawan' }).id).toBe('CASE-0943');
+  });
+
+  it('resolves consumer object format from backend payload', () => {
+    expect(findMatchingMockCase({ consumer: { name: 'Ahmad Fauzi' } }).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ consumer: { name: 'Siti Nurhaliza' } }).id).toBe('CASE-0942');
+    expect(findMatchingMockCase({ consumer: { name: 'Hendra Wijaya' } }).id).toBe('CASE-0944');
+    expect(findMatchingMockCase({ consumer: { name: 'Doni Kurniawan' } }).id).toBe('CASE-0943');
+  });
+
+  it('handles partial name matches via first and last names', () => {
+    expect(findMatchingMockCase({ customerName: 'ahmad' }).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ customerName: 'fauzi' }).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ customerName: 'siti' }).id).toBe('CASE-0942');
+    expect(findMatchingMockCase({ customerName: 'nurhaliza' }).id).toBe('CASE-0942');
+    expect(findMatchingMockCase({ customerName: 'doni' }).id).toBe('CASE-0943');
+    expect(findMatchingMockCase({ customerName: 'kurniawan' }).id).toBe('CASE-0943');
+    expect(findMatchingMockCase({ customerName: 'hendra' }).id).toBe('CASE-0944');
+    expect(findMatchingMockCase({ customerName: 'wijaya' }).id).toBe('CASE-0944');
+  });
+
+  it('disambiguates between Hendra Wijaya and Hendra Irawan', () => {
+    expect(findMatchingMockCase({ customerName: 'Hendra Wijaya' }).id).toBe('CASE-0944');
+    expect(findMatchingMockCase({ customerName: 'Hendra Irawan' }).id).toBe('CASE-0946');
+  });
+
+  it('disambiguates between Ahmad Fauzi and Ahmad Fauzi Pratama', () => {
+    expect(findMatchingMockCase({ customerName: 'Ahmad Fauzi' }).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ customerName: 'Ahmad Fauzi Pratama' }).id).toBe('CASE-0945');
+  });
+
+  it('preserves direct case ID lookups', () => {
+    expect(findMatchingMockCase({ id: 'CASE-0941' }).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ id: 'CASE-0942' }).id).toBe('CASE-0942');
+    expect(findMatchingMockCase({ id: 'CASE-0943' }).id).toBe('CASE-0943');
+    expect(findMatchingMockCase({ id: 'CASE-0944' }).id).toBe('CASE-0944');
+    expect(findMatchingMockCase({ id: 'CASE-0945' }).id).toBe('CASE-0945');
+    expect(findMatchingMockCase({ id: 'CASE-0946' }).id).toBe('CASE-0946');
+  });
+
+  it('falls back safely to default mock case for completely unknown app', () => {
+    const unknown = findMatchingMockCase({ id: 'UNKNOWN-ID', customerName: 'Non Existent' });
+    expect(unknown).toBeDefined();
+    expect(unknown.id).toBe('CASE-0941');
   });
 });

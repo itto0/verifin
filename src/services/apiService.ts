@@ -439,7 +439,7 @@ function mapBackendStatusToCaseStatus(rawStatus?: string): CaseStatus {
 /**
  * Finds the most relevant mockCase template to preserve visual assets (documents, geo, audio, risk score).
  */
-function findMatchingMockCase(app: any): FinancingCase {
+export function findMatchingMockCase(app: any): FinancingCase {
   const appId = (app.id || '').toUpperCase();
   const applicantName = (app.consumer?.name || app.customerName || '').toLowerCase().trim();
 
@@ -460,6 +460,9 @@ function findMatchingMockCase(app: any): FinancingCase {
 
   // Applicant name mapping
   if (applicantName.includes('ahmad') || applicantName.includes('fauzi')) {
+    if (applicantName.includes('pratama')) {
+      return mockCases.find((c) => c.id === 'CASE-0945') || mockCases[0];
+    }
     return mockCases.find((c) => c.id === 'CASE-0941') || mockCases[0];
   }
   if (applicantName.includes('siti') || applicantName.includes('nurhaliza')) {
@@ -467,6 +470,9 @@ function findMatchingMockCase(app: any): FinancingCase {
   }
   if (applicantName.includes('doni') || applicantName.includes('kurniawan')) {
     return mockCases.find((c) => c.id === 'CASE-0943') || mockCases[0];
+  }
+  if (applicantName.includes('irawan')) {
+    return mockCases.find((c) => c.id === 'CASE-0946') || mockCases[0];
   }
   if (applicantName.includes('hendra') || applicantName.includes('wijaya')) {
     return mockCases.find((c) => c.id === 'CASE-0944') || mockCases[0];
