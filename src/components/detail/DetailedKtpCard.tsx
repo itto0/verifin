@@ -32,11 +32,10 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
   document,
   customerName,
   showTamperOverlay,
-  hoveredFieldKey,
+  hoveredFieldKey: _hoveredFieldKey,
   onFieldHover: _onFieldHover,
 }) => {
   const isHighRisk = document.score >= 70 || (document.tamperScore !== undefined && document.tamperScore >= 70);
-  const hoveredBox = hoveredFieldKey ? document.ocrFields[hoveredFieldKey]?.boundingBox : undefined;
 
   return (
     <div className="space-y-3">
@@ -80,39 +79,6 @@ export const DetailedKtpCard: React.FC<DetailedKtpCardProps> = ({
                 <Sparkles className="w-3 h-3 text-amber-900" />
                 <span>Interferensi Moiré LCD Terdeteksi</span>
               </div>
-            )}
-
-            {/* Red Dashed Bounding Boxes for Anomalous Fields */}
-            {showTamperOverlay &&
-              Object.entries(document.ocrFields).map(([key, field]) => {
-                if (!field.isAnomaly || !field.boundingBox) return null;
-                const box = field.boundingBox;
-                return (
-                  <div
-                    key={key}
-                    title={field.anomalyReason || `${field.label}: Anomaly detected`}
-                    className="absolute border-2 border-dashed border-[#DC2626] bg-[#DC2626]/20 rounded pointer-events-none z-10"
-                    style={{
-                      top: `${box.y}%`,
-                      left: `${box.x}%`,
-                      width: `${(box as any).width ?? box.w}%`,
-                      height: `${(box as any).height ?? box.h}%`,
-                    }}
-                  />
-                );
-              })}
-
-            {/* Interactive Coordinate Highlight Reticle on Hover */}
-            {hoveredBox && (
-              <div
-                className="absolute border-2 border-[#2563EB] bg-[#2563EB]/25 rounded pointer-events-none transition-all duration-150 z-10 shadow-[0_0_8px_rgba(37,99,235,0.5)]"
-                style={{
-                  top: `${hoveredBox.y}%`,
-                  left: `${hoveredBox.x}%`,
-                  width: `${(hoveredBox as any).width ?? hoveredBox.w}%`,
-                  height: `${(hoveredBox as any).height ?? hoveredBox.h}%`,
-                }}
-              />
             )}
           </div>
         </div>
