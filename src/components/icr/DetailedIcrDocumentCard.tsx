@@ -13,7 +13,8 @@ import {
  Building2,
  ExternalLink,
  Layers,
- Sparkles
+ Sparkles,
+ FileSearch
 } from 'lucide-react';
 import { IcrDocumentSample } from '../../data/icrData';
 
@@ -28,7 +29,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  onSelectCase,
  highlightedFieldKey,
 }) => {
- const [activeView, setActiveView] = useState<'document' | 'evidence' | 'cadastral'>('document');
+ const [activeView, setActiveView] = useState<'document' | 'evidence' | 'cadastral' | 'raw_scan'>('document');
 
  const isForm =
   document.id === 'ICR-DOC-001' ||
@@ -77,6 +78,19 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <Camera className="w-3.5 h-3.5" />
  <span>On-Site Photo</span>
  </button>
+ {document.imageUrl && (
+ <button
+ onClick={() => setActiveView('raw_scan')}
+ className={`px-2.5 py-1 rounded font-medium transition-colors flex items-center gap-1.5 ${
+ activeView === 'raw_scan'
+ ? 'bg-[#1A1A1A] text-white shadow-xs'
+ : 'text-[#6B6B6B] hover:text-[#1A1A1A]'
+ }`}
+ >
+ <FileSearch className="w-3.5 h-3.5" />
+ <span>Physical Scan Photo</span>
+ </button>
+ )}
  {document.bpnSpatialVerification && (
  <button
  onClick={() => setActiveView('cadastral')}
@@ -456,6 +470,33 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
  )}
 
+ {/* VIEW: RAW SCAN PHOTO OF PHYSICAL PAPER / CERTIFICATE */}
+ {activeView === 'raw_scan' && document.imageUrl && (
+ <div className="w-full max-w-lg bg-slate-950 rounded-lg shadow-md border border-slate-800 overflow-hidden text-white flex flex-col items-center justify-center p-3">
+ <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-xs">
+ <span className="font-semibold text-slate-200">
+ {document.type === 'survey_form' ? 'Foto Lembar Survei CMO Asli' : 'Foto Asli Sertipikat ATR/BPN'}
+ </span>
+ <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
+ Physical Scan
+ </span>
+ </div>
+ <div className="relative rounded-lg overflow-hidden border border-slate-800 max-h-[500px] flex items-center justify-center bg-black/40 w-full">
+ <img
+ src={document.imageUrl}
+ alt={document.title}
+ className="max-h-[460px] w-auto object-contain rounded"
+ />
+ </div>
+ <div className="text-[10px] text-slate-400 mt-2 flex items-center justify-between w-full px-1">
+ <span>No. Dokumen: <strong className="text-slate-200 font-mono">{document.documentNumber}</strong></span>
+ <span className="text-emerald-400 flex items-center gap-1">
+ <CheckCircle2 className="w-3 h-3" /> High-Resolution Substrate
+ </span>
+ </div>
+ </div>
+ )}
+
  {/* VIEW 2: ON-SITE PHOTOGRAPHIC EVIDENCE CAPTURED VIA HARDWARE CAMERAX */}
  {activeView === 'evidence' && (
  <div className="w-full max-w-lg bg-[#0F172A] rounded-lg shadow-md border border-[#334155] overflow-hidden text-white flex flex-col">
@@ -474,7 +515,12 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  <div className="relative aspect-[4/3] bg-slate-950 flex items-center justify-center overflow-hidden">
  {/* Evidence 1: Ahmad Fauzi - PLN Electricity Meter & House Front */}
  {isForm && (
- <div className="w-full h-full relative flex flex-col justify-between p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+ <div className="w-full h-full relative flex flex-col justify-between p-4 bg-slate-900">
+ <img
+ src="/survey_pln_meter.jfif"
+ alt="Meteran Listrik PLN"
+ className="absolute inset-0 w-full h-full object-cover opacity-75"
+ />
  {/* Visual SVG illustration of the PLN meter box & house front */}
  <div className="absolute inset-0 flex items-center justify-center opacity-85">
  <svg viewBox="0 0 320 240" className="w-full h-full max-w-md">
@@ -521,7 +567,12 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
 
  {/* Evidence 2: Doni Kurniawan - Land Parcel Frontage at Kebon Jeruk */}
  {isShm && (
- <div className="w-full h-full relative flex flex-col justify-between p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+ <div className="w-full h-full relative flex flex-col justify-between p-4 bg-slate-900">
+ <img
+ src="/survey_house_front.jfif"
+ alt="Tampak Depan Rumah & Lokasi Agunan"
+ className="absolute inset-0 w-full h-full object-cover opacity-75"
+ />
  <div className="absolute inset-0 flex items-center justify-center opacity-85">
  <svg viewBox="0 0 320 240" className="w-full h-full max-w-md">
  {/* House Front & Garden Fence */}

@@ -244,6 +244,13 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({ caseData }) => {
  {/* Photo Preview Canvas */}
  <div className="space-y-3">
  <div className="relative aspect-4/3 rounded-lg overflow-hidden border border-[#E5E5E3] bg-[#1A1A1A] flex flex-col justify-between p-3 text-white">
+ {selectedPhoto.imageUrl ? (
+   <img
+     src={selectedPhoto.imageUrl}
+     alt={selectedPhoto.caption}
+     className="absolute inset-0 w-full h-full object-cover"
+   />
+ ) : null}
  <div className="flex items-center justify-between text-[10px] z-10 bg-black/60 backdrop-blur-xs px-2 py-1 rounded">
  <span className="flex items-center gap-1">
  <Camera className="w-3 h-3 text-[#16A34A]" />
@@ -252,6 +259,7 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({ caseData }) => {
  <span className="text-cyan-300">BAF Surveyor Mobile</span>
  </div>
 
+ {!selectedPhoto.imageUrl ? (
  <div className="text-center my-auto opacity-75">
  <div className="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center mx-auto mb-1 bg-white/10">
  <Camera className="w-6 h-6 text-white" />
@@ -261,6 +269,9 @@ export const CaseGeoPage: React.FC<CaseGeoPageProps> = ({ caseData }) => {
  TYPE: {selectedPhoto.photoType}
  </div>
  </div>
+ ) : (
+ <div className="my-auto" />
+ )}
 
  <div className="z-10 bg-black/75 backdrop-blur-xs p-2 rounded text-[10px] space-y-0.5 border border-white/10 ">
  <div className="flex justify-between">
