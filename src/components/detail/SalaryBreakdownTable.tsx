@@ -119,7 +119,7 @@ export const SalaryBreakdownTable: React.FC<SalaryBreakdownTableProps> = ({
           {isKtpMatch ? (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A] shrink-0" />
-              <span>100% Cocok: {salaryData.employeeName}</span>
+              <span>Cocok KTP: {salaryData.employeeName}</span>
             </div>
           ) : (
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-[#DC2626]/10 text-[#DC2626] border border-[#DC2626]/20">

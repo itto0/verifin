@@ -6,15 +6,15 @@ import { defaultSalarySlip } from '../../data/salarySlipHelper';
 import { SalarySlipBreakdown } from '../../types';
 
 describe('DetailedSalarySlipCard component', () => {
-  it('renders header with title, OCR confidence, and stamp status badge', () => {
+  it('renders header with title and stamp status badge, without OCR confidence', () => {
     const html = renderToStaticMarkup(
       <DetailedSalarySlipCard salaryData={defaultSalarySlip} />
     );
 
     // Header title
     expect(html).toContain('Pratinjau Forensik Slip Gaji (Corporate Payroll Scan)');
-    // OCR Confidence badge
-    expect(html).toContain('98% OCR Confidence');
+    // OCR Confidence badge removed
+    expect(html).not.toContain('OCR Confidence');
     // Stamp badge for verified
     expect(html).toContain('Stempel Asli Terverifikasi');
   });

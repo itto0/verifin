@@ -19,8 +19,8 @@ describe('SalaryBreakdownTable component', () => {
     // Period & payment date badge
     expect(html).toContain('Oktober 2026');
     expect(html).toContain('25 Oktober 2026');
-    // KTP match badge (100% Cocok)
-    expect(html).toContain('100% Cocok: BUDI SANTOSO');
+    // KTP match badge (Cocok KTP)
+    expect(html).toContain('Cocok KTP: BUDI SANTOSO');
     // Stamp status badge
     expect(html).toContain('Stempel Asli');
   });
@@ -34,7 +34,7 @@ describe('SalaryBreakdownTable component', () => {
     );
 
     expect(html).toContain('Nama Beda: BUDI SANTOSO vs JOKO WIDODO');
-    expect(html).not.toContain('100% Cocok');
+    expect(html).not.toContain('Cocok KTP');
   });
 
   it('renders correct stamp verification pill based on stampStatus', () => {

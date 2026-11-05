@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Building2,
   Calendar,
-  Sparkles,
   Camera,
   Layers,
 } from 'lucide-react';
@@ -102,18 +101,6 @@ export const DetailedSalarySlipCard: React.FC<DetailedSalarySlipCardProps> = ({
 
         {/* Header Badges */}
         <div className="flex items-center flex-wrap gap-2 shrink-0">
-          {/* OCR Confidence Badge */}
-          <span
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium font-mono ${
-              salaryData.ocrConfidence >= 90
-                ? 'bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/30'
-                : 'bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/30'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{salaryData.ocrConfidence}% OCR Confidence</span>
-          </span>
-
           {/* Stamp Status Badge */}
           {getStampBadge()}
         </div>
