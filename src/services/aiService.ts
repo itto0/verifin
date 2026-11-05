@@ -393,6 +393,70 @@ export function createIcrSampleFromAiResult(
 }
 
 /**
+ * Downscales and compresses an image (File or base64 data URL) using HTML Canvas
+ * to prevent HTTP 413 Content Too Large errors and drastically speed up LLM multimodal vision inference.
+ * Resizes max dimension to 1600px and compresses to JPEG ~0.82 quality (typically ~150KB-280KB).
+ */
+export async function compressImageForAi(
+  input: File | string,
+  maxDimension = 1600,
+  quality = 0.82
+): Promise<string> {
+  if (typeof window === 'undefined' || typeof Image === 'undefined') {
+    if (typeof input === 'string') return input;
+    return fileToBase64DataUrl(input);
+  }
+
+  const src = typeof input === 'string' ? input : await fileToBase64DataUrl(input);
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      let { width, height } = img;
+
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(src);
+        return;
+      }
+
+      // Draw solid white background for transparent PNGs
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      try {
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      } catch (e) {
+        resolve(src);
+      }
+    };
+
+    img.onerror = () => {
+      resolve(src);
+    };
+
+    img.src = src;
+  });
+}
+
+/**
  * Execute real OCR on a KTP image using the OpenAI-compatible endpoint.
  */
 export async function performRealKtpOcr(
@@ -400,6 +464,9 @@ export async function performRealKtpOcr(
   options?: { customerName?: string }
 ): Promise<DocumentVerification> {
   const prompt = buildKtpOcrPrompt();
+
+  // Compress and resize image to prevent 413 Payload Too Large and optimize OCR latency
+  const optimizedImage = await compressImageForAi(base64Image, 1600, 0.82);
 
   const response = await fetch(`${AI_CONFIG.baseUrl}/chat/completions`, {
     method: 'POST',
@@ -414,7 +481,7 @@ export async function performRealKtpOcr(
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: base64Image } },
+            { type: 'image_url', image_url: { url: optimizedImage } },
           ],
         },
       ],
@@ -425,6 +492,12 @@ export async function performRealKtpOcr(
 
   if (!response.ok) {
     const errorText = await response.text();
+    if (response.status === 413) {
+      throw new Error(`AI OCR Error 413 (Content Too Large): Gambar melebihi batas ukuran server Nginx (client_max_body_size).`);
+    }
+    if (response.status === 405) {
+      throw new Error(`AI OCR Error 405 (Method Not Allowed): Server hosting belum mengonfigurasi reverse proxy untuk /api/ai.`);
+    }
     throw new Error(`AI OCR API Error (${response.status}): ${errorText}`);
   }
 
@@ -435,7 +508,7 @@ export async function performRealKtpOcr(
   }
 
   const aiResult = parseAiJsonResponse<any>(rawContent);
-  return createDocumentVerificationFromAiResult(base64Image, aiResult);
+  return createDocumentVerificationFromAiResult(optimizedImage, aiResult);
 }
 
 /**
@@ -447,6 +520,9 @@ export async function performRealIcr(
 ): Promise<IcrDocumentSample> {
   const prompt = buildIcrPrompt(fileName);
 
+  // Compress and resize image to prevent 413 Payload Too Large and optimize OCR latency
+  const optimizedImage = await compressImageForAi(base64Image, 1600, 0.82);
+
   const response = await fetch(`${AI_CONFIG.baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -460,7 +536,7 @@ export async function performRealIcr(
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: base64Image } },
+            { type: 'image_url', image_url: { url: optimizedImage } },
           ],
         },
       ],
@@ -471,6 +547,12 @@ export async function performRealIcr(
 
   if (!response.ok) {
     const errorText = await response.text();
+    if (response.status === 413) {
+      throw new Error(`AI ICR Error 413 (Content Too Large): Gambar melebihi batas ukuran server Nginx (client_max_body_size).`);
+    }
+    if (response.status === 405) {
+      throw new Error(`AI ICR Error 405 (Method Not Allowed): Server hosting belum mengonfigurasi reverse proxy untuk /api/ai.`);
+    }
     throw new Error(`AI ICR API Error (${response.status}): ${errorText}`);
   }
 
@@ -481,7 +563,7 @@ export async function performRealIcr(
   }
 
   const aiResult = parseAiJsonResponse<any>(rawContent);
-  return createIcrSampleFromAiResult('ICR-UPLOADED', fileName, base64Image, aiResult);
+  return createIcrSampleFromAiResult('ICR-UPLOADED', fileName, optimizedImage, aiResult);
 }
 
 /**
