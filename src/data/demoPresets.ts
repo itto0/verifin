@@ -1,6 +1,7 @@
 import { DocumentVerification, VoiceVerification } from '../types';
-import { IcrDocumentSample } from './icrData';
-import { defaultSalarySlip } from './salarySlipHelper';
+import { IcrDocumentSample, mockIcrDocuments } from './icrData';
+import { mockCases } from './mockData';
+import { case0941CleanVoiceVerification } from './prompts/elevenlabsCallPrompts';
 
 /**
  * Validates an Indonesian 16-digit NIK against the recorded birth date and gender
@@ -81,6 +82,12 @@ export function validateDukcapilNik(
  * - screen_capture: Moiré pattern detected from photographing an LCD monitor.
  */
 export const ocrDemoPresets: Record<string, DocumentVerification> = {
+  clean: mockCases[0].document,
+  tampered: mockCases[5].document,
+  screen_capture: {
+    ...mockCases[4].document,
+    isScreenCaptureDetected: true,
+  },
 };
 
 export const casePresets = ocrDemoPresets;
@@ -93,7 +100,10 @@ export const casePresets = ocrDemoPresets;
  * - low_confidence: Hand-written survey form with blurry handwriting and illegible numbers.
  */
 export const icrDemoPresets: Record<string, IcrDocumentSample> = {
-
+  survey_clean: mockIcrDocuments[0],
+  clean_shm: mockIcrDocuments[1],
+  cadastral_mismatch: mockIcrDocuments[2],
+  low_confidence: mockIcrDocuments[0],
 };
 
 /**
@@ -103,5 +113,7 @@ export const icrDemoPresets: Record<string, IcrDocumentSample> = {
  * - coaching_suspicion: Moderate compliance but background whispering/coaching cues detected.
  */
 export const voiceDemoPresets: Record<string, VoiceVerification> = {
-
+  nominal: case0941CleanVoiceVerification,
+  hesitant_noncompliant: mockCases[5].voice,
+  coaching_suspicion: mockCases[5].voice,
 };
