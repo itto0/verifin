@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sidebar, NavTab } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { DashboardView } from './components/dashboard/DashboardView';
@@ -42,7 +42,7 @@ export default function App() {
  const [detailSubPage, setDetailSubPage] = useState<CaseSubPage>('overview');
  const [searchQuery, setSearchQuery] = useState<string>('');
  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
- const [dashboardSummary, setDashboardSummary] = useState<any>(() => buildMockDashboardSummary(mockCases));
+ const dashboardSummary = useMemo(() => buildMockDashboardSummary(cases), [cases]);
 
  // Authentication handlers
  const handleLogin = (user: AuthUser) => {

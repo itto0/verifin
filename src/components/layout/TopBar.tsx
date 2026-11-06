@@ -3,12 +3,8 @@ import {
  Bell,
  Menu,
  ChevronDown,
- User,
  Shield,
- Building,
- LogOut,
- ExternalLink,
- Layers
+ LogOut
 } from 'lucide-react';
 import { FinancingCase, AuthUser } from '../../types';
 
