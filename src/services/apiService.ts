@@ -5,19 +5,6 @@ const AUTH_TOKEN_KEY = 'baf_access_token';
 let inMemoryToken: string | null = null;
 
 /**
- * Safely access an environment variable across Vite browser, Node, and Bun test environments.
- */
-function getEnvVar(key: string): string | undefined {
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
-    return import.meta.env[key];
-  }
-  if (typeof process !== 'undefined' && process.env && process.env[key]) {
-    return process.env[key];
-  }
-  return undefined;
-}
-
-/**
  * Helper to compute two-letter initials from full name.
  */
 function getInitials(name: string): string {
@@ -29,44 +16,17 @@ function getInitials(name: string): string {
 }
 
 /**
- * Check if graceful fallback to mock data is enabled (defaults to true).
+ * Standalone zero-network mode: mock fallback is permanently enabled.
  */
 export function isMockFallbackEnabled(): boolean {
-  const val = getEnvVar('VITE_USE_MOCK_FALLBACK');
-  if (val === undefined || val === '') return true;
-  return val.toLowerCase() !== 'false';
+  return true;
 }
 
 /**
- * Resolves the backend API base URL:
- * - If custom override provided, returns it.
- * - In browser environment: prefers `/api/v1` for Vite reverse proxy.
- * - In test / server runtime: resolves to VITE_BACKEND_DIRECT_URL or `http://localhost:8074/api/v1`.
+ * Resolves API base URL (standalone default is '/api/v1').
  */
 export function getApiBaseUrl(override?: string): string {
-  if (override) return override;
-
-  const envApiBase = getEnvVar('VITE_API_BASE_URL');
-  const envDirect = getEnvVar('VITE_BACKEND_DIRECT_URL');
-
-  if (typeof window !== 'undefined') {
-    if (!envApiBase || envApiBase.includes('localhost:8074') || envApiBase.startsWith('/')) {
-      return '/api/v1';
-    }
-    return envApiBase;
-  }
-
-  // Non-browser (Bun / Node / Vitest)
-  if (envApiBase && (envApiBase.startsWith('http://') || envApiBase.startsWith('https://'))) {
-    return envApiBase;
-  }
-  if (envDirect) {
-    return envDirect;
-  }
-  if (envApiBase && envApiBase.startsWith('/')) {
-    return `http://localhost:8074${envApiBase}`;
-  }
-  return 'http://localhost:8074/api/v1';
+  return override || '/api/v1';
 }
 
 /**
@@ -184,89 +144,20 @@ export function buildMockDashboardSummary(cases: FinancingCase[] = mockCases) {
 
 /**
  * Check backend service health.
- * Attempts root `/health` then `/api/v1/health` with a 3s timeout.
+ * In standalone zero-network mode, returns online status with verifin-standalone.
  */
-export async function checkBackendHealth(baseUrl?: string): Promise<{ online: boolean; service?: string }> {
-  const targetBase = baseUrl || getApiBaseUrl();
-  const rootUrl = targetBase.replace(/\/api\/v1\/?$/, '');
-
-  const candidates: string[] = [];
-  if (rootUrl) {
-    candidates.push(`${rootUrl}/health`);
-  } else {
-    candidates.push('/health');
-  }
-  candidates.push(`${targetBase}/health`);
-
-  for (const url of candidates) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3000);
-    try {
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-        signal: controller.signal,
-      });
-
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        return {
-          online: true,
-          service: (data && data.service) ? data.service : 'verifin-backend',
-        };
-      }
-    } catch {
-      // Try next candidate
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  return { online: false };
+export async function checkBackendHealth(_baseUrl?: string): Promise<{ online: boolean; service?: string }> {
+  return { online: true, service: 'verifin-standalone' };
 }
 
 /**
- * Authenticate with the backend or fall back to demo accounts.
+ * Authenticate against local DEMO_USERS or generate fallback auth profile.
  */
 export async function login(
   email: string,
-  password: string,
-  options?: { baseUrl?: string; useMockFallback?: boolean }
+  _password?: string,
+  _options?: { baseUrl?: string; useMockFallback?: boolean }
 ): Promise<{ user: AuthUser; token: string }> {
-  const base = options?.baseUrl || getApiBaseUrl();
-  const allowFallback = options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
-
-  try {
-    const res = await fetch(`${base}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: email,
-        password: password,
-      }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      const token = data.access_token;
-      if (token) {
-        setAuthToken(token);
-      }
-      const user = mapBackendUserToAuthUser(data.user, email);
-      return { user, token };
-    }
-
-    if (!allowFallback) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData?.detail || `Login failed with status ${res.status}`);
-    }
-  } catch (err: any) {
-    if (!allowFallback) {
-      throw err;
-    }
-  }
-
-  // Graceful fallback to DEMO_USERS
   const normalized = email.trim().toLowerCase();
   const matched = DEMO_USERS.find(
     (u) =>
@@ -292,64 +183,22 @@ export async function login(
 }
 
 /**
- * Retrieve summary metrics for the operational dashboard.
+ * Retrieve summary metrics for the operational dashboard from local mock data.
  */
 export async function getDashboardSummary(
-  token?: string,
-  options?: { baseUrl?: string; useMockFallback?: boolean }
+  _token?: string,
+  _options?: { baseUrl?: string; useMockFallback?: boolean }
 ): Promise<any> {
-  const base = options?.baseUrl || getApiBaseUrl();
-  const allowFallback = options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
-  const headers = buildAuthHeaders(token);
-
-  try {
-    const res = await fetch(`${base}/dashboard/summary`, {
-      method: 'GET',
-      headers,
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-    if (!allowFallback) {
-      throw new Error(`Failed to fetch dashboard summary: status ${res.status}`);
-    }
-  } catch (err) {
-    if (!allowFallback) {
-      throw err;
-    }
-  }
-
   return buildMockDashboardSummary(mockCases);
 }
 
 /**
- * Retrieve list of financing applications.
+ * Retrieve list of financing applications from local mock data.
  */
 export async function getApplications(
-  token?: string,
-  options?: { baseUrl?: string; useMockFallback?: boolean }
+  _token?: string,
+  _options?: { baseUrl?: string; useMockFallback?: boolean }
 ): Promise<any[]> {
-  const base = options?.baseUrl || getApiBaseUrl();
-  const allowFallback = options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
-  const headers = buildAuthHeaders(token);
-
-  try {
-    const res = await fetch(`${base}/applications`, {
-      method: 'GET',
-      headers,
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-    if (!allowFallback) {
-      throw new Error(`Failed to fetch applications: status ${res.status}`);
-    }
-  } catch (err) {
-    if (!allowFallback) {
-      throw err;
-    }
-  }
-
   return mockCases;
 }
 
@@ -358,30 +207,9 @@ export async function getApplications(
  */
 export async function getApplicationDetail(
   id: string,
-  token?: string,
-  options?: { baseUrl?: string; useMockFallback?: boolean }
+  _token?: string,
+  _options?: { baseUrl?: string; useMockFallback?: boolean }
 ): Promise<any> {
-  const base = options?.baseUrl || getApiBaseUrl();
-  const allowFallback = options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
-  const headers = buildAuthHeaders(token);
-
-  try {
-    const res = await fetch(`${base}/applications/${encodeURIComponent(id)}`, {
-      method: 'GET',
-      headers,
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-    if (!allowFallback) {
-      throw new Error(`Failed to fetch application ${id}: status ${res.status}`);
-    }
-  } catch (err) {
-    if (!allowFallback) {
-      throw err;
-    }
-  }
-
   const normalizedId = id.trim().toLowerCase();
   const found = mockCases.find(
     (c) =>
@@ -609,41 +437,15 @@ export function mapBackendGisPointsToSurveyorPoints(points: any[]): SurveyorPoin
 }
 
 /**
- * Approve an application via backend workflow endpoint, with mock fallback support.
+ * Approve an application in standalone client mode.
  */
 export async function approveApplication(
   id: string,
   notes?: string,
-  token?: string,
-  options?: ApiOptions
+  _token?: string,
+  _options?: ApiOptions
 ): Promise<any> {
-  const base = options?.baseUrl || getApiBaseUrl();
-  const allowFallback =
-    options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
-  const headers = buildAuthHeaders(token);
   const effectiveNotes = notes && notes.trim().length >= 10 ? notes.trim() : 'Approved by verifikator';
-
-  try {
-    const res = await fetch(`${base}/workflow/${encodeURIComponent(id)}/approve`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ notes: effectiveNotes }),
-    });
-
-    if (res.ok) {
-      return await res.json();
-    }
-
-    if (!allowFallback) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData?.detail || `Failed to approve application: status ${res.status}`);
-    }
-  } catch (err) {
-    if (!allowFallback) {
-      throw err;
-    }
-  }
-
   return {
     id,
     status: 'approved',
@@ -653,41 +455,15 @@ export async function approveApplication(
 }
 
 /**
- * Reject an application via backend workflow endpoint, with mock fallback support.
+ * Reject an application in standalone client mode.
  */
 export async function rejectApplication(
   id: string,
   reason?: string,
-  token?: string,
-  options?: ApiOptions
+  _token?: string,
+  _options?: ApiOptions
 ): Promise<any> {
-  const base = options?.baseUrl || getApiBaseUrl();
-  const allowFallback =
-    options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
-  const headers = buildAuthHeaders(token);
   const effectiveReason = reason && reason.trim().length >= 5 ? reason.trim() : 'Rejected by verifikator';
-
-  try {
-    const res = await fetch(`${base}/workflow/${encodeURIComponent(id)}/reject`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ reason: effectiveReason }),
-    });
-
-    if (res.ok) {
-      return await res.json();
-    }
-
-    if (!allowFallback) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData?.detail || `Failed to reject application: status ${res.status}`);
-    }
-  } catch (err) {
-    if (!allowFallback) {
-      throw err;
-    }
-  }
-
   return {
     id,
     status: 'rejected_fraud',
@@ -697,67 +473,34 @@ export async function rejectApplication(
 }
 
 /**
- * Retrieve GIS survey points from backend or fall back to mock points.
+ * Retrieve GIS survey points in standalone client mode.
  */
 export async function getGisPoints(
   params?: GisFilterParams,
-  token?: string,
-  options?: ApiOptions
+  _token?: string,
+  _options?: ApiOptions
 ): Promise<any[]> {
-  const base = options?.baseUrl || getApiBaseUrl();
-  const allowFallback =
-    options?.useMockFallback !== undefined ? options.useMockFallback : isMockFallbackEnabled();
-  const headers = buildAuthHeaders(token);
+  let points = [...mockSurveyPoints];
 
-  try {
-    const query = new URLSearchParams();
-    if (params?.branchId) query.set('branch_id', params.branchId);
-    if (params?.status) query.set('status', params.status);
-    if (params?.limit) query.set('limit', String(params.limit));
-    const qs = query.toString();
-    const url = `${base}/gis/points${qs ? `?${qs}` : ''}`;
-
-    const res = await fetch(url, {
-      method: 'GET',
-      headers,
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        return data;
-      }
-      if (Array.isArray(data.points)) {
-        return data.points;
-      }
-      if (data.geojson && Array.isArray(data.geojson.features)) {
-        return data.geojson.features.map((f: any) => ({
-          id: f.properties?.survey_id || f.id,
-          application_id: f.properties?.application_id,
-          consumer_name: f.properties?.consumer_name,
-          surveyor_name: f.properties?.surveyor_name,
-          longitude: f.geometry?.coordinates?.[0],
-          latitude: f.geometry?.coordinates?.[1],
-          distance_meters: f.properties?.distance_meters,
-          status: f.properties?.status,
-          is_mock_location: f.properties?.mock_location_detected,
-          survey_time: f.properties?.device_timestamp,
-          ...f.properties,
-        }));
-      }
-      return [];
-    }
-
-    if (!allowFallback) {
-      throw new Error(`Failed to fetch GIS points: status ${res.status}`);
-    }
-  } catch (err) {
-    if (!allowFallback) {
-      throw err;
-    }
+  if (params?.branchId) {
+    const b = params.branchId.toLowerCase();
+    points = points.filter((p) =>
+      p.branch.toLowerCase().includes(b) ||
+      (b === 'jkt-sel' && p.branch.toLowerCase().includes('jakarta')) ||
+      (b === 'bks-01' && p.branch.toLowerCase().includes('bekasi'))
+    );
   }
 
-  return mockSurveyPoints;
+  if (params?.status) {
+    const s = params.status.toLowerCase();
+    points = points.filter((p) => p.status.toLowerCase() === s);
+  }
+
+  if (params?.limit !== undefined && params.limit > 0) {
+    points = points.slice(0, params.limit);
+  }
+
+  return points;
 }
 
 export const API_CONFIG = {
