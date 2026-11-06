@@ -265,4 +265,17 @@ describe('CaseIcrPage ICR Field Survey & Collateral UI Rendering', () => {
     expect(shmHtml).toContain('(Cocok dengan KTP Pemohon)');
     expect(shmHtml).not.toContain('(Cocok 100% dengan KTP Pemohon)');
   });
+
+  it('safely handles non-existent or invalid preset keys without throwing TypeError', () => {
+    // When an invalid preset key is provided, it should fall back safely and render without throwing
+    expect(() => {
+      const html = renderToStaticMarkup(
+        React.createElement(CaseIcrPage, {
+          caseData: baseCase,
+          initialPresetKey: 'non_existent_key' as any,
+        })
+      );
+      expect(html).toContain('Document Category');
+    }).not.toThrow();
+  });
 });

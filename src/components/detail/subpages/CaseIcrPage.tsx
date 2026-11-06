@@ -233,9 +233,11 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({
   const [activePresetKey, setActivePresetKey] = useState<IcrPresetKey>(
     initialPresetKey || (initialCategory === 'bpn_certificate' ? 'clean_shm' : 'survey_clean')
   );
+  const defaultFallbackDoc = mockIcrDocuments.find((d) => d.type === initialCategory) || mockIcrDocuments[0];
   const [activeDoc, setActiveDoc] = useState<IcrDocumentSample>(
     (initialPresetKey && icrDemoPresets[initialPresetKey]) ||
-      (initialCategory === 'bpn_certificate' ? icrDemoPresets.clean_shm : icrDemoPresets.survey_clean)
+      (initialCategory === 'bpn_certificate' ? icrDemoPresets?.clean_shm : icrDemoPresets?.survey_clean) ||
+      defaultFallbackDoc
   );
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanMessage, setScanMessage] = useState<string>('Performing Intelligent Character Recognition (ICR) on handwritten forms and querying ATR/BPN Sentuh Tanahku registry...');
@@ -270,18 +272,22 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({
     setHighlightedField(null);
     if (category === 'survey_form') {
       setActivePresetKey('survey_clean');
-      setActiveDoc(icrDemoPresets.survey_clean);
+      const fallback = mockIcrDocuments.find((d) => d.type === 'survey_form') || mockIcrDocuments[0];
+      setActiveDoc(icrDemoPresets?.survey_clean || fallback);
       triggerScanning('Membaca tulisan tangan Formulir Survei Lapangan BAF (CMO) dengan Intelligent Character Recognition...');
     } else {
       setActivePresetKey('clean_shm');
-      setActiveDoc(icrDemoPresets.clean_shm);
+      const fallback = mockIcrDocuments.find((d) => d.type === 'bpn_certificate') || mockIcrDocuments[0];
+      setActiveDoc(icrDemoPresets?.clean_shm || fallback);
       triggerScanning('Memverifikasi sertipikat agunan SHM terhadap basis data kadastral ATR/BPN Sentuh Tanahku...');
     }
   };
 
   const handleSelectPreset = (key: 'survey_clean' | 'low_confidence' | 'clean_shm' | 'cadastral_mismatch') => {
     setActivePresetKey(key);
-    setActiveDoc(icrDemoPresets[key]);
+    if (icrDemoPresets && icrDemoPresets[key]) {
+      setActiveDoc(icrDemoPresets[key]);
+    }
     setHighlightedField(null);
     triggerScanning();
   };
@@ -330,6 +336,14 @@ export const CaseIcrPage: React.FC<CaseIcrPageProps> = ({
   };
 
   const activeHighlight = highlightedField || hoveredField;
+
+  if (!activeDoc) {
+    return (
+      <div className="p-8 text-center text-slate-500">
+        Data dokumen ICR tidak tersedia.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
