@@ -17,8 +17,12 @@ describe('ElevenLabs Call Audio Prompt', () => {
 
   it('provides voice casting configuration for Agent and Customer', () => {
     expect(ELEVENLABS_VOICE_CONFIG.modelId).toBe('eleven_multilingual_v2');
-    expect(ELEVENLABS_VOICE_CONFIG.agentVoice.stability).toBeGreaterThanOrEqual(0.6);
-    expect(ELEVENLABS_VOICE_CONFIG.customerVoice.stability).toBeGreaterThanOrEqual(0.5);
+    expect(ELEVENLABS_VOICE_CONFIG.agentVoice.stability).toBe(0.65);
+    expect(ELEVENLABS_VOICE_CONFIG.agentVoice.similarity).toBe(0.75);
+    expect(ELEVENLABS_VOICE_CONFIG.agentVoice.style).toBe(0.05);
+    expect(ELEVENLABS_VOICE_CONFIG.customerVoice.stability).toBe(0.55);
+    expect(ELEVENLABS_VOICE_CONFIG.customerVoice.similarity).toBe(0.75);
+    expect(ELEVENLABS_VOICE_CONFIG.customerVoice.style).toBe(0.10);
   });
 
   it('matches VeriFin VoiceVerification data structure with 100% compliance', () => {
@@ -31,6 +35,7 @@ describe('ElevenLabs Call Audio Prompt', () => {
     expect(voice.complianceChecklist.length).toBe(6);
     expect(voice.complianceChecklist.every((item) => item.isCompliant)).toBe(true);
     expect(voice.voiceFlags.length).toBe(0);
-    expect(voice.transcripts.length).toBeGreaterThanOrEqual(14);
+    expect(voice.transcripts.length).toBe(18);
+    expect(voice.transcripts[voice.transcripts.length - 1].endTime).toBeLessThanOrEqual(voice.callDuration);
   });
 });

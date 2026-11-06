@@ -256,6 +256,7 @@ describe('apiService - Applications and Detail', () => {
   let liveToken: string;
 
   beforeEach(async () => {
+    if (!isLiveBackend) return;
     const auth = await login('dian.pratama@baf.id', 'BafSecure2026!', {
       baseUrl: 'http://localhost:8074/api/v1',
     });
