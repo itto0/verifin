@@ -62,6 +62,25 @@ export function parseAiJsonResponse<T>(rawText: string): T {
 }
 
 /**
+ * Safely parse response JSON from AI endpoint, with diagnostic error if reverse proxy
+ * returned corrupted/compressed binary data (e.g. Brotli/Gzip without proper decoding headers).
+ */
+export async function safeParseChatCompletionJson(response: Response): Promise<any> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    if (text.includes('\ufffd') || /[\x00-\x08\x0E-\x1F]/.test(text)) {
+      throw new Error(
+        `AI API response is corrupted binary data (Brotli/Gzip compression mismatch from reverse proxy). ` +
+        `Pastikan reverse proxy (Nginx) memiliki direktif 'proxy_set_header Accept-Encoding "";'.`
+      );
+    }
+    throw new Error(`Gagal mem-parsing respons AI (${response.status}): ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
  * Build structured system prompt for e-KTP OCR.
  */
 export function buildKtpOcrPrompt(): string {
@@ -501,7 +520,7 @@ export async function performRealKtpOcr(
     throw new Error(`AI OCR API Error (${response.status}): ${errorText}`);
   }
 
-  const data = await response.json();
+  const data = await safeParseChatCompletionJson(response);
   const rawContent = data.choices?.[0]?.message?.content;
   if (!rawContent) {
     throw new Error('AI returned an empty response.');
@@ -556,7 +575,7 @@ export async function performRealIcr(
     throw new Error(`AI ICR API Error (${response.status}): ${errorText}`);
   }
 
-  const data = await response.json();
+  const data = await safeParseChatCompletionJson(response);
   const rawContent = data.choices?.[0]?.message?.content;
   if (!rawContent) {
     throw new Error('AI returned an empty response for ICR.');
@@ -662,7 +681,7 @@ export async function performRealAudioAnalysis(
     });
 
     if (response.ok) {
-      const data = await response.json();
+      const data = await safeParseChatCompletionJson(response);
       const rawContent = data.choices?.[0]?.message?.content;
       if (rawContent) {
         const aiStt = parseAiJsonResponse<any>(rawContent);

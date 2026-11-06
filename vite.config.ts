@@ -19,6 +19,9 @@ export default defineConfig(() => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/ai/, ''),
           secure: false,
+          headers: {
+            'Accept-Encoding': 'identity',
+          },
         },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
@@ -35,6 +38,9 @@ export default defineConfig(() => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/ai/, ''),
           secure: false,
+          headers: {
+            'Accept-Encoding': 'identity',
+          },
         },
       },
     },

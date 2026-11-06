@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
   parseAiJsonResponse,
+  safeParseChatCompletionJson,
   buildKtpOcrPrompt,
   buildIcrPrompt,
   buildAudioSttPrompt,
@@ -204,5 +205,29 @@ describe('aiService - Response Parsing and Payload Builders', () => {
     expect(voice.hesitancyDetected).toBe(true);
     expect(voice.scriptComplianceScore).toBe(82);
     expect(voice.waveform).toEqual([20, 40, 60]);
+  });
+
+  describe('safeParseChatCompletionJson', () => {
+    it('successfully parses valid JSON Response', async () => {
+      const mockResponse = new Response(JSON.stringify({ choices: [{ message: { content: 'test' } }] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await safeParseChatCompletionJson(mockResponse);
+      expect(data.choices[0].message.content).toBe('test');
+    });
+
+    it('detects corrupted binary data from proxy compression mismatch and throws clear error', async () => {
+      // Simulate raw Brotli/Gzip binary bytes decoded as UTF-8 string containing control characters
+      const corruptedBinaryString = '\x12\x04\x00\ufffd\x15Y[\x18';
+      const mockResponse = new Response(corruptedBinaryString, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      await expect(safeParseChatCompletionJson(mockResponse)).rejects.toThrow(
+        /corrupted binary data.*Brotli\/Gzip.*proxy_set_header Accept-Encoding/
+      );
+    });
   });
 });

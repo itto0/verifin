@@ -23,6 +23,8 @@ app.all('/api/ai/*', async (req, res) => {
     delete headers.host;
     delete headers.connection;
     delete headers['content-length'];
+    // Force upstream to return plain uncompressed text to avoid Brotli/gzip corruption through proxies
+    headers['accept-encoding'] = 'identity';
 
     const fetchOptions = {
       method: req.method,
@@ -45,13 +47,14 @@ app.all('/api/ai/*', async (req, res) => {
     res.status(upstreamResponse.status);
 
     upstreamResponse.headers.forEach((value, key) => {
-      if (!['content-encoding', 'transfer-encoding', 'connection'].includes(key.toLowerCase())) {
+      const lowerKey = key.toLowerCase();
+      if (!['content-encoding', 'transfer-encoding', 'connection', 'content-length'].includes(lowerKey)) {
         res.setHeader(key, value);
       }
     });
 
-    const responseBuffer = await upstreamResponse.arrayBuffer();
-    res.send(Buffer.from(responseBuffer));
+    const responseText = await upstreamResponse.text();
+    res.send(responseText);
   } catch (error) {
     console.error(`AI Proxy error forwarding to ${targetUrl}:`, error);
     res.status(502).json({
