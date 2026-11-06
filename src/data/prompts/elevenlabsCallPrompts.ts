@@ -76,11 +76,11 @@ Sama-sama Mbak Fitri, selamat siang.`;
 
 export const case0941CleanVoiceVerification: VoiceVerification = {
   callId: 'CALL-20261027-0941-CLN',
-  callDuration: 150,
+  callDuration: 165,
   agentName: 'Fitri Handayani',
   agentId: 'AGT-044',
   callTimestamp: '2026-10-27 14:18:10',
-  audioDurationFormatted: '02:30',
+  audioDurationFormatted: '02:45',
   overallHesitancyCount: 0,
   spellingAccuracyScore: 100,
   scriptComplianceScore: 100,
