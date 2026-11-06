@@ -495,8 +495,8 @@ export async function performRealKtpOcr(
     if (response.status === 413) {
       throw new Error(`AI OCR Error 413 (Content Too Large): Gambar melebihi batas ukuran server Nginx (client_max_body_size).`);
     }
-    if (response.status === 405) {
-      throw new Error(`AI OCR Error 405 (Method Not Allowed): Server hosting belum mengonfigurasi reverse proxy untuk /api/ai.`);
+    if (response.status === 405 || response.status === 501) {
+      throw new Error(`AI OCR Error ${response.status} (${response.status === 501 ? 'Unsupported Method / Not Implemented' : 'Method Not Allowed'}): Server hosting belum mengonfigurasi reverse proxy untuk /api/ai.`);
     }
     throw new Error(`AI OCR API Error (${response.status}): ${errorText}`);
   }
@@ -550,8 +550,8 @@ export async function performRealIcr(
     if (response.status === 413) {
       throw new Error(`AI ICR Error 413 (Content Too Large): Gambar melebihi batas ukuran server Nginx (client_max_body_size).`);
     }
-    if (response.status === 405) {
-      throw new Error(`AI ICR Error 405 (Method Not Allowed): Server hosting belum mengonfigurasi reverse proxy untuk /api/ai.`);
+    if (response.status === 405 || response.status === 501) {
+      throw new Error(`AI ICR Error ${response.status} (${response.status === 501 ? 'Unsupported Method / Not Implemented' : 'Method Not Allowed'}): Server hosting belum mengonfigurasi reverse proxy untuk /api/ai.`);
     }
     throw new Error(`AI ICR API Error (${response.status}): ${errorText}`);
   }
