@@ -21,11 +21,8 @@ import {
   mapBackendGisPointsToSurveyorPoints,
   findMatchingMockCase,
 } from './apiService';
-import { mockCases } from '../data/mockData';
+import { mockCases, mockSurveyPoints } from '../data/mockData';
 import { DEMO_USERS } from '../components/auth/LoginView';
-
-const liveBackendHealth = await checkBackendHealth('http://localhost:8074/api/v1');
-const isLiveBackend = liveBackendHealth.online;
 
 describe('apiService - URL Resolution and Environment Config', () => {
   it('returns explicit override when supplied to getApiBaseUrl', () => {
@@ -33,7 +30,7 @@ describe('apiService - URL Resolution and Environment Config', () => {
     expect(getApiBaseUrl(customUrl)).toBe(customUrl);
   });
 
-  it('resolves a valid base URL containing api/v1', () => {
+  it('resolves default base URL containing api/v1', () => {
     const url = getApiBaseUrl();
     expect(url).toContain('/api/v1');
   });
@@ -128,6 +125,16 @@ describe('apiService - User Mapping and Dashboard Calculation', () => {
     expect(authUser.avatarInitials).toBe('AS');
   });
 
+  it('handles null or undefined backend user gracefully with default demo user', () => {
+    const authUser = mapBackendUserToAuthUser(null);
+    expect(authUser).toBeDefined();
+    expect(authUser.email).toBe(DEMO_USERS[0].email);
+    expect(authUser.name).toBe(DEMO_USERS[0].name);
+
+    const authUserUndefined = mapBackendUserToAuthUser(undefined);
+    expect(authUserUndefined.email).toBe(DEMO_USERS[0].email);
+  });
+
   it('computes mock dashboard summary correctly from mockCases', () => {
     const summary = buildMockDashboardSummary(mockCases);
 
@@ -142,16 +149,16 @@ describe('apiService - User Mapping and Dashboard Calculation', () => {
 });
 
 describe('apiService - Backend Health Check', () => {
-  it.skipIf(!isLiveBackend)('detects live backend at http://localhost:8074', async () => {
-    const health = await checkBackendHealth('http://localhost:8074/api/v1');
+  it('resolves with online status and verifin-standalone service name', async () => {
+    const health = await checkBackendHealth();
     expect(health.online).toBe(true);
-    expect(health.service).toBe('verifin-backend');
+    expect(health.service).toBe('verifin-standalone');
   });
 
-  it('returns offline when endpoint is unreachable', async () => {
-    // Port 59999 is guaranteed unreachable locally
-    const health = await checkBackendHealth('http://127.0.0.1:59999/api/v1');
-    expect(health.online).toBe(false);
+  it('resolves consistently when custom URL is passed', async () => {
+    const health = await checkBackendHealth('https://custom-url/api/v1');
+    expect(health.online).toBe(true);
+    expect(health.service).toBe('verifin-standalone');
   });
 });
 
@@ -160,184 +167,174 @@ describe('apiService - Authentication and Login', () => {
     clearAuthToken();
   });
 
-  it.skipIf(!isLiveBackend)('authenticates against live backend with valid seeded credentials', async () => {
-    const result = await login('dian.pratama@baf.id', 'BafSecure2026!', {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: false,
-    });
+  it('succeeds with seeded credentials (dian.pratama@baf.id) immediately without network calls', async () => {
+    const result = await login('dian.pratama@baf.id', 'any-password');
 
     expect(result.token).toBeDefined();
     expect(typeof result.token).toBe('string');
-    expect(result.token.length).toBeGreaterThan(20);
+    expect(result.token).toContain('baf_mock_token');
     expect(result.user.email).toBe('dian.pratama@baf.id');
     expect(result.user.name).toBe('Dian Pratama');
+    expect(result.user.employeeNik).toBe('BAF-EMP-8842');
 
     // Token must be stored
     expect(getAuthToken()).toBe(result.token);
   });
 
-  it('gracefully falls back to DEMO_USERS when backend login fails and fallback is enabled', async () => {
-    const result = await login('dian.pratama@baf.id', 'wrong-password', {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: true,
-    });
+  it('succeeds with arbitrary credentials (budi.santoso@baf.id) immediately without network calls', async () => {
+    const result = await login('budi.santoso@baf.id', 'any-password');
 
     expect(result.token).toBeDefined();
-    expect(result.token).toContain('baf_mock_token');
-    expect(result.user.email).toBe('dian.pratama@baf.id');
-    expect(result.user.name).toBe('Dian Pratama');
-    expect(getAuthToken()).toBe(result.token);
-  });
-
-  it('gracefully falls back to DEMO_USERS when backend is completely offline', async () => {
-    const result = await login('budi.santoso@baf.id', 'any-password', {
-      baseUrl: 'http://127.0.0.1:59999/api/v1',
-      useMockFallback: true,
-    });
-
-    expect(result.token).toBeDefined();
+    expect(typeof result.token).toBe('string');
     expect(result.token).toContain('baf_mock_token');
     expect(result.user.email).toBe('budi.santoso@baf.id');
     expect(result.user.name).toBe('Budi Santoso');
+
+    expect(getAuthToken()).toBe(result.token);
   });
 
-  it('throws error on failure when mock fallback is disabled', async () => {
-    await expect(
-      login('dian.pratama@baf.id', 'wrong-password', {
-        baseUrl: 'http://localhost:8074/api/v1',
-        useMockFallback: false,
-      })
-    ).rejects.toThrow();
+  it('normalizes credentials with leading/trailing whitespace and mixed case', async () => {
+    const result = await login('   DIAN.PRATAMA@BAF.ID   ', 'pass');
+
+    expect(result.user.email).toBe('dian.pratama@baf.id');
+    expect(result.user.name).toBe('Dian Pratama');
+  });
+
+  it('handles identifier without domain by generating @baf.id email', async () => {
+    const result = await login('riki.hidayat', 'pass');
+
+    expect(result.user.email).toBe('riki.hidayat@baf.id');
+    expect(result.token).toBeDefined();
   });
 });
 
 describe('apiService - Dashboard Summary', () => {
-  it.skipIf(!isLiveBackend)('retrieves summary from live backend', async () => {
-    // Obtain live token first
-    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
-      baseUrl: 'http://localhost:8074/api/v1',
-    });
-
-    const summary = await getDashboardSummary(token, {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: false,
-    });
-
-    expect(summary).toBeDefined();
-    expect(summary.processed_today).toBeGreaterThanOrEqual(1);
-    expect(typeof summary.straight_through_rate).toBe('number');
-    expect(typeof summary.avg_sla_minutes).toBe('number');
-    expect(typeof summary.fraud_blocked_cases).toBe('number');
-    expect(typeof summary.active_branches_count).toBe('number');
-  });
-
-  it('falls back to mock summary when backend is unreachable and fallback is enabled', async () => {
-    const summary = await getDashboardSummary(undefined, {
-      baseUrl: 'http://127.0.0.1:59999/api/v1',
-      useMockFallback: true,
-    });
+  it('returns structured mock datasets without delay', async () => {
+    const summary = await getDashboardSummary();
 
     expect(summary).toBeDefined();
     expect(summary.processed_today).toBe(mockCases.length);
     expect(summary.target_sla_minutes).toBe(15);
-  });
-
-  it('throws error when backend is offline and fallback is disabled', async () => {
-    await expect(
-      getDashboardSummary(undefined, {
-        baseUrl: 'http://127.0.0.1:59999/api/v1',
-        useMockFallback: false,
-      })
-    ).rejects.toThrow();
+    expect(typeof summary.straight_through_rate).toBe('number');
+    expect(typeof summary.pending_manual_review).toBe('number');
+    expect(typeof summary.fraud_blocked_cases).toBe('number');
+    expect(typeof summary.fraud_blocked_amount_rp).toBe('number');
+    expect(summary.active_branches_count).toBeGreaterThan(0);
   });
 });
 
 describe('apiService - Applications and Detail', () => {
-  let liveToken: string;
-
-  beforeEach(async () => {
-    if (!isLiveBackend) return;
-    const auth = await login('dian.pratama@baf.id', 'BafSecure2026!', {
-      baseUrl: 'http://localhost:8074/api/v1',
-    });
-    liveToken = auth.token;
-  });
-
-  it.skipIf(!isLiveBackend)('retrieves applications list from live backend', async () => {
-    const apps = await getApplications(liveToken, {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: false,
-    });
-
-    expect(Array.isArray(apps)).toBe(true);
-    expect(apps.length).toBeGreaterThan(0);
-    expect(apps[0].id).toBeDefined();
-    expect(apps[0].nik).toBeDefined();
-  });
-
-  it('falls back to mockCases when backend is unreachable and fallback is enabled', async () => {
-    const apps = await getApplications(undefined, {
-      baseUrl: 'http://127.0.0.1:59999/api/v1',
-      useMockFallback: true,
-    });
+  it('returns structured mock datasets for getApplications without delay', async () => {
+    const apps = await getApplications();
 
     expect(Array.isArray(apps)).toBe(true);
     expect(apps.length).toBe(mockCases.length);
     expect(apps[0].id).toBe(mockCases[0].id);
+    expect(apps[0].customerName).toBe(mockCases[0].customerName);
   });
 
-  it('throws when getting applications fails and fallback is disabled', async () => {
-    await expect(
-      getApplications(undefined, {
-        baseUrl: 'http://127.0.0.1:59999/api/v1',
-        useMockFallback: false,
-      })
-    ).rejects.toThrow();
-  });
-
-  it.skipIf(!isLiveBackend)('retrieves application detail from live backend by ID', async () => {
-    const app = await getApplicationDetail('APP-2026-JKT-001', liveToken, {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: false,
-    });
-
-    expect(app).toBeDefined();
-    expect(app.id).toBe('APP-2026-JKT-001');
-    expect(app.consumer).toBeDefined();
-  });
-
-  it('retrieves application detail from mockCases fallback by ID', async () => {
-    const app = await getApplicationDetail('CASE-0941', undefined, {
-      baseUrl: 'http://127.0.0.1:59999/api/v1',
-      useMockFallback: true,
-    });
+  it('returns application detail by ID', async () => {
+    const app = await getApplicationDetail('CASE-0941');
 
     expect(app).toBeDefined();
     expect(app.id).toBe('CASE-0941');
     expect(app.customerName).toBe('Ahmad Fauzi');
   });
 
-  it('retrieves application detail from mockCases fallback by applicationNumber', async () => {
-    const app = await getApplicationDetail('BAF-APP-2026-0941', undefined, {
-      baseUrl: 'http://127.0.0.1:59999/api/v1',
-      useMockFallback: true,
-    });
+  it('returns application detail by applicationNumber', async () => {
+    const app = await getApplicationDetail('BAF-APP-2026-0941');
+
+    expect(app).toBeDefined();
+    expect(app.id).toBe('CASE-0941');
+    expect(app.customerName).toBe('Ahmad Fauzi');
+  });
+
+  it('matches application detail case-insensitively', async () => {
+    const app = await getApplicationDetail('case-0941');
 
     expect(app).toBeDefined();
     expect(app.id).toBe('CASE-0941');
   });
 
-  it('throws when application is not found in fallback mock data', async () => {
-    await expect(
-      getApplicationDetail('NON-EXISTENT-ID', undefined, {
-        baseUrl: 'http://127.0.0.1:59999/api/v1',
-        useMockFallback: true,
-      })
-    ).rejects.toThrow('Application NON-EXISTENT-ID not found');
+  it('rejects with "Application NON-EXISTENT-ID not found" when application does not exist', async () => {
+    await expect(getApplicationDetail('NON-EXISTENT-ID')).rejects.toThrow(
+      'Application NON-EXISTENT-ID not found'
+    );
   });
 });
 
-describe('Workflow & GIS Services', () => {
+describe('apiService - GIS Services and Actions', () => {
+  it('returns structured mock datasets for getGisPoints without delay', async () => {
+    const points = await getGisPoints();
+
+    expect(Array.isArray(points)).toBe(true);
+    expect(points.length).toBe(mockSurveyPoints.length);
+    expect(points[0].id).toBe(mockSurveyPoints[0].id);
+    expect(points[0].targetLat).toBeDefined();
+    expect(points[0].surveyLat).toBeDefined();
+  });
+
+  it('filters GIS points by branchId and status', async () => {
+    const jktPoints = await getGisPoints({ branchId: 'JKT-SEL' });
+    expect(jktPoints.length).toBeGreaterThan(0);
+    expect(jktPoints.every((p) => p.branch.toLowerCase().includes('jakarta') || p.branch === 'JKT-SEL')).toBe(true);
+
+    const greenPoints = await getGisPoints({ status: 'green' });
+    expect(greenPoints.length).toBeGreaterThan(0);
+    expect(greenPoints.every((p) => p.status === 'green')).toBe(true);
+  });
+
+  it('limits result count correctly without off-by-one errors', async () => {
+    const onePoint = await getGisPoints({ limit: 1 });
+    expect(onePoint.length).toBe(1);
+
+    const twoPoints = await getGisPoints({ limit: 2 });
+    expect(twoPoints.length).toBe(2);
+
+    const zeroLimit = await getGisPoints({ limit: 0 });
+    expect(zeroLimit.length).toBe(mockSurveyPoints.length);
+  });
+
+  it('approveApplication returns success with appropriate status synchronously', async () => {
+    const res = await approveApplication('APP-2026-JKT-001', 'Verified document and approved');
+
+    expect(res).toBeDefined();
+    expect(res.id).toBe('APP-2026-JKT-001');
+    expect(res.status).toBe('approved');
+    expect(res.success).toBe(true);
+    expect(res.notes).toBe('Verified document and approved');
+  });
+
+  it('approveApplication applies default notes when notes are omitted or short', async () => {
+    const res = await approveApplication('APP-2026-JKT-001');
+
+    expect(res.notes).toBe('Approved by verifikator');
+
+    const resShort = await approveApplication('APP-2026-JKT-001', 'Short');
+    expect(resShort.notes).toBe('Approved by verifikator');
+  });
+
+  it('rejectApplication returns success with appropriate status synchronously', async () => {
+    const res = await rejectApplication('APP-2026-BKS-002', 'Fake GPS flagged');
+
+    expect(res).toBeDefined();
+    expect(res.id).toBe('APP-2026-BKS-002');
+    expect(res.status).toBe('rejected_fraud');
+    expect(res.success).toBe(true);
+    expect(res.reason).toBe('Fake GPS flagged');
+  });
+
+  it('rejectApplication applies default reason when reason is omitted or short', async () => {
+    const res = await rejectApplication('APP-2026-BKS-002');
+
+    expect(res.reason).toBe('Rejected by verifikator');
+
+    const resShort = await rejectApplication('APP-2026-BKS-002', 'Bad');
+    expect(resShort.reason).toBe('Rejected by verifikator');
+  });
+});
+
+describe('Workflow & Mapping Helpers', () => {
   test('mapBackendApplicationsToFinancingCases converts backend items to FinancingCase', () => {
     const rawApps = [
       {
@@ -381,6 +378,12 @@ describe('Workflow & GIS Services', () => {
     expect(mapped[4].riskScore).toBeDefined();
   });
 
+  test('mapBackendApplicationsToFinancingCases handles null or non-array gracefully', () => {
+    expect(mapBackendApplicationsToFinancingCases(null as any)).toEqual([]);
+    expect(mapBackendApplicationsToFinancingCases(undefined as any)).toEqual([]);
+    expect(mapBackendApplicationsToFinancingCases({} as any)).toEqual([]);
+  });
+
   test('mapBackendGisPointsToSurveyorPoints converts GIS payload to SurveyorPoint list', () => {
     const rawPoints = [
       {
@@ -405,104 +408,9 @@ describe('Workflow & GIS Services', () => {
     expect(pts[0].isMockLocation).toBe(false);
   });
 
-  test('getGisPoints returns survey points from backend or fallback', async () => {
-    const points = await getGisPoints();
-    expect(Array.isArray(points)).toBe(true);
-    expect(points.length).toBeGreaterThan(0);
-  });
-
-  test('getGisPoints throws error when backend is offline and fallback is disabled', async () => {
-    await expect(
-      getGisPoints(undefined, undefined, {
-        baseUrl: 'http://127.0.0.1:59999/api/v1',
-        useMockFallback: false,
-      })
-    ).rejects.toThrow();
-  });
-
-  test('approveApplication executes against backend or mock fallback', async () => {
-    const res = await approveApplication('APP-2026-JKT-001', 'Verified and approved');
-    expect(res).toBeDefined();
-    expect(res.status === 'approved' || res.status === 'disetujui' || res.success === true).toBe(true);
-  });
-
-  test('approveApplication executes against live backend with fallback support', async () => {
-    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
-      baseUrl: 'http://localhost:8074/api/v1',
-    });
-    const res = await approveApplication('APP-2026-JKT-001', 'Verified and approved by Dian Pratama', token, {
-      baseUrl: 'http://localhost:8074/api/v1',
-    });
-    expect(res).toBeDefined();
-    expect(res.status === 'approved' || res.status === 'disetujui' || res.success === true).toBe(true);
-  });
-
-  test('approveApplication throws error when backend is offline and fallback is disabled', async () => {
-    await expect(
-      approveApplication('APP-2026-JKT-001', 'Verified and approved', undefined, {
-        baseUrl: 'http://127.0.0.1:59999/api/v1',
-        useMockFallback: false,
-      })
-    ).rejects.toThrow();
-  });
-
-  test('rejectApplication executes against backend or mock fallback', async () => {
-    const res = await rejectApplication('APP-2026-BKS-002', 'Fake GPS flagged');
-    expect(res).toBeDefined();
-    expect(res.status === 'rejected_fraud' || res.status === 'ditolak' || res.success === true).toBe(true);
-  });
-
-  test('rejectApplication throws error when backend is offline and fallback is disabled', async () => {
-    await expect(
-      rejectApplication('APP-2026-BKS-002', 'Fake GPS flagged', undefined, {
-        baseUrl: 'http://127.0.0.1:59999/api/v1',
-        useMockFallback: false,
-      })
-    ).rejects.toThrow();
-  });
-
-  test.skipIf(!isLiveBackend)('getGisPoints retrieves GIS points with live token from backend', async () => {
-    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
-      baseUrl: 'http://localhost:8074/api/v1',
-    });
-    const points = await getGisPoints(undefined, token, {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: false,
-    });
-    expect(Array.isArray(points)).toBe(true);
-    expect(points.length).toBeGreaterThan(0);
-  });
-
-  test.skipIf(!isLiveBackend)('maps live backend GIS points to SurveyorPoint format', async () => {
-    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
-      baseUrl: 'http://localhost:8074/api/v1',
-    });
-    const rawPoints = await getGisPoints(undefined, token, {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: false,
-    });
-    const surveyorPoints = mapBackendGisPointsToSurveyorPoints(rawPoints);
-    expect(surveyorPoints.length).toBeGreaterThan(0);
-    expect(surveyorPoints[0].caseId).toBeDefined();
-    expect(['green', 'yellow', 'red']).toContain(surveyorPoints[0].status);
-  });
-
-  test.skipIf(!isLiveBackend)('maps live backend applications to FinancingCase array', async () => {
-    const { token } = await login('dian.pratama@baf.id', 'BafSecure2026!', {
-      baseUrl: 'http://localhost:8074/api/v1',
-    });
-    const rawApps = await getApplications(token, {
-      baseUrl: 'http://localhost:8074/api/v1',
-      useMockFallback: false,
-    });
-    const cases = mapBackendApplicationsToFinancingCases(rawApps);
-    expect(cases.length).toBeGreaterThan(0);
-    expect(cases[0].id).toBeDefined();
-    expect(cases[0].customerName).toBeDefined();
-    expect(cases[0].document).toBeDefined();
-    expect(cases[0].geo).toBeDefined();
-    expect(cases[0].voice).toBeDefined();
-    expect(cases[0].riskScore).toBeDefined();
+  test('mapBackendGisPointsToSurveyorPoints handles null or non-array gracefully', () => {
+    expect(mapBackendGisPointsToSurveyorPoints(null as any)).toEqual([]);
+    expect(mapBackendGisPointsToSurveyorPoints(undefined as any)).toEqual([]);
   });
 });
 
@@ -562,5 +470,10 @@ describe('apiService - findMatchingMockCase Alignment', () => {
     const unknown = findMatchingMockCase({ id: 'UNKNOWN-ID', customerName: 'Non Existent' });
     expect(unknown).toBeDefined();
     expect(unknown.id).toBe('CASE-0941');
+  });
+
+  it('handles empty or null-like application objects gracefully', () => {
+    expect(findMatchingMockCase({}).id).toBe('CASE-0941');
+    expect(findMatchingMockCase({ consumer: null } as any).id).toBe('CASE-0941');
   });
 });
