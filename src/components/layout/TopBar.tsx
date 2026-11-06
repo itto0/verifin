@@ -7,8 +7,6 @@ import {
  Shield,
  Building,
  LogOut,
- CheckCircle2,
- AlertTriangle,
  ExternalLink,
  Layers
 } from 'lucide-react';
