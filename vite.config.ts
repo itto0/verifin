@@ -20,16 +20,6 @@ export default defineConfig(() => {
           rewrite: (path) => path.replace(/^\/api\/ai/, ''),
           secure: false,
         },
-        '/api/v1': {
-          target: 'http://localhost:8074',
-          changeOrigin: true,
-          secure: false,
-        },
-        '/health': {
-          target: 'http://localhost:8074',
-          changeOrigin: true,
-          secure: false,
-        },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
@@ -44,16 +34,6 @@ export default defineConfig(() => {
           target: 'https://or.flux.id/v1',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/ai/, ''),
-          secure: false,
-        },
-        '/api/v1': {
-          target: 'http://localhost:8074',
-          changeOrigin: true,
-          secure: false,
-        },
-        '/health': {
-          target: 'http://localhost:8074',
-          changeOrigin: true,
           secure: false,
         },
       },
