@@ -19,6 +19,16 @@ describe('demoPresets', () => {
     expect(ocrDemoPresets.screen_capture.isScreenCaptureDetected).toBe(true);
   });
 
+  it('aligns clean OCR preset with Ahmad Fauzi and authentic local assets', () => {
+    expect(ocrDemoPresets.clean.ktpImageUrl).toBe('/ktp_demo_normal.jfif');
+    expect(ocrDemoPresets.clean.slipGajiImageUrl).toBe('/slip_gaji_normal.jfif');
+    expect(ocrDemoPresets.clean.kkImageUrl).toBe('/kartu_keluarga_normal.jfif');
+    expect(ocrDemoPresets.clean.ocrFields.nik.value).toBe('3174012005850001');
+    expect(ocrDemoPresets.clean.ocrFields.nama.value).toBe('AHMAD FAUZI');
+    expect(ocrDemoPresets.clean.salarySlip?.employeeName).toBe('AHMAD FAUZI');
+    expect(ocrDemoPresets.clean.salarySlip?.slipImageUrl).toBe('/slip_gaji_normal.jfif');
+  });
+
   it('defines 3 ICR presets with cadastral variations', () => {
     expect(icrDemoPresets.clean_shm).toBeDefined();
     expect(icrDemoPresets.cadastral_mismatch).toBeDefined();

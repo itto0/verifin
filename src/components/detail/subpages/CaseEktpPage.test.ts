@@ -206,8 +206,8 @@ describe('CaseEktpPage Salary Slip Dual-View Integration', () => {
   it('switching selectedDoc to slip displays DetailedSalarySlipCard and SalaryBreakdownTable with DSR calculation', () => {
     const testCase: FinancingCase = {
       ...baseCase,
-      monthlyInstallment: 1850000,
-      customerName: 'BUDI SANTOSO',
+      monthlyInstallment: 1395000,
+      customerName: 'AHMAD FAUZI',
     };
 
     const html = renderToStaticMarkup(
@@ -225,7 +225,7 @@ describe('CaseEktpPage Salary Slip Dual-View Integration', () => {
     // Right column: SalaryBreakdownTable should be rendered
     expect(html).toContain('Analisis Rasio Beban Utang (DSR)');
     expect(html).toContain('Rasio DSR');
-    expect(html).toContain('27.01%'); // 1,850,000 / 6,850,000 = 27.01%
+    expect(html).toContain('20.36%'); // 1,395,000 / 6,850,000 = 20.36%
     expect(html).toContain('Memenuhi Syarat OJK (DSR ≤ 35%)');
 
     // KTP specific tamper box and NIK analysis card should NOT be shown
