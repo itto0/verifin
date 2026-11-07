@@ -13,6 +13,7 @@ import {
   Sparkles,
   Upload,
   Loader2,
+  FileAudio,
 } from 'lucide-react';
 import { VoiceVerification, ScriptComplianceItem, TranscriptSnippet } from '../../types';
 import { voiceDemoPresets } from '../../data/demoPresets';
@@ -37,6 +38,13 @@ export function calculateScriptCompliance(checklist: ScriptComplianceItem[]): {
   const failed = total - passed;
   const percentage = total > 0 ? Math.round((passed / total) * 100) : 0;
   return { total, passed, failed, percentage };
+}
+
+export function resolveActiveAudioSrc(
+  audioObjectUrl: string | null,
+  recordingUrl?: string | null
+): string | null {
+  return audioObjectUrl || recordingUrl || null;
 }
 
 export function createCustomVoiceVerification(
@@ -320,6 +328,8 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     return voice;
   }, [activePresetKey, customVoice, voice]);
 
+  const activeAudioSrc = audioObjectUrl || activeVoice.recordingUrl || null;
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
@@ -343,7 +353,7 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
 
   // Audio playback progress (timer for presets without local audio file)
   useEffect(() => {
-    if (audioObjectUrl) return; // Driven by HTMLAudioElement onTimeUpdate
+    if (activeAudioSrc) return; // Driven by HTMLAudioElement onTimeUpdate
     if (isPlaying) {
       timerRef.current = setInterval(() => {
         setCurrentTime((prev) => {
@@ -360,10 +370,10 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, duration, playbackSpeed, audioObjectUrl]);
+  }, [isPlaying, duration, playbackSpeed, activeAudioSrc]);
 
   const togglePlay = () => {
-    if (audioRef.current && audioObjectUrl) {
+    if (audioRef.current && activeAudioSrc) {
       if (isPlaying) {
         audioRef.current.pause();
         setIsPlaying(false);
@@ -383,7 +393,7 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
   const handleSeek = (newTime: number) => {
     const clamped = Math.max(0, Math.min(newTime, duration));
     setCurrentTime(clamped);
-    if (audioRef.current && audioObjectUrl) {
+    if (audioRef.current && activeAudioSrc) {
       audioRef.current.currentTime = clamped;
     }
   };
@@ -391,7 +401,7 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
   const handleReset = () => {
     setIsPlaying(false);
     setCurrentTime(0);
-    if (audioRef.current && audioObjectUrl) {
+    if (audioRef.current && activeAudioSrc) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
@@ -409,10 +419,10 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {audioObjectUrl && (
+      {activeAudioSrc && (
         <audio
           ref={audioRef}
-          src={audioObjectUrl}
+          src={activeAudioSrc}
           onTimeUpdate={() => {
             if (audioRef.current) {
               setCurrentTime(audioRef.current.currentTime);
@@ -608,8 +618,20 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
           <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-[#E5E5E3] pb-3">
               <div>
-                <h4 className="text-sm font-semibold text-[#1A1A1A]">
-                  Call Audio Waveform Player
+                <h4 className="text-sm font-semibold text-[#1A1A1A] flex items-center gap-2">
+                  <span>Call Audio Waveform Player</span>
+                  {activeVoice.recordingUrl && !audioObjectUrl && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <FileAudio className="w-3 h-3 text-emerald-600" />
+                      Authentic Recording (voice_0941.mp3)
+                    </span>
+                  )}
+                  {audioObjectUrl && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      <FileAudio className="w-3 h-3 text-blue-600" />
+                      Custom Audio: {uploadedFileName || 'Uploaded'}
+                    </span>
+                  )}
                 </h4>
                 <div className="text-[11px] text-[#6B6B6B] mt-0.5 font-mono">
                   ID: {activeVoice.callId} · {activeVoice.audioDurationFormatted}

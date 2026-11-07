@@ -3,6 +3,7 @@ import { voiceDemoPresets } from '../../data/demoPresets';
 import {
   createCustomVoiceVerification,
   calculateScriptCompliance,
+  resolveActiveAudioSrc,
   VoicePresetKey,
 } from './VoiceVerificationTab';
 
@@ -139,7 +140,28 @@ describe('VoiceVerificationTab & Audio QA Demo Logic', () => {
     });
   });
 
-  describe('4. Voice flags and whisper anomaly detection for coaching_suspicion', () => {
+  describe('4. Audio recording asset resolution', () => {
+    it('provides valid local recordingUrl for nominal clean preset', () => {
+      const nominal = voiceDemoPresets.nominal;
+      expect(nominal.recordingUrl).toBe('/voice_0941.mp3');
+    });
+
+    it('keeps synthetic presets free from recordingUrl so timer simulation operates', () => {
+      expect(voiceDemoPresets.hesitant_noncompliant.recordingUrl).toBeUndefined();
+      expect(voiceDemoPresets.coaching_suspicion.recordingUrl).toBeUndefined();
+    });
+
+    it('resolves active audio source giving priority to uploaded audio over preset recordingUrl', () => {
+      expect(resolveActiveAudioSrc('blob:http://localhost/custom.mp3', '/voice_0941.mp3')).toBe(
+        'blob:http://localhost/custom.mp3'
+      );
+      expect(resolveActiveAudioSrc(null, '/voice_0941.mp3')).toBe('/voice_0941.mp3');
+      expect(resolveActiveAudioSrc(null, undefined)).toBeNull();
+      expect(resolveActiveAudioSrc(null, null)).toBeNull();
+    });
+  });
+
+  describe('5. Voice flags and whisper anomaly detection for coaching_suspicion', () => {
     const coachingPreset = voiceDemoPresets.coaching_suspicion;
 
     it('detects whisper coaching anomalies in preset', () => {
