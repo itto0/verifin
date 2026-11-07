@@ -45,7 +45,7 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  documentNumber: 'SRV-FORM-2026-0941',
  overallConfidence: 74,
  status: 'needs_review',
- thumbnailUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80',
+ thumbnailUrl: '/survey_form_cmo.jfif',
  imageUrl: '/survey_form_cmo.jfif',
  summaryNote: 'Terdapat 2 isian tulisan tangan dengan keyakinan di bawah 80% pada bagian daya listrik & penghasilan penjamin.',
  extractedFields: [
@@ -105,13 +105,13 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  id: 'ICR-DOC-002',
  type: 'bpn_certificate',
  title: 'Sertipikat Hak Milik (SHM) Agunan Tambahan / Sentuh Tanahku',
- applicantName: 'Doni Kurniawan',
- caseId: 'CASE-0943',
+ applicantName: 'Ahmad Fauzi',
+ caseId: 'CASE-0941',
  scanDate: '2026-10-27 10:50 WIB',
  documentNumber: 'SHM-3174-05-01294',
  overallConfidence: 96,
  status: 'verified',
- thumbnailUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80',
+ thumbnailUrl: '/sertipikat_tanah_bpn.jfif',
  imageUrl: '/sertipikat_tanah_bpn.jfif',
  summaryNote: 'Validasi OCR dan pencocokan koordinat persil bidang tanah Sentuh Tanahku (Kementerian ATR/BPN) cocok 100%.',
  extractedFields: [
@@ -134,7 +134,7 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  {
  fieldKey: 'surat_ukur',
  label: 'Surat Ukur / Gambar Situasi',
- extractedValue: 'No. 342/Kebon Jeruk/2018',
+ extractedValue: 'No. 342/Tebet/2018',
  normalizedValue: 'SU-342-2018',
  confidence: 96,
  isAnomaly: false,
@@ -150,8 +150,8 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  {
  fieldKey: 'pemegang_hak',
  label: 'Nama Pemegang Hak',
- extractedValue: 'DONI KURNIAWAN',
- normalizedValue: 'DONI KURNIAWAN',
+ extractedValue: 'AHMAD FAUZI',
+ normalizedValue: 'AHMAD FAUZI',
  confidence: 99,
  isAnomaly: false,
  }
@@ -160,11 +160,11 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  persilNib: '09.01.05.02.04581',
  shmNumber: 'SHM 01294',
  surfaceAreaM2: 142,
- districtOffice: 'Kantor Pertanahan Kota Administrasi Jakarta Barat',
- registeredOwner: 'Doni Kurniawan (Sesuai KTP Pemohon)',
+ districtOffice: 'Kantor Pertanahan Kota Administrasi Jakarta Selatan',
+ registeredOwner: 'Ahmad Fauzi (Sesuai KTP Pemohon)',
  applicantRelation: 'Pemilik Langsung (Self-Owned)',
- latitude: -6.195420,
- longitude: 106.772410,
+ latitude: -6.2383,
+ longitude: 106.8532,
  spatialMatchWithSurveyAddress: true,
  sentuhTanahkuStatus: 'Terverifikasi BPN',
  }
@@ -179,8 +179,8 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  documentNumber: 'SHGB-3171-01-08492',
  overallConfidence: 62,
  status: 'mismatch_flag',
- thumbnailUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
- imageUrl: '/slip_gaji_normal.jfif',
+ thumbnailUrl: '/sertipikat_tanah_bpn.jfif',
+ imageUrl: '/sertipikat_tanah_bpn.jfif',
  summaryNote: 'PERINGATAN ANOMALI: Nama pemegang hak pada sertipikat BPN berbeda dengan data pengajuan dan NIB terdaftar di wilayah lain.',
  extractedFields: [
  {

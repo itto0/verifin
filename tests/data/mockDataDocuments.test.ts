@@ -29,7 +29,7 @@ describe('Case 0941 Document Assets Integration', () => {
 
     expect(doc001?.imageUrl).toBe('/survey_form_cmo.jfif');
     expect(doc002?.imageUrl).toBe('/sertipikat_tanah_bpn.jfif');
-    expect(doc003?.imageUrl).toBe('/slip_gaji_normal.jfif');
+    expect(doc003?.imageUrl).toBe('/sertipikat_tanah_bpn.jfif');
   });
 
   it('should update demoPreset clean ktpImageUrl', () => {

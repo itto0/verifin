@@ -5,6 +5,7 @@ import {
   voiceDemoPresets,
   validateDukcapilNik,
 } from './demoPresets';
+import { mockIcrDocuments } from './icrData';
 
 describe('demoPresets', () => {
   it('defines 3 OCR presets with distinct risk profiles', () => {
@@ -115,6 +116,28 @@ describe('demoPresets', () => {
       const result = validateDukcapilNik('3275015408940001', '14/08/1994', 'Perempuan');
       expect(result.isValid).toBe(true);
       expect(result.anomalies.length).toBe(0);
+    });
+  });
+
+  describe('mockIcrDocuments public assets alignment', () => {
+    it('aligns ICR-DOC-001 and ICR-DOC-002 with Ahmad Fauzi and local public assets', () => {
+      const doc1 = mockIcrDocuments.find((d) => d.id === 'ICR-DOC-001')!;
+      expect(doc1.applicantName).toBe('Ahmad Fauzi');
+      expect(doc1.caseId).toBe('CASE-0941');
+      expect(doc1.thumbnailUrl).toBe('/survey_form_cmo.jfif');
+      expect(doc1.imageUrl).toBe('/survey_form_cmo.jfif');
+
+      const doc2 = mockIcrDocuments.find((d) => d.id === 'ICR-DOC-002')!;
+      expect(doc2.applicantName).toBe('Ahmad Fauzi');
+      expect(doc2.caseId).toBe('CASE-0941');
+      expect(doc2.thumbnailUrl).toBe('/sertipikat_tanah_bpn.jfif');
+      expect(doc2.imageUrl).toBe('/sertipikat_tanah_bpn.jfif');
+      expect(doc2.bpnSpatialVerification?.registeredOwner).toContain('Ahmad Fauzi');
+      expect(doc2.bpnSpatialVerification?.districtOffice).toContain('Jakarta Selatan');
+
+      const doc3 = mockIcrDocuments.find((d) => d.id === 'ICR-DOC-003')!;
+      expect(doc3.thumbnailUrl).toBe('/sertipikat_tanah_bpn.jfif');
+      expect(doc3.imageUrl).toBe('/sertipikat_tanah_bpn.jfif');
     });
   });
 });
