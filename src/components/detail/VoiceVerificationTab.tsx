@@ -328,7 +328,7 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     return voice;
   }, [activePresetKey, customVoice, voice]);
 
-  const activeAudioSrc = audioObjectUrl || activeVoice.recordingUrl || null;
+  const activeAudioSrc = resolveActiveAudioSrc(audioObjectUrl, activeVoice.recordingUrl);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -343,13 +343,13 @@ export const VoiceVerificationTab: React.FC<VoiceVerificationTabProps> = ({
     if (audioRef.current) {
       audioRef.current.playbackRate = playbackSpeed;
     }
-  }, [playbackSpeed]);
+  }, [playbackSpeed, activeAudioSrc]);
 
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isMuted;
     }
-  }, [isMuted]);
+  }, [isMuted, activeAudioSrc]);
 
   // Audio playback progress (timer for presets without local audio file)
   useEffect(() => {
