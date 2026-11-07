@@ -58,6 +58,20 @@ describe('demoPresets', () => {
     expect(voiceDemoPresets.hesitant_noncompliant.scriptComplianceScore).toBeLessThan(80);
   });
 
+  it('ensures coaching_suspicion agent is distinct from applicant Ahmad Fauzi', () => {
+    expect(voiceDemoPresets.coaching_suspicion.agentName).not.toBe('Ahmad Fauzi');
+    expect(voiceDemoPresets.coaching_suspicion.agentId).toBe('AGT-019');
+  });
+
+  it('aligns hesitant_noncompliant transcript with Ahmad Fauzi NIK and birth date', () => {
+    const hesitant = voiceDemoPresets.hesitant_noncompliant;
+    const nikSnippet = hesitant.transcripts.find((t) => t.id === 'T-6');
+    const dobSnippet = hesitant.transcripts.find((t) => t.id === 'T-10');
+
+    expect(nikSnippet?.text).toContain('Tiga satu tujuh empat');
+    expect(dobSnippet?.text).toContain('dua puluh Mei sembilan belas delapan puluh lima');
+  });
+
   describe('validateDukcapilNik', () => {
     it('validates matching NIK birth date format for male', () => {
       // DOB: 14-08-1994 -> NIK middle digits: 140894
