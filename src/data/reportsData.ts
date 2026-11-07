@@ -93,15 +93,26 @@ export interface SystemAuditEntry {
 
 export const mockSystemAuditEntries: SystemAuditEntry[] = [
  {
+ id: 'AUD-88292',
+ timestamp: '2026-10-27 12:15:10 WIB',
+ category: 'RISK_CALCULATION',
+ actor: 'Engine VeriFin v2.4 (Automated)',
+ targetRef: 'CASE-0943',
+ action: 'Multi-Pillar Score Evaluated: 88 (HIGH)',
+ details: 'Flag Geo mock location detected (Fake GPS isFromMockProvider = true) + Voice hesitation 2.1s. Rekomendasi tolak pengajuan.',
+ ipAddress: '10.240.12.8 (Internal VPC)',
+ integrityHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ },
+ {
  id: 'AUD-88291',
  timestamp: '2026-10-27 14:18:12 WIB',
  category: 'RISK_CALCULATION',
  actor: 'Engine VeriFin v2.4 (Automated)',
  targetRef: 'CASE-0941',
- action: 'Multi-Pillar Score Evaluated: 84 (HIGH)',
- details: 'Flag e-KTP font mismatch (score 88) + Geo mock location detected (score 92) + Voice hesitation 3.4s.',
+ action: 'Multi-Pillar Score Evaluated: 15 (LOW)',
+ details: 'Semua pilar risiko dalam batas aman (e-KTP: 12, Geo: 10, Voice: 18, Dokumen: 26). Lolos verifikasi otomatis.',
  ipAddress: '10.240.12.8 (Internal VPC)',
- integrityHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+ integrityHash: 'd5a1b3298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b9921',
  },
  {
  id: 'AUD-88290',

@@ -23,6 +23,32 @@ export const mockMasterBranches: MasterBranch[] = [
  {
  id: 'BR-02',
  code: 'BAF-JKT02',
+ name: 'BAF Cabang Jakarta Barat',
+ region: 'Jabodetabek 1',
+ address: 'Jl. Panjang No. 55, Kebon Jeruk, Jakarta Barat',
+ manager: 'Rahmat Hidayat, S.Kom.',
+ activeSurveyors: 6,
+ maxRadiusMeters: 1200,
+ latitude: -6.1895,
+ longitude: 106.7725,
+ status: 'active'
+ },
+ {
+ id: 'BR-03',
+ code: 'BAF-JKT03',
+ name: 'BAF Cabang Jakarta Pusat',
+ region: 'Jabodetabek 1',
+ address: 'Jl. Kebon Sirih No. 15, Gambir, Jakarta Pusat',
+ manager: 'Aditya Pratama, M.M.',
+ activeSurveyors: 5,
+ maxRadiusMeters: 1000,
+ latitude: -6.1824,
+ longitude: 106.8312,
+ status: 'active'
+ },
+ {
+ id: 'BR-04',
+ code: 'BAF-JKT04',
  name: 'BAF Cabang Jakarta Timur',
  region: 'Jabodetabek 1',
  address: 'Jl. Raya Pemuda Kav. 72, Rawamangun, Jakarta Timur',
@@ -34,9 +60,9 @@ export const mockMasterBranches: MasterBranch[] = [
  status: 'active'
  },
  {
- id: 'BR-03',
+ id: 'BR-05',
  code: 'BAF-BKS01',
- name: 'BAF Cabang Bekasi Barat',
+ name: 'BAF Cabang Kota Bekasi',
  region: 'Jawa Barat 1',
  address: 'Ruko Sinpasa Commercial Blok A-12, Summarecon Bekasi',
  manager: 'Hendra Gunawan',
@@ -47,11 +73,11 @@ export const mockMasterBranches: MasterBranch[] = [
  status: 'active'
  },
  {
- id: 'BR-04',
+ id: 'BR-06',
  code: 'BAF-BDG01',
- name: 'BAF Cabang Bandung Asia Afrika',
+ name: 'BAF Cabang Bandung Soekarno-Hatta',
  region: 'Jawa Barat 2',
- address: 'Jl. Asia Afrika No. 141, Sumur Bandung, Kota Bandung',
+ address: 'Jl. Soekarno-Hatta No. 590, Sekejati, Buahbatu, Kota Bandung',
  manager: 'Ahmad Fauzi Ridwan',
  activeSurveyors: 9,
  maxRadiusMeters: 1000,
@@ -60,11 +86,11 @@ export const mockMasterBranches: MasterBranch[] = [
  status: 'active'
  },
  {
- id: 'BR-05',
+ id: 'BR-07',
  code: 'BAF-SBY01',
- name: 'BAF Cabang Surabaya Gubeng',
+ name: 'BAF Cabang Surabaya Timur',
  region: 'Jawa Timur 1',
- address: 'Jl. Raya Gubeng No. 44, Gubeng, Surabaya',
+ address: 'Jl. Kertajaya No. 120, Gubeng, Surabaya',
  manager: 'Didik Prasetyo',
  activeSurveyors: 8,
  maxRadiusMeters: 1200,
@@ -73,7 +99,7 @@ export const mockMasterBranches: MasterBranch[] = [
  status: 'active'
  },
  {
- id: 'BR-06',
+ id: 'BR-08',
  code: 'BAF-SMG01',
  name: 'BAF Cabang Semarang Pandanaran',
  region: 'Jawa Tengah',
@@ -86,7 +112,7 @@ export const mockMasterBranches: MasterBranch[] = [
  status: 'active'
  },
  {
- id: 'BR-07',
+ id: 'BR-09',
  code: 'BAF-DPS01',
  name: 'BAF Cabang Denpasar Teuku Umar',
  region: 'Bali & Nusa Tenggara',
@@ -99,7 +125,7 @@ export const mockMasterBranches: MasterBranch[] = [
  status: 'active'
  },
  {
- id: 'BR-08',
+ id: 'BR-10',
  code: 'BAF-MDN01',
  name: 'BAF Cabang Medan Ringroad',
  region: 'Sumatera Utara',
@@ -209,27 +235,27 @@ export const mockMasterProducts: MasterProduct[] = [
 
 export const mockMasterSurveyors: MasterSurveyor[] = [
  {
- id: 'SRV-01',
- employeeNik: 'CMO-2022091',
- fullName: 'Bayu Nugroho',
+ id: 'SRV-JKT-104',
+ employeeNik: 'CMO-2022104',
+ fullName: 'Bambang Sudirgo',
  branchCode: 'BAF-JKT01',
- branchName: 'BAF Jakarta Selatan',
- phone: '0813-8821-4901',
+ branchName: 'BAF Cabang Jakarta Selatan',
+ phone: '0812-9844-1120',
  deviceModel: 'Samsung Galaxy A15 (SM-A155F)',
  deviceImei: '862049102847192',
  osVersion: 'Android 14 (OneUI 6.1)',
  gpsAccuracyThresholdMeters: 15,
  mockLocationStrikes: 2,
- status: 'suspended',
+ status: 'active',
  lastActive: '2026-10-27 15:10 WIB'
  },
  {
- id: 'SRV-02',
- employeeNik: 'CMO-2021045',
- fullName: 'Fajar Ramadhan',
+ id: 'SRV-BDG-031',
+ employeeNik: 'CMO-2021031',
+ fullName: 'Cecep Supriatna',
  branchCode: 'BAF-BDG01',
- branchName: 'BAF Bandung Asia Afrika',
- phone: '0812-9901-2334',
+ branchName: 'BAF Cabang Bandung Soekarno-Hatta',
+ phone: '0821-3344-5511',
  deviceModel: 'Xiaomi Redmi Note 13',
  deviceImei: '863920194827104',
  osVersion: 'Android 13 (HyperOS)',
@@ -239,12 +265,12 @@ export const mockMasterSurveyors: MasterSurveyor[] = [
  lastActive: '2026-10-27 16:40 WIB'
  },
  {
- id: 'SRV-03',
- employeeNik: 'CMO-2023118',
- fullName: 'Eko Prasetyo',
+ id: 'SRV-SBY-042',
+ employeeNik: 'CMO-2023042',
+ fullName: 'Dimas Wicaksono',
  branchCode: 'BAF-SBY01',
- branchName: 'BAF Surabaya Gubeng',
- phone: '0857-1192-3840',
+ branchName: 'BAF Cabang Surabaya Timur',
+ phone: '0857-1122-3344',
  deviceModel: 'Infinix Note 40 Pro',
  deviceImei: '869201847192841',
  osVersion: 'Android 14 (XOS 14)',
@@ -254,32 +280,32 @@ export const mockMasterSurveyors: MasterSurveyor[] = [
  lastActive: '2026-10-27 14:22 WIB'
  },
  {
- id: 'SRV-04',
+ id: 'SRV-JKT-088',
  employeeNik: 'CMO-2020088',
- fullName: 'Rizky Kurniawan',
+ fullName: 'Rahmat Hidayat',
  branchCode: 'BAF-JKT02',
- branchName: 'BAF Jakarta Timur',
- phone: '0811-9283-4911',
+ branchName: 'BAF Cabang Jakarta Barat',
+ phone: '0818-7711-9900',
  deviceModel: 'Oppo Reno 11F 5G',
  deviceImei: '861928471092834',
  osVersion: 'Android 14 (ColorOS 14)',
  gpsAccuracyThresholdMeters: 10,
- mockLocationStrikes: 1,
+ mockLocationStrikes: 0,
  status: 'active',
  lastActive: '2026-10-27 13:50 WIB'
  },
  {
- id: 'SRV-05',
- employeeNik: 'CMO-2024012',
+ id: 'SRV-BKS-019',
+ employeeNik: 'CMO-2024019',
  fullName: 'Agus Setiawan',
  branchCode: 'BAF-BKS01',
- branchName: 'BAF Bekasi Barat',
- phone: '0818-0923-4819',
+ branchName: 'BAF Cabang Kota Bekasi',
+ phone: '0813-8877-2234',
  deviceModel: 'Vivo Y27s',
  deviceImei: '864910294819284',
  osVersion: 'Android 13 (Funtouch 13)',
  gpsAccuracyThresholdMeters: 15,
- mockLocationStrikes: 0,
+ mockLocationStrikes: 1,
  status: 'active',
  lastActive: '2026-10-27 16:05 WIB'
  }

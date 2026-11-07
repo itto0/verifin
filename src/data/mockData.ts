@@ -1,5 +1,6 @@
 import { FinancingCase, RiskEngineRules, SurveyorPoint, AuthUser } from '../types';
 import { defaultSalarySlip } from './salarySlipHelper';
+import { case0941CleanVoiceVerification } from './prompts/elevenlabsCallPrompts';
 
 export const DEMO_USERS: AuthUser[] = [
   {
@@ -8,7 +9,7 @@ export const DEMO_USERS: AuthUser[] = [
     email: 'dian.pratama@baf.id',
     role: 'Senior Verifier',
     level: 'Level 2 Verifier',
-    branch: 'Jakarta South Hub',
+    branch: 'BAF Jakarta Selatan',
     avatarInitials: 'DP',
     employeeNik: 'BAF-EMP-8842'
   },
@@ -28,7 +29,7 @@ export const DEMO_USERS: AuthUser[] = [
     email: 'rina.anggraini@baf.id',
     role: 'Branch Verification Officer',
     level: 'Level 1 Underwriter',
-    branch: 'Kota Bekasi Branch',
+    branch: 'BAF Kota Bekasi',
     avatarInitials: 'RA',
     employeeNik: 'BAF-EMP-9174'
   }
@@ -69,14 +70,15 @@ export const mockCases: FinancingCase[] = [
  pillars: {
  ektp: { score: 12, weight: 30, weightedScore: 3.6 },
  location: { score: 10, weight: 30, weightedScore: 3.0 },
- voice: { score: 24, weight: 25, weightedScore: 6.0 },
- document: { score: 16, weight: 15, weightedScore: 2.4 },
+ voice: { score: 18, weight: 25, weightedScore: 4.5 },
+ document: { score: 26, weight: 15, weightedScore: 3.9 },
  },
  reasons: [
  'Titik survei akurat 32 meter dari alamat KTP (zona hijau ≤200 m)',
  'Struktur NIK valid dan terverifikasi Dukcapil tanpa anomali',
  'Fisik e-KTP asli tanpa indikasi manipulasi atau screen capture',
- 'Foto fisik rumah dan meteran listrik KWH terverifikasi in-app camera'
+ 'Foto fisik rumah dan meteran listrik KWH terverifikasi in-app camera',
+ 'Tele-verifikasi lancar 100% kepatuhan script tanpa jeda keraguan'
  ]
  },
  document: {
@@ -136,7 +138,7 @@ export const mockCases: FinancingCase[] = [
  distanceMeters: 32,
  distanceStatus: 'green',
  isMockLocationDetected: false,
- score: 92,
+ score: 10,
  surveyPhotos: [
  {
  id: 'PHT-01',
@@ -172,47 +174,7 @@ export const mockCases: FinancingCase[] = [
  }
  ]
  },
- voice: {
- callId: 'CALL-20261027-8821',
- callDuration: 245,
- agentName: 'Fitri Handayani',
- agentId: 'AGT-044',
- callTimestamp: '2026-10-27 13:40:11',
- audioDurationFormatted: '04:05',
- overallHesitancyCount: 3,
- spellingAccuracyScore: 68,
- scriptComplianceScore: 85,
- score: 72,
- voiceFlags: [
- 'Jeda keraguan 3.4 detik saat pertanyaan keamanan nama gadis ibu kandung',
- 'Jeda 2.8 detik saat konfirmasi tanggal lahir',
- 'Salah sebut nominal cicilan pertama (menyebutkan Rp 1.100.000, seharusnya Rp 1.395.000)'
- ],
- complianceChecklist: [
- { id: 'SC-1', category: 'Pembuka', requirement: 'Salam standar BAF & perkenalan diri verifikator', isCompliant: true, timestampRef: 4 },
- { id: 'SC-2', category: 'Verifikasi', requirement: 'Konfirmasi nama lengkap & 16 digit NIK pemohon', isCompliant: true, timestampRef: 28 },
- { id: 'SC-3', category: 'Verifikasi', requirement: 'Verifikasi nama gadis ibu kandung nasabah', isCompliant: true, timestampRef: 54, note: 'Konsumen ragu 3.4 detik' },
- { id: 'SC-4', category: 'Pembiayaan', requirement: 'Konfirmasi unit Yamaha NMAX 155 & tenor 35 bulan', isCompliant: true, timestampRef: 92 },
- { id: 'SC-5', category: 'Pembiayaan', requirement: 'Konfirmasi besaran angsuran & tanggal jatuh tempo', isCompliant: true, timestampRef: 140, note: 'Konsumen sempat salah sebut angka cicilan' },
- { id: 'SC-6', category: 'Penutup', requirement: 'Pernyataan klausul persetujuan & rekaman resmi OJK', isCompliant: false, timestampRef: 230, note: 'Panggilan terputus sebelum pembacaan lengkap klausul OJK' }
- ],
- transcripts: [
- { id: 'T-1', speaker: 'agent', startTime: 0, endTime: 6, text: 'Selamat siang, saya Fitri dari Verifikasi Pembiayaan BAF. Benar saya terhubung dengan Bapak Ahmad Fauzi?' },
- { id: 'T-2', speaker: 'customer', startTime: 7, endTime: 11, text: 'Iya selamat siang Mbak. Betul saya sendiri, Pak Ahmad Fauzi.' },
- { id: 'T-3', speaker: 'agent', startTime: 12, endTime: 22, text: 'Terima kasih Pak Ahmad Fauzi. Mohon izin melakukan verifikasi data singkat terkait pengajuan pembiayaan unit Yamaha NMAX ya Pak.' },
- { id: 'T-4', speaker: 'customer', startTime: 23, endTime: 26, text: 'Iya silakan Mbak.' },
- { id: 'T-5', speaker: 'agent', startTime: 27, endTime: 34, text: 'Bisa dibantu sebutkan kembali 16 digit Nomor Induk Kependudukan (NIK) KTP Bapak?' },
- { id: 'T-6', speaker: 'customer', startTime: 35, endTime: 48, text: 'Tiga satu tujuh empat nol satu dua nol nol lima delapan lima nol nol nol satu.', spellingMatch: true },
- { id: 'T-7', speaker: 'agent', startTime: 49, endTime: 54, text: 'Baik cocok Pak. Untuk nama gadis ibu kandung siapa ya Pak?' },
- { id: 'T-8', speaker: 'customer', startTime: 55, endTime: 65, text: 'Eee... tunggu sebentar Mbak... eee... Nurhasanah.', hasHesitancy: true, hesitancyDuration: 3.4, pitchTremor: true, flagReason: 'Jeda panjang 3.4 detik & intonasi bergetar sebelum menjawab nama ibu' },
- { id: 'T-9', speaker: 'agent', startTime: 66, endTime: 75, text: 'Baik, Ibu Nurhasanah. Lalu untuk tanggal lahir Bapak sendiri tanggal berapa ya?' },
- { id: 'T-10', speaker: 'customer', startTime: 76, endTime: 85, text: 'Eee... dua puluh Mei sembilan belas delapan puluh lima.', hasHesitancy: true, hesitancyDuration: 2.8, flagReason: 'Jeda 2.8 detik saat konfirmasi tanggal lahir' },
- { id: 'T-11', speaker: 'agent', startTime: 86, endTime: 100, text: 'Untuk unit Yamaha NMAX 155 Connected dengan tenor 35 bulan. Berapa nominal angsuran per bulannya Pak?' },
- { id: 'T-12', speaker: 'customer', startTime: 101, endTime: 114, text: 'Sekitar satu juta seratus ribu ya Mbak?', hasHesitancy: true, hesitancyDuration: 1.8, flagReason: 'Salah sebut nominal angsuran (seharusnya Rp 1.395.000)' },
- { id: 'T-13', speaker: 'agent', startTime: 115, endTime: 130, text: 'Sesuai kesepakatan aplikasi angsurannya Rp 1.395.000 ya Pak. Apakah Bapak menyetujui nominal tersebut?' },
- { id: 'T-14', speaker: 'customer', startTime: 131, endTime: 138, text: 'Oh iya iya betul Mbak, Rp 1.395.000.' }
- ]
- },
+ voice: case0941CleanVoiceVerification,
  auditTrail: [
  { id: 'A-1', timestamp: '2026-10-27 14:15:20', actor: 'Sistem LOS BAF', action: 'Submit Pengajuan', notes: 'Pengajuan masuk dari Dealer Yamaha Jaya Motor Jaksel' },
  { id: 'A-2', timestamp: '2026-10-27 14:16:02', actor: 'Engine OCR VeriFin', action: 'Ekstraksi Dokumen', notes: 'Ekstraksi 10 field e-KTP selesai (confidence rata-rata 93.1%)' },
@@ -957,7 +919,7 @@ export const mockSurveyPoints: SurveyorPoint[] = [
  id: 'PT-06',
  caseId: 'CASE-0946',
  applicantName: 'Hendra Irawan',
- vehicleModel: 'Yamaha NMAX 155',
+ vehicleModel: 'Yamaha All New NMAX 155 Connected',
  branch: 'BAF Jakarta Pusat',
  surveyorName: 'Bambang Sudirgo',
  targetLat: -6.182410,
@@ -1022,7 +984,7 @@ export const mockSurveyPoints: SurveyorPoint[] = [
  caseId: 'CASE-0950',
  applicantName: 'Nurul Hidayati',
  vehicleModel: 'Yamaha Mio M3 125',
- branch: 'BAF Surabaya Barat',
+ branch: 'BAF Surabaya Timur',
  surveyorName: 'Dimas Wicaksono',
  targetLat: -7.265000,
  targetLng: 112.712000,
@@ -1038,7 +1000,7 @@ export const mockSurveyPoints: SurveyorPoint[] = [
  caseId: 'CASE-0951',
  applicantName: 'Rizky Kurniawan',
  vehicleModel: 'Yamaha All New R15 Connected',
- branch: 'BAF Bandung Dago',
+ branch: 'BAF Bandung Soekarno-Hatta',
  surveyorName: 'Cecep Supriatna',
  targetLat: -6.892000,
  targetLng: 107.615000,
@@ -1077,5 +1039,6 @@ export const branchList = [
  'BAF Depok Margonda',
  'BAF Tangerang Serpong',
  'BAF Bandung Soekarno-Hatta',
- 'BAF Surabaya Timur'
+ 'BAF Surabaya Timur',
+ 'BAF Semarang Pandanaran'
 ];

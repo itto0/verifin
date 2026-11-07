@@ -172,7 +172,7 @@ export async function login(
     email: normalized.includes('@') ? normalized : `${normalized}@baf.id`,
     role: 'Senior Verifier',
     level: 'Level 2 Verifier',
-    branch: 'Jakarta South Hub',
+    branch: 'BAF Jakarta Selatan',
     avatarInitials: normalized.slice(0, 2).toUpperCase(),
     employeeNik: 'BAF-EMP-8842',
   };
