@@ -113,12 +113,12 @@ export const mockIcrDocuments: IcrDocumentSample[] = [
  status: 'verified',
  thumbnailUrl: '/sertipikat_tanah_bpn.jfif',
  imageUrl: '/sertipikat_tanah_bpn.jfif',
- summaryNote: 'Validasi OCR dan pencocokan koordinat persil bidang tanah Sentuh Tanahku (Kementerian ATR/BPN) cocok 100%.',
+ summaryNote: 'Validasi OCR dan pencocokan koordinat persil bidang tanah Sentuh Tanahku (Kementerian ATR/BPN) terverifikasi cocok.',
  extractedFields: [
  {
  fieldKey: 'shm_nomor',
  label: 'Nomor Sertipikat',
- extractedValue: 'SHM No. 01294/Kebon Jeruk',
+ extractedValue: 'SHM No. 01294/Tebet',
  normalizedValue: 'SHM-01294',
  confidence: 99,
  isAnomaly: false,

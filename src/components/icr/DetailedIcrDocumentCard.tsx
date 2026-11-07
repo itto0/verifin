@@ -565,7 +565,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
  )}
 
- {/* Evidence 2: Doni Kurniawan - Land Parcel Frontage at Kebon Jeruk */}
+ {/* Evidence 2: Ahmad Fauzi - Land Parcel Frontage at Tebet, Jakarta Selatan */}
  {isShm && (
  <div className="w-full h-full relative flex flex-col justify-between p-4 bg-slate-900">
  <img
@@ -599,7 +599,7 @@ export const DetailedIcrDocumentCard: React.FC<DetailedIcrDocumentCardProps> = (
  </div>
 
  <div className="relative z-10 text-[9px] text-slate-400 bg-black/60 p-1.5 rounded flex items-center justify-between">
- <span>GPS: -6.195420, 106.772410 (Kebon Jeruk)</span>
+ <span>GPS: -6.238300, 106.853200 (Tebet, Jakarta Selatan)</span>
  <span>2026-10-27 10:45:00 WIB</span>
  </div>
  </div>
