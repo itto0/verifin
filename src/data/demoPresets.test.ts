@@ -38,6 +38,17 @@ describe('demoPresets', () => {
     expect(icrDemoPresets.cadastral_mismatch.bpnSpatialVerification?.spatialMatchWithSurveyAddress).toBe(false);
   });
 
+  it('provides physical scan imageUrl for all ICR demo presets', () => {
+    expect(icrDemoPresets.survey_clean.imageUrl).toBe('/survey_form_cmo.jfif');
+    expect(icrDemoPresets.survey_clean.thumbnailUrl).toBe('/survey_form_cmo.jfif');
+    expect(icrDemoPresets.clean_shm.imageUrl).toBe('/sertipikat_tanah_bpn.jfif');
+    expect(icrDemoPresets.clean_shm.thumbnailUrl).toBe('/sertipikat_tanah_bpn.jfif');
+    expect(icrDemoPresets.cadastral_mismatch.imageUrl).toBe('/sertipikat_tanah_bpn.jfif');
+    expect(icrDemoPresets.cadastral_mismatch.thumbnailUrl).toBe('/sertipikat_tanah_bpn.jfif');
+    expect(icrDemoPresets.low_confidence.imageUrl).toBe('/survey_form_cmo.jfif');
+    expect(icrDemoPresets.low_confidence.thumbnailUrl).toBe('/survey_form_cmo.jfif');
+  });
+
   it('defines 3 Voice STT presets with hesitation and compliance differences', () => {
     expect(voiceDemoPresets.nominal).toBeDefined();
     expect(voiceDemoPresets.hesitant_noncompliant).toBeDefined();

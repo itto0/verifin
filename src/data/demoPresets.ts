@@ -245,7 +245,8 @@ export const icrDemoPresets: Record<string, IcrDocumentSample> = {
     documentNumber: 'SRV-FORM-2026-001',
     overallConfidence: 96,
     status: 'verified',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80',
+    thumbnailUrl: '/survey_form_cmo.jfif',
+    imageUrl: '/survey_form_cmo.jfif',
     summaryNote: 'Formulir survei lapangan CMO terverifikasi bersih. Seluruh isian tulisan tangan jelas, daya listrik 1300 VA cocok dengan foto meteran, dan catatan lingkungan RT/RW mengonfirmasi domisili tetap.',
     extractedFields: [
       {
@@ -308,7 +309,8 @@ export const icrDemoPresets: Record<string, IcrDocumentSample> = {
     documentNumber: 'SHM-3174-05-01294',
     overallConfidence: 96,
     status: 'verified',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=80',
+    thumbnailUrl: '/sertipikat_tanah_bpn.jfif',
+    imageUrl: '/sertipikat_tanah_bpn.jfif',
     summaryNote: 'Validasi OCR dan pencocokan koordinat persil bidang tanah Sentuh Tanahku (Kementerian ATR/BPN) terverifikasi cocok.',
     extractedFields: [
       {
@@ -375,7 +377,8 @@ export const icrDemoPresets: Record<string, IcrDocumentSample> = {
     documentNumber: 'SHM-3275-01-08812',
     overallConfidence: 82,
     status: 'mismatch_flag',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80',
+    thumbnailUrl: '/sertipikat_tanah_bpn.jfif',
+    imageUrl: '/sertipikat_tanah_bpn.jfif',
     summaryNote: 'Koordinat plot persil Sentuh Tanahku berjarak 3.8 km dari alamat survei faktual pemohon. Nama pemilik terdaftar pada sertipikat berbeda dengan pemohon.',
     extractedFields: [
       {
@@ -444,7 +447,8 @@ export const icrDemoPresets: Record<string, IcrDocumentSample> = {
     documentNumber: 'SRV-FORM-2026-0941',
     overallConfidence: 62,
     status: 'needs_review',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&auto=format&fit=crop&q=80',
+    thumbnailUrl: '/survey_form_cmo.jfif',
+    imageUrl: '/survey_form_cmo.jfif',
     summaryNote: 'Terdapat 3 isian tulisan tangan yang terindikasi anomali pada bagian daya listrik, penghasilan, dan status sewa rumah.',
     extractedFields: [
       {
