@@ -28,6 +28,7 @@ describe('ElevenLabs Call Audio Prompt', () => {
   it('matches VeriFin VoiceVerification data structure with 100% compliance', () => {
     const voice = case0941CleanVoiceVerification;
     expect(voice.callId).toBe('CALL-20261027-0941-CLN');
+    expect(voice.recordingUrl).toBe('/voice_0941.mp3');
     expect(voice.overallHesitancyCount).toBe(0);
     expect(voice.spellingAccuracyScore).toBe(100);
     expect(voice.scriptComplianceScore).toBe(100);

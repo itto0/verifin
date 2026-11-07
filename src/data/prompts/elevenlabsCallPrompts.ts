@@ -81,6 +81,7 @@ export const case0941CleanVoiceVerification: VoiceVerification = {
   agentId: 'AGT-044',
   callTimestamp: '2026-10-27 14:18:10',
   audioDurationFormatted: '02:45',
+  recordingUrl: '/voice_0941.mp3',
   overallHesitancyCount: 0,
   spellingAccuracyScore: 100,
   scriptComplianceScore: 100,

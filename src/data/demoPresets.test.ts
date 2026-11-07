@@ -67,6 +67,7 @@ describe('demoPresets', () => {
     expect(voiceDemoPresets.hesitant_noncompliant).toBeDefined();
     expect(voiceDemoPresets.coaching_suspicion).toBeDefined();
 
+    expect(voiceDemoPresets.nominal.recordingUrl).toBe('/voice_0941.mp3');
     expect(voiceDemoPresets.nominal.scriptComplianceScore).toBeGreaterThanOrEqual(90);
     expect(voiceDemoPresets.hesitant_noncompliant.scriptComplianceScore).toBeLessThan(80);
   });
