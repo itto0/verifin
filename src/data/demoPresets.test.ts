@@ -39,6 +39,18 @@ describe('demoPresets', () => {
     expect(icrDemoPresets.cadastral_mismatch.bpnSpatialVerification?.spatialMatchWithSurveyAddress).toBe(false);
   });
 
+  it('aligns clean_shm preset with Ahmad Fauzi and South Jakarta cadastral registry', () => {
+    const shm = icrDemoPresets.clean_shm;
+    expect(shm.applicantName).toBe('Ahmad Fauzi');
+    expect(shm.caseId).toBe('CASE-0941');
+    expect(shm.thumbnailUrl).toBe('/sertipikat_tanah_bpn.jfif');
+    expect(shm.imageUrl).toBe('/sertipikat_tanah_bpn.jfif');
+    expect(shm.bpnSpatialVerification?.registeredOwner).toBe('Ahmad Fauzi');
+    expect(shm.bpnSpatialVerification?.districtOffice).toBe('Kantor Pertanahan Kota Administrasi Jakarta Selatan');
+    expect(shm.bpnSpatialVerification?.latitude).toBe(-6.2383);
+    expect(shm.bpnSpatialVerification?.longitude).toBe(106.8532);
+  });
+
   it('provides physical scan imageUrl for all ICR demo presets', () => {
     expect(icrDemoPresets.survey_clean.imageUrl).toBe('/survey_form_cmo.jfif');
     expect(icrDemoPresets.survey_clean.thumbnailUrl).toBe('/survey_form_cmo.jfif');
