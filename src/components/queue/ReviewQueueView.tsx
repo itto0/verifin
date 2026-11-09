@@ -5,7 +5,8 @@ import {
  Clock,
  XCircle,
  MapPin,
- ChevronRight
+ ChevronRight,
+ FileText
 } from 'lucide-react';
 import { FinancingCase, RiskLevel, CaseStatus } from '../../types';
 import { branchList } from '../../data/mockData';
@@ -203,17 +204,33 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
  {sortedCases.map((c) => {
  const isHigh = c.riskScore.level === 'high';
  const isMedium = c.riskScore.level === 'medium';
+ const isDemo = Boolean(c.hasDemoDocuments);
 
  return (
  <tr
  key={c.id}
  onClick={() => onSelectCase(c.id)}
- className="hover:bg-[#F7F7F5] transition-colors cursor-pointer group"
+ className={`transition-colors cursor-pointer group ${
+ isDemo
+ ? 'border-l-4 border-l-blue-600 bg-blue-50/25 hover:bg-blue-50/50'
+ : 'hover:bg-[#F7F7F5]'
+ }`}
  >
  {/* Column 1: Application ID */}
  <td className="py-4 px-6 whitespace-nowrap">
- <div className=" text-xs font-semibold text-[#1A1A1A]">
+ <div className="flex items-center gap-1.5 flex-wrap">
+ <span className="text-xs font-semibold text-[#1A1A1A]">
  {c.applicationNumber}
+ </span>
+ {isDemo && (
+ <span
+ className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200/80"
+ title="Application with full authentic demo documents (e-KTP, KK, Slip Gaji, Survey & ICR)"
+ >
+ <FileText className="w-3 h-3 text-blue-600 shrink-0" />
+ Demo Document
+ </span>
+ )}
  </div>
  <div className="text-xs text-[#6B6B6B] mt-0.5 tabular-nums">
  {c.submittedAt}
