@@ -213,7 +213,7 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
  className={`transition-colors cursor-pointer group ${
  isDemo
  ? 'border-l-4 border-l-blue-600 bg-blue-50/25 hover:bg-blue-50/50'
- : 'hover:bg-[#F7F7F5]'
+ : 'border-l-4 border-l-transparent hover:bg-[#F7F7F5]'
  }`}
  >
  {/* Column 1: Application ID */}
@@ -227,7 +227,7 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({
  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200/80"
  title="Application with full authentic demo documents (e-KTP, KK, Slip Gaji, Survey & ICR)"
  >
- <FileText className="w-3 h-3 text-blue-600 shrink-0" />
+ <FileText aria-hidden="true" className="w-3 h-3 text-blue-600 shrink-0" />
  Demo Document
  </span>
  )}
