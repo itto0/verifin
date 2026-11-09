@@ -394,6 +394,7 @@ export function mapBackendApplicationsToFinancingCases(apps: any[]): FinancingCa
       assignedVerifier: app.assigned_verifikator_name || base.assignedVerifier,
       decisionNotes: app.notes || base.decisionNotes,
       decisionTimestamp: app.updated_at || base.decisionTimestamp,
+      hasDemoDocuments: base.hasDemoDocuments ?? matched.hasDemoDocuments,
     };
   });
 }

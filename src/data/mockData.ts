@@ -50,8 +50,9 @@ export const initialRules: RiskEngineRules = {
 
 export const mockCases: FinancingCase[] = [
  {
- id: 'CASE-0941',
- applicationNumber: 'BAF-APP-2026-0941',
+  id: 'CASE-0941',
+  hasDemoDocuments: true,
+  applicationNumber: 'BAF-APP-2026-0941',
  submittedAt: '2026-10-27 14:15:20',
  customerName: 'Ahmad Fauzi',
  customerNik: '3174012005850001',

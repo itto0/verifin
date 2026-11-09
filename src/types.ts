@@ -197,6 +197,7 @@ export interface FinancingCase {
   monthlyInstallment?: number;
   [key: string]: any;
  };
+ hasDemoDocuments?: boolean;
 }
 
 export interface SurveyorPoint {
