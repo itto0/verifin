@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from app.schemas.common import Finding
 from app.schemas.ocr import KTPFieldExtraction, KTPValidationResult
 
@@ -207,120 +207,367 @@ def cross_validate_ktp(fields: KTPFieldExtraction) -> KTPValidationResult:
     return validation
 
 
+class _OCRBox:
+    """Internal geometric container for parsed OCR lines."""
+
+    def __init__(self, text: str, confidence: float, bbox: Optional[List[Any]] = None, index: int = 0):
+        self.text = text.strip()
+        self.confidence = max(0.0, min(1.0, float(confidence)))
+        self.bbox = bbox
+        self.index = index
+        self.has_bbox = False
+        self.min_x = 0.0
+        self.max_x = 0.0
+        self.min_y = 0.0
+        self.max_y = 0.0
+        self.center_y = 0.0
+        self.height = 0.0
+        self.width = 0.0
+
+        if bbox and isinstance(bbox, (list, tuple)) and len(bbox) >= 3:
+            try:
+                xs = [float(pt[0]) for pt in bbox if len(pt) >= 2]
+                ys = [float(pt[1]) for pt in bbox if len(pt) >= 2]
+                if xs and ys:
+                    self.min_x = min(xs)
+                    self.max_x = max(xs)
+                    self.min_y = min(ys)
+                    self.max_y = max(ys)
+                    self.center_y = (self.min_y + self.max_y) / 2.0
+                    self.height = max(self.max_y - self.min_y, 1.0)
+                    self.width = max(self.max_x - self.min_x, 1.0)
+                    self.has_bbox = True
+            except (ValueError, TypeError, IndexError):
+                self.has_bbox = False
+
+
+def _clean_val(val: str) -> str:
+    """Strips leading/trailing delimiters while preserving internal slashes or punctuation."""
+    v = re.sub(r"^[:;.\-\s]+", "", val)
+    v = re.sub(r"[:;\s]+$", "", v)
+    return v.strip()
+
+
+def _normalize_gender(raw: str) -> str:
+    """Normalizes gender string and strips blood type artifact if present."""
+    cleaned = re.sub(r"(?:Gol\.?|Golongan)?\s*Darah.*$", "", raw, flags=re.IGNORECASE).strip()
+    upper = cleaned.upper()
+    if "LAKI" in upper:
+        return "LAKI-LAKI"
+    elif "PEREMPUAN" in upper:
+        return "PEREMPUAN"
+    return cleaned
+
+
+def _normalize_ttl(raw: str) -> Tuple[Optional[str], Optional[str]]:
+    """Splits Tempat/Tgl Lahir into city and birth date."""
+    val = raw.strip()
+    if "," in val:
+        parts = val.split(",", 1)
+        city = parts[0].strip(":;.- ")
+        date_str = parts[1].strip(":;.- ")
+        return city or None, date_str or None
+
+    m = re.search(r"(\d{2}[-/.]\d{2}[-/.]\d{4})", val)
+    if m:
+        date_str = m.group(1).replace(".", "-").replace("/", "-")
+        city = val[: m.start()].strip(":;.,- ")
+        return city or None, date_str or None
+
+    return None, val.strip(":;.- ") or None
+
+
+def _is_system_or_label(text: str) -> bool:
+    """Checks whether the text matches standard e-KTP headers or field labels."""
+    t = text.strip()
+    patterns = [
+        r"^(?:REPUBLIK|REPUBLIC)\s*INDONESIA\b",
+        r"^PROVINSI\b",
+        r"^(?:KABUPATEN|KOTA)\s+ADM\b",
+        r"^NIK\b",
+        r"^Nama\b",
+        r"^Tempat.*Lahir\b",
+        r"^Jenis\s*Kelamin\b",
+        r"^(?:Gol\.?|Golongan)?\s*Darah\b",
+        r"^Alamat\b",
+        r"^RT\s*[/I|\\l\s.]?\s*RW\b",
+        r"^Kel+[/I|\\l\s.:]*Desa\b",
+        r"^Kecamatan\b",
+        r"^Agama\b",
+        r"^Status\s*(?:Per)?kawinan\b",
+        r"^Pekerjaan\b",
+        r"^Kewarganegaraan\b",
+        r"^Berlaku\s*(?:.*Hingga)?\b",
+        r"^SURAT\b",
+        r"^KARTU\s*TANDA\s*PENDUDUK\b",
+    ]
+    for p in patterns:
+        if re.search(p, t, re.IGNORECASE):
+            return True
+    if re.search(r"^(?:KABUPATEN|KOTA)\b", t, re.IGNORECASE) and not re.search(r"\d", t) and "," not in t:
+        return True
+    return False
+
+
+FIELD_SPECS = [
+    {"key": "nik", "label_pat": r"NIK"},
+    {"key": "nama", "label_pat": r"Nama"},
+    {"key": "ttl", "label_pat": r"Tempat.*Lahir"},
+    {"key": "jenis_kelamin", "label_pat": r"Jenis\s*Kelamin"},
+    {"key": "alamat", "label_pat": r"Alamat"},
+    {"key": "rt_rw", "label_pat": r"RT\s*[/I|\\l\s.]?\s*RW"},
+    {"key": "kel_desa", "label_pat": r"Kel+[/I|\\l\s.:]*Desa"},
+    {"key": "kecamatan", "label_pat": r"Kecamatan"},
+    {"key": "agama", "label_pat": r"Agama"},
+    {"key": "status_perkawinan", "label_pat": r"Status\s*(?:Per)?kawinan"},
+    {"key": "pekerjaan", "label_pat": r"Pekerjaan"},
+    {"key": "kewarganegaraan", "label_pat": r"Kewarganegaraan"},
+    {"key": "berlaku_hingga", "label_pat": r"Berlaku\s*(?:Hingga|s/?d|.*Hingga)"},
+]
+
+
+def _match_inline(box_text: str, label_pat: str) -> Optional[str]:
+    """Matches 'Label : Value' or 'Label Value' on the same line."""
+    m = re.search(rf"^\s*{label_pat}\s*[:;.]\s*(.*)$", box_text, re.IGNORECASE)
+    if m:
+        val = _clean_val(m.group(1))
+        if val and not _is_system_or_label(val):
+            return val
+    m2 = re.search(rf"^\s*{label_pat}\s+(.*)$", box_text, re.IGNORECASE)
+    if m2:
+        val = _clean_val(m2.group(1))
+        if val and not _is_system_or_label(val):
+            return val
+    return None
+
+
+def _match_standalone(box_text: str, label_pat: str) -> bool:
+    """Matches standalone label without value (e.g. 'Nama' or 'Nama :')."""
+    return bool(re.search(rf"^\s*{label_pat}\s*[:;.]?\s*$", box_text, re.IGNORECASE))
+
+
+def _assign_field_value(
+    fields: KTPFieldExtraction,
+    field_key: str,
+    raw_val: str,
+    conf: float,
+) -> bool:
+    """Normalizes and assigns extracted text to corresponding KTP fields."""
+    val = _clean_val(raw_val)
+    if not val:
+        return False
+
+    bounded_conf = round(max(0.0, min(1.0, float(conf))), 4)
+
+    if field_key == "nik":
+        clean_nik = re.sub(r"\D", "", val)
+        if len(clean_nik) == 16:
+            fields.nik = clean_nik
+            fields.field_confidences["nik"] = bounded_conf
+            return True
+        return False
+
+    elif field_key == "nama":
+        fields.nama = val
+        fields.field_confidences["nama"] = bounded_conf
+        return True
+
+    elif field_key == "ttl":
+        city, date_str = _normalize_ttl(val)
+        if date_str:
+            fields.tgl_lahir = date_str
+            fields.field_confidences["tgl_lahir"] = bounded_conf
+        if city:
+            fields.tempat_lahir = city
+            fields.field_confidences["tempat_lahir"] = bounded_conf
+        return bool(date_str or city)
+
+    elif field_key == "jenis_kelamin":
+        gender = _normalize_gender(val)
+        fields.jenis_kelamin = gender
+        fields.field_confidences["jenis_kelamin"] = bounded_conf
+        return True
+
+    elif field_key == "alamat":
+        fields.alamat = val
+        fields.field_confidences["alamat"] = bounded_conf
+        return True
+
+    elif field_key == "rt_rw":
+        fields.rt_rw = val
+        fields.field_confidences["rt_rw"] = bounded_conf
+        return True
+
+    elif field_key == "kel_desa":
+        fields.kel_desa = val
+        fields.field_confidences["kel_desa"] = bounded_conf
+        return True
+
+    elif field_key == "kecamatan":
+        fields.kecamatan = val
+        fields.field_confidences["kecamatan"] = bounded_conf
+        return True
+
+    elif field_key == "agama":
+        fields.agama = val
+        fields.field_confidences["agama"] = bounded_conf
+        return True
+
+    elif field_key == "status_perkawinan":
+        fields.status_perkawinan = val
+        fields.field_confidences["status_perkawinan"] = bounded_conf
+        return True
+
+    elif field_key == "pekerjaan":
+        fields.pekerjaan = val
+        fields.field_confidences["pekerjaan"] = bounded_conf
+        return True
+
+    elif field_key == "kewarganegaraan":
+        fields.kewarganegaraan = val
+        fields.field_confidences["kewarganegaraan"] = bounded_conf
+        return True
+
+    elif field_key == "berlaku_hingga":
+        fields.berlaku_hingga = val
+        fields.field_confidences["berlaku_hingga"] = bounded_conf
+        return True
+
+    return False
+
+
+def _is_field_resolved(fields: KTPFieldExtraction, field_key: str) -> bool:
+    """Checks whether the field is already populated."""
+    if field_key == "nik":
+        return fields.nik is not None
+    if field_key == "ttl":
+        return fields.tgl_lahir is not None and fields.tempat_lahir is not None
+    return getattr(fields, field_key, None) is not None
+
+
 def extract_ktp_fields_from_ocr(lines: List[Any]) -> KTPFieldExtraction:
-    """Parses sequential OCR lines using regex rules for Indonesian e-KTP layout."""
+    """Parses OCR lines using two-tier spatial row pairing and sequential fallback for Indonesian e-KTP layout."""
     fields = KTPFieldExtraction()
 
-    for line in lines:
+    # 1. Normalize lines into _OCRBox objects
+    boxes: List[_OCRBox] = []
+    for idx, line in enumerate(lines):
         if hasattr(line, "text"):
             txt = str(line.text).strip()
             conf = float(getattr(line, "confidence", 1.0))
+            bbox = getattr(line, "bbox", None)
         elif isinstance(line, (list, tuple)) and len(line) >= 2:
             txt = str(line[0]).strip()
             conf = float(line[1])
+            bbox = line[2] if len(line) >= 3 else None
         else:
             txt = str(line).strip()
             conf = 1.0
+            bbox = None
+        if txt:
+            boxes.append(_OCRBox(text=txt, confidence=conf, bbox=bbox, index=idx))
 
-        # NIK detection
-        nik_match = re.search(r"\b(\d{16})\b", txt)
-        if not nik_match:
-            # Check for NIK : 3204...
-            nik_match = re.search(r"NIK\s*[:;.]?\s*([0-9Xx\s]{16,20})", txt, re.IGNORECASE)
-            if nik_match:
-                cleaned = re.sub(r"\D", "", nik_match.group(1))
-                if len(cleaned) == 16 and not fields.nik:
-                    fields.nik = cleaned
-                    fields.field_confidences["nik"] = conf
-        else:
-            if not fields.nik:
-                fields.nik = nik_match.group(1)
-                fields.field_confidences["nik"] = conf
+    if not boxes:
+        return fields
 
-        # Nama
-        nama_match = re.search(r"Nama\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if nama_match and not fields.nama:
-            fields.nama = nama_match.group(1).strip()
-            fields.field_confidences["nama"] = conf
+    # 2. Extract NIK first
+    for box in boxes:
+        m = re.search(r"\b(\d{16})\b", box.text)
+        if m and not fields.nik:
+            fields.nik = m.group(1)
+            fields.field_confidences["nik"] = round(box.confidence, 4)
+            break
+        m2 = re.search(r"NIK\s*[:;.]?\s*([0-9Xx\s]{16,24})", box.text, re.IGNORECASE)
+        if m2 and not fields.nik:
+            cleaned = re.sub(r"\D", "", m2.group(1))
+            if len(cleaned) == 16:
+                fields.nik = cleaned
+                fields.field_confidences["nik"] = round(box.confidence, 4)
+                break
 
-        # Tempat / Tgl Lahir
-        ttl_match = re.search(r"Tempat.*Lahir\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if ttl_match and not fields.tgl_lahir:
-            ttl_val = ttl_match.group(1).strip()
-            if "," in ttl_val:
-                parts = ttl_val.split(",", 1)
-                fields.tempat_lahir = parts[0].strip()
-                fields.tgl_lahir = parts[1].strip()
-            else:
-                fields.tgl_lahir = ttl_val
-            fields.field_confidences["tgl_lahir"] = conf
-            if fields.tempat_lahir:
-                fields.field_confidences["tempat_lahir"] = conf
+    # 3. For each field definition, apply two-tier matching
+    for spec in FIELD_SPECS:
+        key = spec["key"]
+        lbl_pat = spec["label_pat"]
 
-        # Jenis Kelamin
-        jk_match = re.search(r"Jenis\s*Kelamin\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if jk_match and not fields.jenis_kelamin:
-            val = jk_match.group(1).strip()
-            if "LAKI" in val.upper():
-                fields.jenis_kelamin = "LAKI-LAKI"
-            elif "PEREMPUAN" in val.upper():
-                fields.jenis_kelamin = "PEREMPUAN"
-            else:
-                fields.jenis_kelamin = val
-            fields.field_confidences["jenis_kelamin"] = conf
+        if _is_field_resolved(fields, key):
+            continue
 
-        # Alamat
-        alamat_match = re.search(r"Alamat\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if alamat_match and not fields.alamat:
-            fields.alamat = alamat_match.group(1).strip()
-            fields.field_confidences["alamat"] = conf
+        resolved = False
 
-        # RT/RW
-        rtrw_match = re.search(r"RT\s*/\s*RW\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if rtrw_match and not fields.rt_rw:
-            fields.rt_rw = rtrw_match.group(1).strip()
-            fields.field_confidences["rt_rw"] = conf
+        # Step A: Inline matching
+        for box in boxes:
+            inline_val = _match_inline(box.text, lbl_pat)
+            if inline_val:
+                if _assign_field_value(fields, key, inline_val, box.confidence):
+                    resolved = True
+                    break
 
-        # Kel/Desa
-        kel_match = re.search(r"Kel\s*/\s*Desa\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if kel_match and not fields.kel_desa:
-            fields.kel_desa = kel_match.group(1).strip()
-            fields.field_confidences["kel_desa"] = conf
+        if resolved or _is_field_resolved(fields, key):
+            continue
 
-        # Kecamatan
-        kec_match = re.search(r"Kecamatan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if kec_match and not fields.kecamatan:
-            fields.kecamatan = kec_match.group(1).strip()
-            fields.field_confidences["kecamatan"] = conf
+        # Step B: Spatial Row Pairing
+        label_box: Optional[_OCRBox] = None
+        label_box_idx: int = -1
+        for b_i, box in enumerate(boxes):
+            if _match_standalone(box.text, lbl_pat):
+                label_box = box
+                label_box_idx = b_i
+                break
 
-        # Agama
-        agama_match = re.search(r"Agama\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if agama_match and not fields.agama:
-            fields.agama = agama_match.group(1).strip()
-            fields.field_confidences["agama"] = conf
+        if label_box and label_box.has_bbox:
+            candidate_boxes = []
+            for c in boxes:
+                if c.index == label_box.index or not c.has_bbox:
+                    continue
+                # Must be horizontally to the right of label
+                if c.min_x < label_box.min_x + 10:
+                    continue
+                # Vertical overlap check (same row: center_y difference typically < 0.5 * height)
+                y_diff = abs(c.center_y - label_box.center_y)
+                tolerance = min(label_box.height, c.height) * 0.5
+                if y_diff > tolerance:
+                    continue
+                # Filter out system headers and recognized labels
+                if _is_system_or_label(c.text):
+                    continue
+                # For gender, filter out blood type if present
+                if key == "jenis_kelamin" and re.search(r"(?:Gol\.?|Golongan)?\s*Darah\b", c.text, re.IGNORECASE):
+                    continue
+                candidate_boxes.append(c)
 
-        # Status Perkawinan
-        kawin_match = re.search(r"Status\s*Perkawinan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if kawin_match and not fields.status_perkawinan:
-            fields.status_perkawinan = kawin_match.group(1).strip()
-            fields.field_confidences["status_perkawinan"] = conf
+            if candidate_boxes:
+                # Sort candidates by min_x ascending
+                candidate_boxes.sort(key=lambda b: b.min_x)
+                # Cluster horizontally adjacent words in the same field
+                clustered = [candidate_boxes[0]]
+                for next_box in candidate_boxes[1:]:
+                    gap = next_box.min_x - clustered[-1].max_x
+                    max_gap = max(label_box.height, clustered[-1].height) * 1.8
+                    if 0 <= gap <= max_gap:
+                        clustered.append(next_box)
+                    else:
+                        break
 
-        # Pekerjaan
-        kerja_match = re.search(r"Pekerjaan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if kerja_match and not fields.pekerjaan:
-            fields.pekerjaan = kerja_match.group(1).strip()
-            fields.field_confidences["pekerjaan"] = conf
+                combined_text = " ".join(b.text for b in clustered)
+                avg_conf = sum(b.confidence for b in clustered) / len(clustered)
+                if _assign_field_value(fields, key, combined_text, avg_conf):
+                    resolved = True
 
-        # Kewarganegaraan
-        wn_match = re.search(r"Kewarganegaraan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if wn_match and not fields.kewarganegaraan:
-            fields.kewarganegaraan = wn_match.group(1).strip()
-            fields.field_confidences["kewarganegaraan"] = conf
+        if resolved or _is_field_resolved(fields, key):
+            continue
 
-        # Berlaku Hingga
-        berlaku_match = re.search(r"Berlaku\s*Hingga\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
-        if berlaku_match and not fields.berlaku_hingga:
-            fields.berlaku_hingga = berlaku_match.group(1).strip()
-            fields.field_confidences["berlaku_hingga"] = conf
+        # Step C: Sequential Adjacency Fallback
+        if label_box_idx >= 0:
+            for j in range(label_box_idx + 1, min(label_box_idx + 3, len(boxes))):
+                cand_box = boxes[j]
+                if cand_box.text and not _is_system_or_label(cand_box.text):
+                    if _assign_field_value(fields, key, cand_box.text, cand_box.confidence):
+                        resolved = True
+                    break
+                elif _is_system_or_label(cand_box.text):
+                    break
 
     return fields
+
+

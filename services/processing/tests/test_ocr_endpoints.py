@@ -220,3 +220,81 @@ def test_assess_image_quality_rgba_support():
     assert quality.height == 600
     assert not quality.is_low_res
     assert quality.blur_score > 0
+
+
+def test_extract_ktp_fields_spatial_multi_box():
+    lines = [
+        OCRLineResult(text="PROVINSI DKI JAKARTA", confidence=0.9, bbox=[[1000, 200], [1700, 200], [1700, 250], [1000, 250]]),
+        OCRLineResult(text="NIK", confidence=0.99, bbox=[[500, 430], [650, 430], [650, 500], [500, 500]]),
+        OCRLineResult(text="3174012005850001", confidence=0.95, bbox=[[950, 430], [1500, 430], [1500, 500], [950, 500]]),
+        OCRLineResult(text="Nama", confidence=0.98, bbox=[[500, 540], [650, 540], [650, 600], [500, 600]]),
+        OCRLineResult(text="AHMAD FAUZI", confidence=0.97, bbox=[[950, 540], [1400, 540], [1400, 600], [950, 600]]),
+        OCRLineResult(text="Tempat/Tgl Lahir", confidence=0.92, bbox=[[500, 600], [850, 600], [850, 660], [500, 660]]),
+        OCRLineResult(text="JAKARTA, 20-05-1985", confidence=0.93, bbox=[[950, 600], [1500, 600], [1500, 660], [950, 660]]),
+        OCRLineResult(text="Jenis Kelamin", confidence=0.91, bbox=[[500, 660], [800, 660], [800, 720], [500, 720]]),
+        OCRLineResult(text="LAKI-LAKI", confidence=0.96, bbox=[[950, 660], [1200, 660], [1200, 720], [950, 720]]),
+        OCRLineResult(text="Gol. Darah: 0", confidence=0.94, bbox=[[1350, 660], [1600, 660], [1600, 720], [1350, 720]]),
+        OCRLineResult(text="Alamat", confidence=0.95, bbox=[[500, 720], [680, 720], [680, 780], [500, 780]]),
+        OCRLineResult(text="JL TEBET BARAT DALAM NO. 12", confidence=0.90, bbox=[[950, 720], [1600, 720], [1600, 780], [950, 780]]),
+        OCRLineResult(text="RTIRW", confidence=0.92, bbox=[[580, 780], [750, 780], [750, 840], [580, 840]]),
+        OCRLineResult(text="004/002", confidence=0.91, bbox=[[950, 780], [1150, 780], [1150, 840], [950, 840]]),
+        OCRLineResult(text="KellDesa", confidence=0.88, bbox=[[580, 840], [800, 840], [800, 900], [580, 900]]),
+        OCRLineResult(text="TEBET BARAT", confidence=0.94, bbox=[[950, 840], [1300, 840], [1300, 900], [950, 900]]),
+        OCRLineResult(text="Kecamatan", confidence=0.96, bbox=[[580, 900], [820, 900], [820, 960], [580, 960]]),
+        OCRLineResult(text="TEBET", confidence=0.95, bbox=[[950, 900], [1150, 900], [1150, 960], [950, 960]]),
+        OCRLineResult(text="Agama", confidence=0.97, bbox=[[500, 960], [680, 960], [680, 1020], [500, 1020]]),
+        OCRLineResult(text="ISLAM", confidence=0.99, bbox=[[950, 960], [1150, 960], [1150, 1020], [950, 1020]]),
+        OCRLineResult(text="Status Perkawinan", confidence=0.95, bbox=[[500, 1020], [850, 1020], [850, 1080], [500, 1080]]),
+        OCRLineResult(text="KAWIN", confidence=0.97, bbox=[[950, 1020], [1150, 1020], [1150, 1080], [950, 1080]]),
+        OCRLineResult(text="Pekerjaan", confidence=0.96, bbox=[[500, 1080], [750, 1080], [750, 1140], [500, 1140]]),
+        OCRLineResult(text="KARYAWAN SWASTA", confidence=0.94, bbox=[[950, 1080], [1450, 1080], [1450, 1140], [950, 1140]]),
+        OCRLineResult(text="Kewarganegaraan", confidence=0.93, bbox=[[500, 1140], [880, 1140], [880, 1200], [500, 1200]]),
+        OCRLineResult(text="WNI", confidence=0.98, bbox=[[950, 1140], [1100, 1140], [1100, 1200], [950, 1200]]),
+        OCRLineResult(text="Berlaku Hingga", confidence=0.96, bbox=[[500, 1200], [820, 1200], [820, 1260], [500, 1260]]),
+        OCRLineResult(text="SEUMUR HIDUP", confidence=0.99, bbox=[[950, 1200], [1350, 1200], [1350, 1260], [950, 1260]]),
+    ]
+    fields = extract_ktp_fields_from_ocr(lines)
+    assert fields.nik == "3174012005850001"
+    assert fields.nama == "AHMAD FAUZI"
+    assert fields.tempat_lahir == "JAKARTA"
+    assert fields.tgl_lahir == "20-05-1985"
+    assert fields.jenis_kelamin == "LAKI-LAKI"
+    assert fields.alamat == "JL TEBET BARAT DALAM NO. 12"
+    assert fields.rt_rw == "004/002"
+    assert fields.kel_desa == "TEBET BARAT"
+    assert fields.kecamatan == "TEBET"
+    assert fields.agama == "ISLAM"
+    assert fields.status_perkawinan == "KAWIN"
+    assert fields.pekerjaan == "KARYAWAN SWASTA"
+    assert fields.kewarganegaraan == "WNI"
+    assert fields.berlaku_hingga == "SEUMUR HIDUP"
+    assert fields.field_confidences["nama"] == pytest.approx(0.97, abs=0.01)
+    assert fields.field_confidences["alamat"] == pytest.approx(0.90, abs=0.01)
+
+
+def test_extract_ktp_fields_sequential_fallback():
+    lines = [
+        ("PROVINSI DKI JAKARTA", 0.95),
+        ("NIK", 0.99),
+        ("3174012005850001", 0.98),
+        ("Nama", 0.97),
+        ("AHMAD FAUZI", 0.96),
+        ("Tempat/Tgl Lahir", 0.94),
+        ("JAKARTA, 20-05-1985", 0.93),
+        ("Jenis Kelamin", 0.95),
+        ("LAKI-LAKI", 0.95),
+        ("Alamat", 0.92),
+        ("JL TEBET BARAT DALAM NO. 12", 0.91),
+        ("Agama", 0.99),
+        ("ISLAM", 0.98),
+    ]
+    fields = extract_ktp_fields_from_ocr(lines)
+    assert fields.nik == "3174012005850001"
+    assert fields.nama == "AHMAD FAUZI"
+    assert fields.tempat_lahir == "JAKARTA"
+    assert fields.tgl_lahir == "20-05-1985"
+    assert fields.jenis_kelamin == "LAKI-LAKI"
+    assert fields.alamat == "JL TEBET BARAT DALAM NO. 12"
+    assert fields.agama == "ISLAM"
+    assert fields.field_confidences["nama"] == pytest.approx(0.96, abs=0.01)
+
