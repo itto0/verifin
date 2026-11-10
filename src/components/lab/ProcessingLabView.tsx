@@ -868,6 +868,13 @@ const KtpDomainCard: React.FC<{ data: KTPProcessResult }> = ({ data }) => {
   const validation = data?.validation || ({} as any);
   const confidences = fields.field_confidences || {};
   const imageQuality = data?.image_quality;
+  const blurScore = imageQuality?.blur_score ?? data?.quality_score;
+  const isBlurred = imageQuality?.is_blurred ?? data?.is_blurred;
+  const hasQuality = Boolean(
+    imageQuality ||
+    typeof data?.quality_score === 'number' ||
+    typeof data?.is_blurred === 'boolean'
+  );
 
   // Support backend variations: province vs province_code, etc.
   const provinceVal = validation.province || validation.province_code || '—';
@@ -875,7 +882,8 @@ const KtpDomainCard: React.FC<{ data: KTPProcessResult }> = ({ data }) => {
   const districtVal = validation.district || validation.district_code || '—';
   const genderVal = validation.parsed_gender || validation.gender || '—';
   const dobVal = validation.parsed_dob || validation.birth_date_str || '—';
-  const isTampered = (validation.tamper_score || 0) > 0.5;
+  const tamperScoreNum = typeof validation.tamper_score === 'number' ? validation.tamper_score : 0;
+  const isTampered = tamperScoreNum > 1 ? tamperScoreNum >= 50 : tamperScoreNum > 0.5;
 
   return (
     <div className="space-y-4">
@@ -931,11 +939,11 @@ const KtpDomainCard: React.FC<{ data: KTPProcessResult }> = ({ data }) => {
           </div>
         </div>
 
-        {imageQuality && (
+        {hasQuality && (
           <div className="flex flex-wrap items-center gap-4 text-xs text-[#6B6B6B] pt-2 border-t border-[#E5E5E3]">
-            <span>Blur Score: <strong className="text-[#1A1A1A] font-semibold">{imageQuality.blur_score?.toFixed(1) ?? '—'}</strong></span>
-            <span>Image Status: <strong className={imageQuality.is_blurred ? 'text-[#DC2626] font-semibold' : 'text-[#16A34A] font-semibold'}>{imageQuality.is_blurred ? 'Blurred Warning' : 'Sharp'}</strong></span>
-            {imageQuality.width && imageQuality.height && (
+            <span>Blur Score: <strong className="text-[#1A1A1A] font-semibold">{typeof blurScore === 'number' ? blurScore.toFixed(1) : '—'}</strong></span>
+            <span>Image Status: <strong className={isBlurred ? 'text-[#DC2626] font-semibold' : 'text-[#16A34A] font-semibold'}>{isBlurred ? 'Blurred Warning' : 'Sharp'}</strong></span>
+            {imageQuality?.width && imageQuality?.height && (
               <span>Resolution: <strong className="text-[#1A1A1A] font-semibold">{imageQuality.width} x {imageQuality.height} px</strong></span>
             )}
           </div>
