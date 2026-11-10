@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 from typing import List, Tuple
 import cv2
 from fastapi import FastAPI
@@ -7,7 +8,7 @@ import numpy as np
 import pytest
 
 from app.routers.ocr import router
-from app.services.ktp_parser import extract_ktp_fields_from_ocr
+from app.services.ktp_parser import cross_validate_ktp, extract_ktp_fields_from_ocr
 from app.services.ocr_engine import (
     OCREngine,
     OCRLineResult,
@@ -297,4 +298,41 @@ def test_extract_ktp_fields_sequential_fallback():
     assert fields.alamat == "JL TEBET BARAT DALAM NO. 12"
     assert fields.agama == "ISLAM"
     assert fields.field_confidences["nama"] == pytest.approx(0.96, abs=0.01)
+
+
+def test_real_ktp_demo_image_full_extraction():
+    img_path = Path(__file__).resolve().parents[3] / "public" / "ktp_demo_normal.jfif"
+    if not img_path.exists():
+        img_path = Path("public/ktp_demo_normal.jfif").resolve()
+    assert img_path.exists(), f"Demo KTP image not found at {img_path}"
+
+    img = cv2.imread(str(img_path))
+    assert img is not None, f"Failed to load image from {img_path}"
+
+    engine = OCREngine()
+    lines = engine.extract_text(img)
+    assert len(lines) > 0
+
+    fields = extract_ktp_fields_from_ocr(lines)
+    assert fields.nik == "3174012005850001"
+    assert fields.nama == "AHMAD FAUZI"
+    assert fields.tempat_lahir == "JAKARTA"
+    assert fields.tgl_lahir == "20-05-1985"
+    assert fields.jenis_kelamin == "LAKI-LAKI"
+    assert fields.alamat == "JL TEBET BARAT DALAM NO. 12"
+    assert fields.rt_rw == "004/002"
+    assert fields.kel_desa == "TEBET BARAT"
+    assert fields.kecamatan == "TEBET"
+    assert fields.agama == "ISLAM"
+    assert fields.status_perkawinan == "KAWIN"
+    assert fields.pekerjaan == "KARYAWAN SWASTA"
+    assert fields.kewarganegaraan == "WNI"
+    assert fields.berlaku_hingga == "SEUMUR HIDUP"
+
+    for field_name, conf in fields.field_confidences.items():
+        assert 0.0 <= conf <= 1.0
+
+    validation = cross_validate_ktp(fields)
+    assert validation.is_valid is True
+
 
