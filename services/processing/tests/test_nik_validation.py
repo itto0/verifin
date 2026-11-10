@@ -58,9 +58,40 @@ def test_cross_validate_ktp_mismatch():
         berlaku_hingga="SEUMUR HIDUP",
     )
     tamper_result = cross_validate_ktp(fields)
+    assert tamper_result.is_valid is False
     assert tamper_result.tamper_score >= 70
     assert any(f.type == "NIK_BIRTHDATE_MISMATCH" for f in tamper_result.findings)
     assert any(f.type == "NIK_GENDER_MISMATCH" for f in tamper_result.findings)
+
+
+def test_cross_validate_ktp_birthdate_mismatch_only():
+    fields = KTPFieldExtraction(
+        nik="3204051205900001",
+        nama="BUDI SANTOSO",
+        tempat_lahir="BANDUNG",
+        tgl_lahir="15-08-1992",  # Mismatches NIK birthdate (1990-05-12)
+        jenis_kelamin="LAKI-LAKI",  # Matches NIK gender
+    )
+    tamper_result = cross_validate_ktp(fields)
+    assert tamper_result.is_valid is False
+    assert tamper_result.tamper_score >= 70.0
+    assert any(f.type == "NIK_BIRTHDATE_MISMATCH" for f in tamper_result.findings)
+    assert not any(f.type == "NIK_GENDER_MISMATCH" for f in tamper_result.findings)
+
+
+def test_cross_validate_ktp_gender_mismatch_only():
+    fields = KTPFieldExtraction(
+        nik="3204051205900001",
+        nama="BUDI SANTOSO",
+        tempat_lahir="BANDUNG",
+        tgl_lahir="12-05-1990",  # Matches NIK birthdate
+        jenis_kelamin="PEREMPUAN",  # Mismatches NIK gender (LAKI-LAKI)
+    )
+    tamper_result = cross_validate_ktp(fields)
+    assert tamper_result.is_valid is False
+    assert tamper_result.tamper_score >= 70.0
+    assert any(f.type == "NIK_GENDER_MISMATCH" for f in tamper_result.findings)
+    assert not any(f.type == "NIK_BIRTHDATE_MISMATCH" for f in tamper_result.findings)
 
 
 def test_missing_nik():
@@ -96,6 +127,7 @@ def test_cross_validate_ktp_match():
         jenis_kelamin="LAKI-LAKI",  # Matches NIK gender
     )
     tamper_result = cross_validate_ktp(fields)
+    assert tamper_result.is_valid is True
     assert tamper_result.tamper_score == 0.0
     assert not any(f.type in ("NIK_BIRTHDATE_MISMATCH", "NIK_GENDER_MISMATCH") for f in tamper_result.findings)
 
@@ -143,4 +175,36 @@ def test_cross_validate_ktp_with_invalid_nik():
     tamper_result = cross_validate_ktp(fields)
     assert tamper_result.is_valid is False
     assert tamper_result.tamper_score == 0.0
+
+
+def test_invalid_regency_code():
+    result = validate_nik("3200051205900001")
+    assert result.is_valid is False
+    assert any(f.type == "INVALID_REGENCY_CODE" for f in result.findings)
+
+
+def test_invalid_district_code():
+    result = validate_nik("3204001205900001")
+    assert result.is_valid is False
+    assert any(f.type == "INVALID_DISTRICT_CODE" for f in result.findings)
+
+
+def test_expanded_papua_provinces():
+    for prov_code in ["93", "94", "95", "96"]:
+        result = validate_nik(f"{prov_code}01011205900001")
+        assert result.is_valid is True
+        assert result.province_code == prov_code
+        assert not any(f.type == "INVALID_PROVINCE_CODE" for f in result.findings)
+
+
+def test_nik_century_cutoff():
+    # Born 2009 -> age 17 in 2026, decoded as 2009
+    res_2009 = validate_nik("3204051205090001")
+    assert res_2009.is_valid is True
+    assert res_2009.birth_date_str == "2009-05-12"
+
+    # Born year short 10 -> in 2026, 10 > 9 (26 - 17), decoded as 1910
+    res_1910 = validate_nik("3204051205100001")
+    assert res_1910.is_valid is True
+    assert res_1910.birth_date_str == "1910-05-12"
 
