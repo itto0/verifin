@@ -7,3 +7,14 @@ coverage/
 .playwright-mcp/
 .env*
 !.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
