@@ -11,18 +11,35 @@ from app.services.voice_qa import calculate_voice_qa
 router = APIRouter(tags=["Voice Analytics"])
 
 
-async def save_temp_audio(upload_file: UploadFile) -> str:
+MAX_AUDIO_SIZE_BYTES = 50 * 1024 * 1024  # 50MB
+
+
+def save_temp_audio(upload_file: UploadFile) -> str:
+    if upload_file.size is not None and upload_file.size > MAX_AUDIO_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="Audio file too large (max 50MB)")
+
     suffix = os.path.splitext(upload_file.filename or "")[1] or ".wav"
     tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp_path = tmp.name
-            shutil.copyfileobj(upload_file.file, tmp)
+            total_bytes = 0
+            while chunk := upload_file.file.read(1024 * 1024):
+                total_bytes += len(chunk)
+                if total_bytes > MAX_AUDIO_SIZE_BYTES:
+                    break
+                tmp.write(chunk)
 
-        file_size = os.path.getsize(tmp_path)
-        if file_size == 0:
-            os.remove(tmp_path)
-            tmp_path = None
+        if total_bytes > MAX_AUDIO_SIZE_BYTES:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                tmp_path = None
+            raise HTTPException(status_code=400, detail="Audio file too large (max 50MB)")
+
+        if total_bytes == 0:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                tmp_path = None
             raise HTTPException(status_code=400, detail="Empty audio file")
         return tmp_path
     except Exception:
@@ -32,17 +49,23 @@ async def save_temp_audio(upload_file: UploadFile) -> str:
 
 
 @router.post("/transcribe", response_model=ProcessEnvelope[TranscriptionResult])
-async def transcribe_audio(
+def transcribe_audio(
     file: UploadFile = File(...),
     audio_engine: AudioEngine = Depends(get_audio_engine),
     settings: AppConfig = Depends(get_settings),
 ):
-    tmp_path = await save_temp_audio(file)
+    tmp_path = save_temp_audio(file)
     try:
         result = audio_engine.transcribe_file(tmp_path)
+        if result.segments:
+            raw_conf = sum(s.confidence for s in result.segments) / len(result.segments) * 100.0
+            confidence = round(float(max(0.0, min(100.0, raw_conf))), 1)
+        else:
+            confidence = 90.0
+
         return ProcessEnvelope[TranscriptionResult](
             status="success",
-            confidence=90.0,
+            confidence=confidence,
             model_version=settings.voice_model_version,
             data=result,
             findings=[],
@@ -53,12 +76,12 @@ async def transcribe_audio(
 
 
 @router.post("/analyze", response_model=ProcessEnvelope[VoiceQAResult])
-async def analyze_voice_call(
+def analyze_voice_call(
     file: UploadFile = File(...),
     audio_engine: AudioEngine = Depends(get_audio_engine),
     settings: AppConfig = Depends(get_settings),
 ):
-    tmp_path = await save_temp_audio(file)
+    tmp_path = save_temp_audio(file)
     try:
         transcript = audio_engine.transcribe_file(tmp_path)
         qa_result, findings = calculate_voice_qa(transcript.segments)

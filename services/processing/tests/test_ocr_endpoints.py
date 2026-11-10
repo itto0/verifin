@@ -187,6 +187,29 @@ def test_post_ocr_document_empty_file_raises_400(client):
     assert "Empty image file" in response.json()["detail"]
 
 
+def test_post_ocr_ktp_file_too_large(client):
+    class LargeFakeFile(io.RawIOBase):
+        def __init__(self, size):
+            self.size = size
+            self.read_bytes = 0
+
+        def read(self, n=-1):
+            if self.read_bytes >= self.size:
+                return b""
+            chunk_size = n if n > 0 else (self.size - self.read_bytes)
+            chunk_size = min(chunk_size, self.size - self.read_bytes)
+            self.read_bytes += chunk_size
+            return b"a" * chunk_size
+
+    large_file = LargeFakeFile(16 * 1024 * 1024)
+    response = client.post(
+        "/api/v1/ocr/ktp",
+        files={"file": ("huge.jpg", large_file, "image/jpeg")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Image file too large (max 15MB)"
+
+
 def test_assess_image_quality_rgba_support():
     # 4-channel BGRA image
     rgba_img = np.zeros((600, 800, 4), dtype=np.uint8)

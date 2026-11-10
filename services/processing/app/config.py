@@ -1,8 +1,15 @@
 from functools import lru_cache
-from pydantic import BaseModel
+from typing import List
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class AppConfig(BaseModel):
+class AppConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
     app_name: str = "VeriFin Processing Service"
     version: str = "0.1.0"
     ocr_model_version: str = "easyocr-id-en-v1"
@@ -13,6 +20,7 @@ class AppConfig(BaseModel):
     blur_threshold: float = 100.0
     min_image_width: int = 600
     hesitation_silence_threshold: float = 1.5
+    cors_origins: List[str] = ["*"]
 
 
 @lru_cache

@@ -94,7 +94,19 @@ def test_app_config_defaults():
     assert config.blur_threshold == 100.0
     assert config.min_image_width == 600
     assert config.whisper_model_size == "small"
+    assert config.cors_origins == ["*"]
 
     # Verify cached instance
     config2 = get_settings()
     assert config is config2
+
+
+def test_app_config_env_and_cors(monkeypatch):
+    monkeypatch.setenv("APP_NAME", "Custom VeriFin Service")
+    monkeypatch.setenv("WHISPER_DEVICE", "cuda")
+    monkeypatch.setenv("CORS_ORIGINS", '["http://app.internal", "https://baf.id"]')
+
+    custom_cfg = AppConfig()
+    assert custom_cfg.app_name == "Custom VeriFin Service"
+    assert custom_cfg.whisper_device == "cuda"
+    assert custom_cfg.cors_origins == ["http://app.internal", "https://baf.id"]

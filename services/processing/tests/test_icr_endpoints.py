@@ -133,6 +133,29 @@ def test_post_icr_survey_form_corrupted_file(client):
     assert "Invalid image file format" in response.json()["detail"]
 
 
+def test_post_icr_survey_form_file_too_large(client):
+    class LargeFakeFile(io.RawIOBase):
+        def __init__(self, size):
+            self.size = size
+            self.read_bytes = 0
+
+        def read(self, n=-1):
+            if self.read_bytes >= self.size:
+                return b""
+            chunk_size = n if n > 0 else (self.size - self.read_bytes)
+            chunk_size = min(chunk_size, self.size - self.read_bytes)
+            self.read_bytes += chunk_size
+            return b"a" * chunk_size
+
+    large_file = LargeFakeFile(16 * 1024 * 1024)
+    response = client.post(
+        "/api/v1/icr/survey-form",
+        files={"file": ("huge.jpg", large_file, "image/jpeg")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Image file too large (max 15MB)"
+
+
 def test_extract_survey_form_icr_unit():
     lines = [
         OCRLineResult(text="Header Form CMO", confidence=0.90, bbox=[]),

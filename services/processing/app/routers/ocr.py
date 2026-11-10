@@ -12,8 +12,15 @@ from app.services.ocr_engine import OCREngine, assess_image_quality, get_ocr_eng
 router = APIRouter(tags=["OCR"])
 
 
-async def read_image_from_upload(upload_file: UploadFile) -> np.ndarray:
-    contents = await upload_file.read()
+MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024  # 15MB
+
+
+def read_image_from_upload(upload_file: UploadFile) -> np.ndarray:
+    if upload_file.size is not None and upload_file.size > MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="Image file too large (max 15MB)")
+    contents = upload_file.file.read(MAX_IMAGE_SIZE_BYTES + 1)
+    if len(contents) > MAX_IMAGE_SIZE_BYTES:
+        raise HTTPException(status_code=400, detail="Image file too large (max 15MB)")
     if not contents:
         raise HTTPException(status_code=400, detail="Empty image file")
     nparr = np.frombuffer(contents, np.uint8)
@@ -24,12 +31,12 @@ async def read_image_from_upload(upload_file: UploadFile) -> np.ndarray:
 
 
 @router.post("/ktp", response_model=ProcessEnvelope[KTPProcessResult])
-async def process_ktp(
+def process_ktp(
     file: UploadFile = File(...),
     ocr_engine: OCREngine = Depends(get_ocr_engine),
     settings: AppConfig = Depends(get_settings),
 ):
-    image_np = await read_image_from_upload(file)
+    image_np = read_image_from_upload(file)
     quality = assess_image_quality(image_np)
 
     extracted_lines = ocr_engine.extract_text(image_np)
@@ -65,12 +72,12 @@ async def process_ktp(
 
 
 @router.post("/document", response_model=ProcessEnvelope[Dict[str, Any]])
-async def process_document(
+def process_document(
     file: UploadFile = File(...),
     ocr_engine: OCREngine = Depends(get_ocr_engine),
     settings: AppConfig = Depends(get_settings),
 ):
-    image_np = await read_image_from_upload(file)
+    image_np = read_image_from_upload(file)
     quality = assess_image_quality(image_np)
     extracted_lines = ocr_engine.extract_text(image_np)
 

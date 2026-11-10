@@ -12,12 +12,12 @@ router = APIRouter(tags=["ICR"])
 
 
 @router.post("/survey-form", response_model=ProcessEnvelope[ICRFormResult])
-async def process_survey_form(
+def process_survey_form(
     file: UploadFile = File(...),
     ocr_engine: OCREngine = Depends(get_ocr_engine),
     settings: AppConfig = Depends(get_settings),
 ):
-    image_np = await read_image_from_upload(file)
+    image_np = read_image_from_upload(file)
     quality = assess_image_quality(image_np)
     lines = ocr_engine.extract_text(image_np)
 

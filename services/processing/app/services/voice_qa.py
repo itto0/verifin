@@ -8,12 +8,14 @@ OJK_STAGES = [
     {
         "stage": "1. GREETING & IDENTITY",
         "description": "Agent states official greeting and company identity (BAF / PT Bussan Auto Finance)",
-        "patterns": [r"baf\b", r"bussan auto finance", r"selamat (pagi|siang|sore)", r"dengan saya"],
+        "patterns": [r"\bbaf\b", r"bussan auto finance", r"selamat (pagi|siang|sore|malam)", r"dengan saya"],
+        "greeting_patterns": [r"selamat (pagi|siang|sore|malam)", r"dengan saya", r"halo", r"hai"],
+        "identity_patterns": [r"\bbaf\b", r"bussan auto finance"],
     },
     {
         "stage": "2. PURPOSE & RECORDING DISCLOSURE",
         "description": "Agent discloses call purpose and mandatory recording notice",
-        "patterns": [r"direkam", r"rekaman", r"verifikasi", r"pengajuan", r"pembiayaan"],
+        "patterns": [r"direkam", r"rekaman"],
     },
     {
         "stage": "3. DATA CONFIRMATION",
@@ -23,7 +25,7 @@ OJK_STAGES = [
     {
         "stage": "4. CLOSING STATEMENT",
         "description": "Professional closing thanking the customer",
-        "patterns": [r"terima kasih", r"selamat beraktivitas", r"selamat (pagi|siang|sore)"],
+        "patterns": [r"terima kasih", r"selamat beraktivitas", r"selamat (pagi|siang|sore|malam)"],
     },
 ]
 
@@ -35,14 +37,43 @@ def audit_script_compliance(segments: List[AudioSegment]) -> List[ScriptCheckIte
 
     checklist: List[ScriptCheckItem] = []
     for item in OJK_STAGES:
-        matches = [p for p in item["patterns"] if re.search(p, full_agent_text)]
-        passed = len(matches) >= 1
-        matched_sample = None
-        if passed:
-            for text in agent_texts:
-                if any(re.search(p, text.lower()) for p in item["patterns"]):
-                    matched_sample = text
-                    break
+        stage_name = item["stage"]
+        if "1. GREETING & IDENTITY" in stage_name:
+            greeting_patterns = item.get(
+                "greeting_patterns",
+                [r"selamat (pagi|siang|sore|malam)", r"dengan saya", r"halo", r"hai"],
+            )
+            identity_patterns = item.get("identity_patterns", [r"\bbaf\b", r"bussan auto finance"])
+            has_greeting = any(re.search(p, full_agent_text) for p in greeting_patterns)
+            has_identity = any(re.search(p, full_agent_text) for p in identity_patterns)
+            passed = has_greeting and has_identity
+            matched_sample = None
+            if passed:
+                for text in agent_texts:
+                    t_low = text.lower()
+                    if any(re.search(p, t_low) for p in greeting_patterns) and any(
+                        re.search(p, t_low) for p in identity_patterns
+                    ):
+                        matched_sample = text
+                        break
+                if not matched_sample:
+                    for text in agent_texts:
+                        t_low = text.lower()
+                        if any(re.search(p, t_low) for p in identity_patterns) or any(
+                            re.search(p, t_low) for p in greeting_patterns
+                        ):
+                            matched_sample = text
+                            break
+        else:
+            patterns = item["patterns"]
+            matches = [p for p in patterns if re.search(p, full_agent_text)]
+            passed = len(matches) >= 1
+            matched_sample = None
+            if passed:
+                for text in agent_texts:
+                    if any(re.search(p, text.lower()) for p in patterns):
+                        matched_sample = text
+                        break
 
         checklist.append(
             ScriptCheckItem(

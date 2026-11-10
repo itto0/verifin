@@ -78,3 +78,32 @@ def test_get_ocr_engine_singleton():
     engine1 = get_ocr_engine()
     engine2 = get_ocr_engine()
     assert engine1 is engine2
+
+
+def test_ocr_engine_reader_gpu_flag(monkeypatch):
+    import sys
+    calls = []
+
+    class MockEasyOCRModule:
+        class Reader:
+            def __init__(self, languages, gpu=False):
+                calls.append({"languages": languages, "gpu": gpu})
+
+    monkeypatch.setitem(sys.modules, "easyocr", MockEasyOCRModule)
+
+    from app.config import AppConfig
+
+    # With CPU
+    monkeypatch.setattr("app.services.ocr_engine.get_settings", lambda: AppConfig(whisper_device="cpu"))
+    engine_cpu = OCREngine()
+    engine_cpu._get_reader()
+    assert len(calls) == 1
+    assert calls[0]["gpu"] is False
+    assert calls[0]["languages"] == ["id", "en"]
+
+    # With CUDA
+    monkeypatch.setattr("app.services.ocr_engine.get_settings", lambda: AppConfig(whisper_device="cuda"))
+    engine_cuda = OCREngine()
+    engine_cuda._get_reader()
+    assert len(calls) == 2
+    assert calls[1]["gpu"] is True

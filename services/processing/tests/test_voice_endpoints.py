@@ -49,6 +49,48 @@ def test_audit_script_compliance_missing_recording_disclosure():
     assert stage2.matched_utterance is None
 
 
+def test_audit_script_compliance_stage1_missing_company_identity():
+    # Agent greets but forgets company name (BAF / Bussan Auto Finance)
+    segments = [
+        AudioSegment(id=0, start=0.0, end=2.0, text="Selamat pagi dengan saya selaku customer service", speaker="agent"),
+        AudioSegment(id=1, start=2.5, end=5.0, text="Panggilan ini direkam untuk keperluan verifikasi pengajuan pembiayaan", speaker="agent"),
+        AudioSegment(id=2, start=5.5, end=7.0, text="Konfirmasi nama bapak", speaker="agent"),
+        AudioSegment(id=3, start=7.5, end=9.0, text="Terima kasih bapak selamat beraktivitas", speaker="agent"),
+    ]
+    checklist = audit_script_compliance(segments)
+    stage1 = checklist[0]
+    assert not stage1.passed
+    assert stage1.matched_utterance is None
+
+
+def test_audit_script_compliance_stage1_missing_greeting():
+    # Agent states company name but misses greeting
+    segments = [
+        AudioSegment(id=0, start=0.0, end=2.0, text="Dari BAF Finance mau tanya-tanya", speaker="agent"),
+        AudioSegment(id=1, start=2.5, end=5.0, text="Panggilan ini direkam untuk keperluan verifikasi pengajuan pembiayaan", speaker="agent"),
+        AudioSegment(id=2, start=5.5, end=7.0, text="Konfirmasi nama bapak", speaker="agent"),
+        AudioSegment(id=3, start=7.5, end=9.0, text="Terima kasih bapak selamat beraktivitas", speaker="agent"),
+    ]
+    checklist = audit_script_compliance(segments)
+    stage1 = checklist[0]
+    assert not stage1.passed
+    assert stage1.matched_utterance is None
+
+
+def test_audit_script_compliance_stage2_missing_recording_word():
+    # Agent states purpose ("verifikasi pengajuan pembiayaan") but omits "direkam" / "rekaman"
+    segments = [
+        AudioSegment(id=0, start=0.0, end=2.0, text="Selamat pagi dengan saya dari BAF Finance", speaker="agent"),
+        AudioSegment(id=1, start=2.5, end=5.0, text="Tujuan panggilan ini untuk verifikasi pengajuan pembiayaan", speaker="agent"),
+        AudioSegment(id=2, start=5.5, end=7.0, text="Konfirmasi nama bapak", speaker="agent"),
+        AudioSegment(id=3, start=7.5, end=9.0, text="Terima kasih bapak selamat beraktivitas", speaker="agent"),
+    ]
+    checklist = audit_script_compliance(segments)
+    stage2 = checklist[1]
+    assert not stage2.passed
+    assert stage2.matched_utterance is None
+
+
 def test_audit_script_compliance_customer_speech_ignored():
     # Customer says compliant phrases, agent says nothing compliant
     segments = [
@@ -151,7 +193,74 @@ def test_post_voice_transcribe(client):
     body = response.json()
     assert body["status"] == "success"
     assert len(body["data"]["segments"]) == 7
-    assert body["confidence"] == 90.0
+    assert body["confidence"] == 100.0
+
+
+def test_post_voice_transcribe_confidence_calculation_empty_segments(monkeypatch):
+    test_engine = AudioEngine(model="mock")
+    orig_transcribe = test_engine.transcribe_file
+    monkeypatch.setattr(
+        test_engine,
+        "transcribe_file",
+        lambda p, mock_segments=None: orig_transcribe(p, mock_segments=[]),
+    )
+    app.dependency_overrides[get_audio_engine] = lambda: test_engine
+    custom_client = TestClient(app)
+    fake_audio = io.BytesIO(b"RIFF....WAVEfmt ....data....")
+    response = custom_client.post(
+        "/api/v1/voice/transcribe",
+        files={"file": ("call.wav", fake_audio, "audio/wav")},
+    )
+    assert response.status_code == 200
+    assert response.json()["confidence"] == 90.0
+    app.dependency_overrides.clear()
+
+
+def test_post_voice_transcribe_confidence_calculation_varied(monkeypatch):
+    test_engine = AudioEngine(model="mock")
+    orig_transcribe = test_engine.transcribe_file
+    custom_segments = [
+        AudioSegment(id=0, start=0.0, end=1.0, text="Halo", confidence=0.8),
+        AudioSegment(id=1, start=1.5, end=3.0, text="Selamat pagi", confidence=0.9),
+    ]
+    monkeypatch.setattr(
+        test_engine,
+        "transcribe_file",
+        lambda p, mock_segments=None: orig_transcribe(p, mock_segments=custom_segments),
+    )
+    app.dependency_overrides[get_audio_engine] = lambda: test_engine
+    custom_client = TestClient(app)
+    fake_audio = io.BytesIO(b"RIFF....WAVEfmt ....data....")
+    response = custom_client.post(
+        "/api/v1/voice/transcribe",
+        files={"file": ("call.wav", fake_audio, "audio/wav")},
+    )
+    assert response.status_code == 200
+    assert response.json()["confidence"] == 85.0
+    app.dependency_overrides.clear()
+
+
+def test_post_voice_audio_file_too_large(client):
+    class LargeFakeFile(io.RawIOBase):
+        def __init__(self, size):
+            self.size = size
+            self.read_bytes = 0
+
+        def read(self, n=-1):
+            if self.read_bytes >= self.size:
+                return b""
+            chunk_size = n if n > 0 else (self.size - self.read_bytes)
+            chunk_size = min(chunk_size, self.size - self.read_bytes)
+            self.read_bytes += chunk_size
+            return b"a" * chunk_size
+
+    large_file = LargeFakeFile(51 * 1024 * 1024)
+    response = client.post(
+        "/api/v1/voice/transcribe",
+        files={"file": ("huge.wav", large_file, "audio/wav")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Audio file too large (max 50MB)"
 
 
 def test_post_voice_transcribe_empty_file(client):

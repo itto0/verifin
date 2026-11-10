@@ -77,7 +77,10 @@ class OCREngine:
     def _get_reader(self):
         if self._reader is None:
             import easyocr
-            self._reader = easyocr.Reader(["id", "en"], gpu=False)
+            self._reader = easyocr.Reader(
+                ["id", "en"],
+                gpu=(get_settings().whisper_device == "cuda"),
+            )
         return self._reader
 
     def extract_text(
