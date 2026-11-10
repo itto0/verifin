@@ -120,3 +120,70 @@ def test_table_endpoint_no_tables_found():
         assert payload["confidence"] == 50.0
     finally:
         app.dependency_overrides.clear()
+
+
+def test_table_endpoint_dynamic_cell_confidence():
+    from app.schemas.table import TableCell
+
+    cell1 = TableCell(row_idx=0, col_idx=0, text="A", confidence=0.90)
+    cell2 = TableCell(row_idx=0, col_idx=1, text="B", confidence=0.94)
+    mock_table = ExtractedTable(
+        table_idx=0,
+        headers=["A", "B"],
+        rows=[],
+        cells=[cell1, cell2],
+        num_rows=0,
+        num_cols=2,
+    )
+
+    class MockTableEngine:
+        def extract_tables_from_image(self, image_np, borderless=True, mock_tables=None):
+            return TableExtractionResult(tables_found=1, tables=[mock_table], raw_text=""), []
+
+    app.dependency_overrides[get_table_engine] = lambda: MockTableEngine()
+
+    try:
+        img_bytes = _make_dummy_image_bytes()
+        response = client.post(
+            "/api/v1/ocr/table",
+            files={"file": ("slip.png", io.BytesIO(img_bytes), "image/png")},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["confidence"] == 92.0
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_table_endpoint_dynamic_cell_confidence_blurred_capped():
+    from app.schemas.table import TableCell
+
+    cell1 = TableCell(row_idx=0, col_idx=0, text="A", confidence=0.95)
+    mock_table = ExtractedTable(
+        table_idx=0,
+        headers=["A"],
+        rows=[],
+        cells=[cell1],
+        num_rows=0,
+        num_cols=1,
+    )
+
+    class MockTableEngine:
+        def extract_tables_from_image(self, image_np, borderless=True, mock_tables=None):
+            return TableExtractionResult(tables_found=1, tables=[mock_table], raw_text=""), []
+
+    app.dependency_overrides[get_table_engine] = lambda: MockTableEngine()
+
+    try:
+        blurred_img = np.zeros((700, 700, 3), dtype=np.uint8)
+        _, buf = cv2.imencode(".png", blurred_img)
+        response = client.post(
+            "/api/v1/ocr/table",
+            files={"file": ("blur.png", io.BytesIO(buf.tobytes()), "image/png")},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["confidence"] == 45.0
+        assert payload["status"] == "partial"
+    finally:
+        app.dependency_overrides.clear()

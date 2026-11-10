@@ -1,7 +1,7 @@
 import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ProcessingLabView } from './ProcessingLabView';
+import { ProcessingLabView, escapeCsv } from './ProcessingLabView';
 import {
   ProcessEnvelope,
   KTPProcessResult,
@@ -412,5 +412,28 @@ describe('ProcessingLabView', () => {
     );
     expect(html).toContain('No Tables Detected');
     expect(html).toContain('The table detection model could not identify any tabular structures or grid cells');
+  });
+
+  describe('escapeCsv formula injection mitigation', () => {
+    it('prepends single quote to values starting with formula indicators (=, +, -, @)', () => {
+      expect(escapeCsv('=SUM(A1:B1)')).toBe("'=SUM(A1:B1)");
+      expect(escapeCsv('+12345')).toBe("'+12345");
+      expect(escapeCsv('-999')).toBe("'-999");
+      expect(escapeCsv('@SUM(1,2)')).toBe("\"'@SUM(1,2)\""); // contains comma, so wrapped in quotes
+    });
+
+    it('correctly handles comma and quote escaping combined with formula indicators', () => {
+      expect(escapeCsv('=cmd|"/C calc"!A0')).toBe("\"'=cmd|\"\"/C calc\"\"!A0\"");
+      expect(escapeCsv('=1,2')).toBe("\"'=1,2\"");
+    });
+
+    it('handles normal strings and empty/null/undefined safely', () => {
+      expect(escapeCsv('Normal text')).toBe('Normal text');
+      expect(escapeCsv('Text, with comma')).toBe('"Text, with comma"');
+      expect(escapeCsv(null)).toBe('');
+      expect(escapeCsv(undefined)).toBe('');
+      expect(escapeCsv('')).toBe('');
+      expect(escapeCsv(100)).toBe('100');
+    });
   });
 });

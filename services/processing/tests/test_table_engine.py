@@ -134,3 +134,113 @@ def test_table_engine_content_mapping(monkeypatch):
     assert cell.col_idx == 0
     assert cell.confidence == 0.9
     assert cell.bbox == [10, 20, 200, 100]
+
+
+def test_table_engine_rangeindex_header_promotion(monkeypatch):
+    from collections import OrderedDict
+    from dataclasses import dataclass
+
+    @dataclass
+    class FakeBBox:
+        x1: int
+        y1: int
+        x2: int
+        y2: int
+
+    @dataclass
+    class FakeCell:
+        bbox: FakeBBox
+        value: str
+        confidence: int = 95
+        row: int = 0
+        col: int = 0
+
+    fake_bbox = FakeBBox(10, 20, 200, 100)
+    c00 = FakeCell(bbox=fake_bbox, value="Item", confidence=95, row=0, col=0)
+    c01 = FakeCell(bbox=fake_bbox, value="Price", confidence=90, row=0, col=1)
+    c10 = FakeCell(bbox=fake_bbox, value="Apple", confidence=88, row=1, col=0)
+    c11 = FakeCell(bbox=fake_bbox, value="1000", confidence=92, row=1, col=1)
+
+    class FakeDFValues:
+        @staticmethod
+        def tolist():
+            return [["Item", "Price"], ["Apple", "1000"]]
+
+    class FakeDF:
+        # Default integer RangeIndex produced by img2table / pandas
+        columns = [0, 1]
+        values = FakeDFValues()
+
+    class FakeTable:
+        bbox = fake_bbox
+        content = OrderedDict([
+            (0, [c00, c01]),
+            (1, [c10, c11]),
+        ])
+        df = FakeDF()
+
+    class FakeDoc:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def extract_tables(self, *args, **kwargs):
+            return [FakeTable()]
+
+    monkeypatch.setattr("img2table.document.Image", FakeDoc)
+    monkeypatch.setattr("img2table.ocr.EasyOCR", lambda *args, **kwargs: None)
+
+    engine = TableEngine()
+    monkeypatch.setattr(engine, "_get_reader", lambda: None)
+
+    img = np.zeros((100, 100, 3), dtype=np.uint8)
+    result, findings = engine.extract_tables_from_image(img)
+
+    assert result.tables_found == 1
+    tbl = result.tables[0]
+    # Row 0 promoted to headers
+    assert tbl.headers == ["Item", "Price"]
+    # Row 1 is the remaining data row
+    assert tbl.rows == [["Apple", "1000"]]
+    assert tbl.num_rows == 1
+    assert tbl.num_cols == 2
+
+    # Check cell header flags
+    assert len(tbl.cells) == 4
+    header_cells = [c for c in tbl.cells if c.is_header]
+    data_cells = [c for c in tbl.cells if not c.is_header]
+    assert len(header_cells) == 2
+    assert all(c.row_idx == 0 for c in header_cells)
+    assert len(data_cells) == 2
+    assert all(c.row_idx == 1 for c in data_cells)
+
+
+def test_table_engine_ocr_wrapper_kw_init(monkeypatch):
+    from unittest.mock import MagicMock
+
+    class MockEasyOCRClass:
+        def __init__(self, *args, **kwargs):
+            raise TypeError("EasyOCR __init__ signature mismatch")
+
+    monkeypatch.setattr("img2table.ocr.EasyOCR", MockEasyOCRClass)
+
+    class FakeDoc:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def extract_tables(self, *args, **kwargs):
+            ocr = kwargs.get("ocr")
+            # Verify ocr_wrapper compatibility attributes
+            assert hasattr(ocr, "kw")
+            assert ocr.kw == {}
+            assert hasattr(ocr, "reader")
+            assert ocr.lang == ["id", "en"]
+            return []
+
+    monkeypatch.setattr("img2table.document.Image", FakeDoc)
+
+    engine = TableEngine()
+    monkeypatch.setattr(engine, "_get_reader", lambda: MagicMock())
+
+    img = np.zeros((100, 100, 3), dtype=np.uint8)
+    result, findings = engine.extract_tables_from_image(img)
+    assert result.tables_found == 0

@@ -64,6 +64,7 @@ class TableEngine:
                 ocr_wrapper = Img2TableEasyOCR.__new__(Img2TableEasyOCR)
                 ocr_wrapper.lang = ["id", "en"]
                 ocr_wrapper.reader = reader
+                ocr_wrapper.kw = {}
             doc = Img2TableImage(encoded_img.tobytes())
 
             extracted = doc.extract_tables(
@@ -79,6 +80,7 @@ class TableEngine:
             for idx, tbl in enumerate(extracted):
                 headers: List[str] = []
                 rows: List[List[str]] = []
+                promoted_header = False
                 try:
                     df = tbl.df
                     headers = [str(col).strip() for col in df.columns]
@@ -86,6 +88,13 @@ class TableEngine:
                         [str(val).strip() if val is not None else "" for val in row]
                         for row in df.values.tolist()
                     ]
+                    if (
+                        len(df.columns) > 0
+                        and all(isinstance(c, int) or str(c).isdigit() for c in df.columns)
+                        and len(rows) >= 1
+                    ):
+                        headers = rows.pop(0)
+                        promoted_header = True
                 except Exception:
                     pass
 
@@ -98,6 +107,7 @@ class TableEngine:
                         ]
                         if not headers:
                             headers = row_vals
+                            promoted_header = True
                         else:
                             rows.append(row_vals)
 
@@ -113,13 +123,15 @@ class TableEngine:
                             raw_conf = getattr(cell, "confidence", 100)
                             cell_conf = float(raw_conf if raw_conf is not None else 100) / 100.0
                             cell_conf = max(0.0, min(1.0, cell_conf))
+                            cell_row_idx = getattr(cell, "row", int(r_idx))
                             cells.append(
                                 TableCell(
-                                    row_idx=getattr(cell, "row", int(r_idx)),
+                                    row_idx=cell_row_idx,
                                     col_idx=getattr(cell, "col", int(c_idx)),
                                     text=str(getattr(cell, "value", None) or getattr(cell, "text", "") or "").strip(),
                                     confidence=cell_conf,
                                     bbox=cell_bbox,
+                                    is_header=bool(promoted_header and cell_row_idx == 0),
                                 )
                             )
                 elif hasattr(tbl, "cells"):
@@ -127,15 +139,17 @@ class TableEngine:
                         raw_conf = getattr(cell, "confidence", 100)
                         cell_conf = float(raw_conf if raw_conf is not None else 100) / 100.0
                         cell_conf = max(0.0, min(1.0, cell_conf))
+                        cell_row_idx = getattr(cell, "row", 0)
                         cells.append(
                             TableCell(
-                                row_idx=cell.row,
-                                col_idx=cell.col,
+                                row_idx=cell_row_idx,
+                                col_idx=getattr(cell, "col", 0),
                                 text=str(getattr(cell, "value", None) or getattr(cell, "text", "") or "").strip(),
                                 confidence=cell_conf,
                                 bbox=[cell.bbox.x1, cell.bbox.y1, cell.bbox.x2, cell.bbox.y2]
                                 if hasattr(cell, "bbox") and cell.bbox
                                 else None,
+                                is_header=bool(promoted_header and cell_row_idx == 0),
                             )
                         )
 
@@ -145,19 +159,23 @@ class TableEngine:
                     else None
                 )
 
+                num_rows = len(rows)
+                num_cols = len(headers) if headers else (len(rows[0]) if rows else 0)
+
                 tables.append(
                     ExtractedTable(
                         table_idx=idx,
                         headers=headers,
                         rows=rows,
                         cells=cells,
-                        num_rows=len(rows),
-                        num_cols=len(headers) if headers else (len(rows[0]) if rows else 0),
+                        num_rows=num_rows,
+                        num_cols=num_cols,
                         bbox=outer_bbox,
                     )
                 )
 
-                raw_lines.append("\t".join(headers))
+                if headers:
+                    raw_lines.append("\t".join(headers))
                 for row in rows:
                     raw_lines.append("\t".join(row))
 

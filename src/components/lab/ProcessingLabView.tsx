@@ -54,6 +54,17 @@ import {
 
 export type LabSubTab = 'ktp' | 'icr' | 'voice' | 'general' | 'table';
 
+export const escapeCsv = (val: unknown): string => {
+  let str = val == null ? '' : String(val);
+  if (str.startsWith('=') || str.startsWith('+') || str.startsWith('-') || str.startsWith('@')) {
+    str = `'${str}`;
+  }
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+};
+
 export interface ProcessingLabViewProps {
   initialTab?: LabSubTab;
   initialResult?: ProcessEnvelope<any> | null;
@@ -1362,13 +1373,6 @@ const TableDomainCard: React.FC<{ data: TableExtractionResult }> = ({ data }) =>
   }
 
   const handleCopyCsv = async (table: ExtractedTable, idx: number) => {
-    const escapeCsv = (val: unknown) => {
-      const str = val == null ? '' : String(val);
-      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
     const lines: string[] = [];
     if (table.headers && table.headers.length > 0) {
       lines.push(table.headers.map(escapeCsv).join(','));

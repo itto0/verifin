@@ -120,7 +120,14 @@ def process_table(
 
     all_findings = quality.findings + table_findings
 
-    if table_result.tables_found > 0:
+    cell_confidences = [
+        c.confidence * 100.0
+        for t in table_result.tables
+        for c in t.cells
+    ]
+    if cell_confidences:
+        base_conf = float(np.mean(cell_confidences))
+    elif table_result.tables_found > 0:
         base_conf = 85.0
     else:
         base_conf = 50.0
