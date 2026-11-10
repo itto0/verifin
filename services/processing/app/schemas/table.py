@@ -6,7 +6,7 @@ class TableCell(BaseModel):
     row_idx: int
     col_idx: int
     text: str
-    confidence: float = 1.0  # 0.0 - 1.0
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     bbox: Optional[List[int]] = None  # [x1, y1, x2, y2]
     is_header: bool = False
 

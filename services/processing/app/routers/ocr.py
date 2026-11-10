@@ -6,8 +6,10 @@ import numpy as np
 from app.config import AppConfig, get_settings
 from app.schemas.common import ProcessEnvelope
 from app.schemas.ocr import KTPFieldExtraction, KTPProcessResult
+from app.schemas.table import TableExtractionResult
 from app.services.ktp_parser import cross_validate_ktp, extract_ktp_fields_from_ocr
 from app.services.ocr_engine import OCREngine, assess_image_quality, get_ocr_engine
+from app.services.table_engine import TableEngine, get_table_engine
 
 router = APIRouter(tags=["OCR"])
 
@@ -98,4 +100,46 @@ def process_document(
         model_version=settings.ocr_model_version,
         data={"lines": lines_payload, "total_lines": len(lines_payload)},
         findings=quality.findings,
+    )
+
+
+@router.post("/table", response_model=ProcessEnvelope[TableExtractionResult])
+def process_table(
+    file: UploadFile = File(...),
+    borderless: bool = True,
+    table_engine: TableEngine = Depends(get_table_engine),
+    settings: AppConfig = Depends(get_settings),
+) -> ProcessEnvelope[TableExtractionResult]:
+    """Extracts 2D structured tables from arbitrary image documents."""
+    image_np = read_image_from_upload(file)
+    quality = assess_image_quality(image_np)
+
+    table_result, table_findings = table_engine.extract_tables_from_image(
+        image_np, borderless=borderless
+    )
+
+    all_findings = quality.findings + table_findings
+
+    if table_result.tables_found > 0:
+        base_conf = 85.0
+    else:
+        base_conf = 50.0
+
+    if quality.is_blurred:
+        base_conf = min(base_conf, 45.0)
+
+    avg_conf = max(0.0, min(100.0, base_conf))
+
+    status: str = "success"
+    if quality.is_blurred or any(f.severity in ["high", "critical"] for f in all_findings):
+        status = "partial"
+    elif table_result.tables_found == 0:
+        status = "partial"
+
+    return ProcessEnvelope[TableExtractionResult](
+        status=status,
+        confidence=round(avg_conf, 1),
+        model_version=settings.ocr_model_version,
+        data=table_result,
+        findings=all_findings,
     )

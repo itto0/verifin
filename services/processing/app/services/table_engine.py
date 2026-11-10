@@ -77,26 +77,67 @@ class TableEngine:
             raw_lines: List[str] = []
 
             for idx, tbl in enumerate(extracted):
-                df = tbl.df
-                headers: List[str] = [str(col).strip() for col in df.columns]
-                rows: List[List[str]] = [
-                    [str(val).strip() if val is not None else "" for val in row]
-                    for row in df.values.tolist()
-                ]
+                headers: List[str] = []
+                rows: List[List[str]] = []
+                try:
+                    df = tbl.df
+                    headers = [str(col).strip() for col in df.columns]
+                    rows = [
+                        [str(val).strip() if val is not None else "" for val in row]
+                        for row in df.values.tolist()
+                    ]
+                except Exception:
+                    pass
+
+                content = getattr(tbl, "content", {})
+                if not rows and isinstance(content, dict) and content:
+                    for row_idx, row_cells in content.items():
+                        row_vals = [
+                            str(getattr(cell, "value", None) or getattr(cell, "text", "") or "").strip()
+                            for cell in row_cells
+                        ]
+                        if not headers:
+                            headers = row_vals
+                        else:
+                            rows.append(row_vals)
 
                 cells: List[TableCell] = []
-                for cell in getattr(tbl, "cells", []):
-                    cells.append(
-                        TableCell(
-                            row_idx=cell.row,
-                            col_idx=cell.col,
-                            text=str(cell.text or "").strip(),
-                            confidence=float(getattr(cell, "confidence", 100) or 100) / 100.0,
-                            bbox=[cell.bbox.x1, cell.bbox.y1, cell.bbox.x2, cell.bbox.y2]
-                            if hasattr(cell, "bbox") and cell.bbox
-                            else None,
+                if isinstance(content, dict):
+                    for r_idx, row_cells in content.items():
+                        for c_idx, cell in enumerate(row_cells):
+                            cell_bbox = (
+                                [cell.bbox.x1, cell.bbox.y1, cell.bbox.x2, cell.bbox.y2]
+                                if hasattr(cell, "bbox") and cell.bbox
+                                else None
+                            )
+                            raw_conf = getattr(cell, "confidence", 100)
+                            cell_conf = float(raw_conf if raw_conf is not None else 100) / 100.0
+                            cell_conf = max(0.0, min(1.0, cell_conf))
+                            cells.append(
+                                TableCell(
+                                    row_idx=getattr(cell, "row", int(r_idx)),
+                                    col_idx=getattr(cell, "col", int(c_idx)),
+                                    text=str(getattr(cell, "value", None) or getattr(cell, "text", "") or "").strip(),
+                                    confidence=cell_conf,
+                                    bbox=cell_bbox,
+                                )
+                            )
+                elif hasattr(tbl, "cells"):
+                    for cell in getattr(tbl, "cells", []):
+                        raw_conf = getattr(cell, "confidence", 100)
+                        cell_conf = float(raw_conf if raw_conf is not None else 100) / 100.0
+                        cell_conf = max(0.0, min(1.0, cell_conf))
+                        cells.append(
+                            TableCell(
+                                row_idx=cell.row,
+                                col_idx=cell.col,
+                                text=str(getattr(cell, "value", None) or getattr(cell, "text", "") or "").strip(),
+                                confidence=cell_conf,
+                                bbox=[cell.bbox.x1, cell.bbox.y1, cell.bbox.x2, cell.bbox.y2]
+                                if hasattr(cell, "bbox") and cell.bbox
+                                else None,
+                            )
                         )
-                    )
 
                 outer_bbox = (
                     [tbl.bbox.x1, tbl.bbox.y1, tbl.bbox.x2, tbl.bbox.y2]

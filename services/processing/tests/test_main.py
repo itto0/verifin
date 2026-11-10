@@ -48,6 +48,7 @@ def test_openapi_schema_contains_all_mounted_routers(client):
     # Check OCR routes
     assert "/api/v1/ocr/ktp" in paths
     assert "/api/v1/ocr/document" in paths
+    assert "/api/v1/ocr/table" in paths
 
     # Check ICR routes
     assert "/api/v1/icr/survey-form" in paths
@@ -61,6 +62,7 @@ def test_mounted_routers_endpoint_validation(client):
     # Verify routers are mounted and reject requests missing required multipart files
     assert client.post("/api/v1/ocr/ktp").status_code == 422
     assert client.post("/api/v1/ocr/document").status_code == 422
+    assert client.post("/api/v1/ocr/table").status_code == 422
     assert client.post("/api/v1/icr/survey-form").status_code == 422
     assert client.post("/api/v1/voice/transcribe").status_code == 422
     assert client.post("/api/v1/voice/analyze").status_code == 422
