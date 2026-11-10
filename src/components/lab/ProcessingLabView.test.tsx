@@ -391,4 +391,26 @@ describe('ProcessingLabView', () => {
     expect(html).toContain('Rp 10.000.000');
     expect(html).toContain('Copy CSV');
   });
+
+  it('renders "No Tables Detected" fallback alert when tables_found is 0', () => {
+    const emptyTableEnvelope: ProcessEnvelope<TableExtractionResult> = {
+      status: 'success',
+      confidence: 85.0,
+      findings: [],
+      evidence_refs: [],
+      model_version: 'easyocr-1.7.2',
+      processed_at: new Date().toISOString(),
+      data: {
+        tables_found: 0,
+        tables: [],
+        raw_text: '',
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <ProcessingLabView initialTab="table" initialResult={emptyTableEnvelope} />
+    );
+    expect(html).toContain('No Tables Detected');
+    expect(html).toContain('The table detection model could not identify any tabular structures or grid cells');
+  });
 });

@@ -399,6 +399,29 @@ describe('processingClient', () => {
     expect(url).toContain('/api/v1/ocr/table?borderless=true');
   });
 
+  it('processTableImage calls /api/v1/ocr/table with borderless=false when specified', async () => {
+    const mockFetch = mock();
+    globalThis.fetch = mockFetch as any;
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: 'success',
+        confidence: 85.0,
+        findings: [],
+        evidence_refs: [],
+        model_version: 'easyocr-1.7.2',
+        processed_at: new Date().toISOString(),
+        data: { tables_found: 0, tables: [], raw_text: '' },
+      }),
+    });
+
+    const file = new File(['dummy'], 'table.png', { type: 'image/png' });
+    await processTableImage(file, false);
+
+    const [url] = mockFetch.mock.calls[0];
+    expect(url).toContain('/api/v1/ocr/table?borderless=false');
+  });
+
   it('enforces client-side max upload size guard for table images (>15MB)', async () => {
     const hugeBlob = {
       size: MAX_IMAGE_SIZE + 1,

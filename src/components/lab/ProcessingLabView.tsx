@@ -1362,11 +1362,12 @@ const TableDomainCard: React.FC<{ data: TableExtractionResult }> = ({ data }) =>
   }
 
   const handleCopyCsv = async (table: ExtractedTable, idx: number) => {
-    const escapeCsv = (val: string) => {
-      if (val.includes(',') || val.includes('"') || val.includes('\n') || val.includes('\r')) {
-        return `"${val.replace(/"/g, '""')}"`;
+    const escapeCsv = (val: unknown) => {
+      const str = val == null ? '' : String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
       }
-      return val;
+      return str;
     };
     const lines: string[] = [];
     if (table.headers && table.headers.length > 0) {
@@ -1387,7 +1388,7 @@ const TableDomainCard: React.FC<{ data: TableExtractionResult }> = ({ data }) =>
     }
   };
 
-  const handleCopyJson = async (table: ExtractedTable, idx: number) => {
+  const handleCopyTableJson = async (table: ExtractedTable, idx: number) => {
     try {
       await navigator.clipboard.writeText(JSON.stringify(table, null, 2));
       setCopiedJsonIdx(idx);
