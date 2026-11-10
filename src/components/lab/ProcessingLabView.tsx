@@ -30,6 +30,7 @@ import {
   Loader2,
   FileCheck2,
   Info,
+  Table as TableIcon,
 } from 'lucide-react';
 import {
   checkProcessingHealth,
@@ -37,6 +38,7 @@ import {
   processSurveyFormImage,
   analyzeVoiceAudio,
   processDocumentImage,
+  processTableImage,
   HealthCheckResponse,
   ProcessEnvelope,
   Finding,
@@ -44,11 +46,13 @@ import {
   ICRFormResult,
   VoiceQAResult,
   GeneralOcrResult,
+  TableExtractionResult,
+  ExtractedTable,
   MAX_IMAGE_SIZE,
   MAX_AUDIO_SIZE,
 } from '../../services/processingClient';
 
-export type LabSubTab = 'ktp' | 'icr' | 'voice' | 'general';
+export type LabSubTab = 'ktp' | 'icr' | 'voice' | 'general' | 'table';
 
 export interface ProcessingLabViewProps {
   initialTab?: LabSubTab;
@@ -111,6 +115,16 @@ const DEMO_PRESETS: Record<LabSubTab, DemoPreset> = {
     mimeType: 'image/jpeg',
     type: 'image',
     description: 'Standard payslip document for multi-line bounding box detection and text extraction.',
+  },
+  table: {
+    tab: 'table',
+    title: 'Table Detection & Extraction',
+    buttonLabel: 'Load Demo Table (Salary Slip)',
+    url: '/slip_gaji_normal.jfif',
+    fileName: 'slip_gaji_normal.jfif',
+    mimeType: 'image/jpeg',
+    type: 'image',
+    description: 'Tabular document for heuristic & OCR-based grid line detection, row-column alignment, and CSV export.',
   },
 };
 
@@ -320,6 +334,8 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
         resEnvelope = await processSurveyFormImage(selectedFile);
       } else if (activeTab === 'voice') {
         resEnvelope = await analyzeVoiceAudio(selectedFile);
+      } else if (activeTab === 'table') {
+        resEnvelope = await processTableImage(selectedFile);
       } else {
         resEnvelope = await processDocumentImage(selectedFile);
       }
@@ -376,7 +392,7 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
               <div>
                 <h1 className="text-xl font-bold text-[#1A1A1A]">Python ML Processing Lab</h1>
                 <p className="text-xs text-[#6B6B6B] mt-0.5">
-                  Interactive testbed &amp; playground for e-KTP OCR, Survey Form ICR, Voice QA, and Document OCR.
+                  Interactive testbed &amp; playground for e-KTP OCR, Survey Form ICR, Voice QA, General OCR, and Table Detection.
                 </p>
               </div>
             </div>
@@ -510,6 +526,21 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
         >
           <FileText className="w-4 h-4" />
           <span>General Document OCR</span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'table'}
+          onClick={() => handleSelectTab('table')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-all ${
+            activeTab === 'table'
+              ? 'border-[#2563EB] text-[#2563EB] font-semibold bg-blue-50/30'
+              : 'border-transparent text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-gray-300'
+          }`}
+        >
+          <TableIcon className="w-4 h-4" />
+          <span>Table Detection</span>
         </button>
       </div>
 
@@ -821,6 +852,10 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
                   onCopyText={handleCopyText}
                   copiedText={copiedText}
                 />
+              )}
+
+              {activeTab === 'table' && (
+                <TableDomainCard data={result.data as TableExtractionResult} />
               )}
 
               {/* Collapsible JSON Accordion */}
@@ -1298,6 +1333,200 @@ const GeneralDomainCard: React.FC<{
           </pre>
         </div>
       )}
+    </div>
+  );
+};
+
+/**
+ * Table Detection & Extraction Domain Visualizer: HTML Table, Zebra Striping & CSV/JSON Export
+ */
+const TableDomainCard: React.FC<{ data: TableExtractionResult }> = ({ data }) => {
+  const [copiedCsvIdx, setCopiedCsvIdx] = useState<number | null>(null);
+  const [copiedJsonIdx, setCopiedJsonIdx] = useState<number | null>(null);
+
+  const tables = data?.tables || [];
+  const tablesCount = data?.tables_found ?? tables.length;
+
+  if (!data || tablesCount === 0 || tables.length === 0) {
+    return (
+      <div className="bg-white border border-[#E5E5E3] rounded-xl p-8 text-center shadow-xs space-y-2">
+        <div className="w-10 h-10 rounded-full bg-amber-50 text-[#D97706] flex items-center justify-center mx-auto mb-2">
+          <TableIcon className="w-5 h-5" />
+        </div>
+        <h4 className="text-sm font-bold text-[#1A1A1A]">No Tables Detected</h4>
+        <p className="text-xs text-[#6B6B6B] max-w-sm mx-auto">
+          The table detection model could not identify any tabular structures or grid cells in this document.
+        </p>
+      </div>
+    );
+  }
+
+  const handleCopyCsv = async (table: ExtractedTable, idx: number) => {
+    const escapeCsv = (val: string) => {
+      if (val.includes(',') || val.includes('"') || val.includes('\n') || val.includes('\r')) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+    const lines: string[] = [];
+    if (table.headers && table.headers.length > 0) {
+      lines.push(table.headers.map(escapeCsv).join(','));
+    }
+    if (table.rows && table.rows.length > 0) {
+      for (const row of table.rows) {
+        lines.push(row.map(escapeCsv).join(','));
+      }
+    }
+    const csvContent = lines.join('\n');
+    try {
+      await navigator.clipboard.writeText(csvContent);
+      setCopiedCsvIdx(idx);
+      setTimeout(() => setCopiedCsvIdx(null), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleCopyJson = async (table: ExtractedTable, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(table, null, 2));
+      setCopiedJsonIdx(idx);
+      setTimeout(() => setCopiedJsonIdx(null), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Table Count & Overview Header */}
+      <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E3]">
+          <div className="flex items-center gap-2">
+            <TableIcon className="w-5 h-5 text-[#2563EB]" />
+            <h4 className="text-sm font-bold text-[#1A1A1A]">Extracted Tables</h4>
+          </div>
+          <span className="text-xs px-2.5 py-1 rounded-md bg-blue-50 text-[#2563EB] border border-blue-100 font-semibold">
+            {tablesCount} Table{tablesCount !== 1 ? 's' : ''} Detected
+          </span>
+        </div>
+
+        {/* Render each extracted table */}
+        <div className="space-y-6">
+          {tables.map((table, tIdx) => {
+            const isCopiedCsv = copiedCsvIdx === tIdx;
+            const isCopiedJson = copiedJsonIdx === tIdx;
+
+            return (
+              <div key={table.table_idx ?? tIdx} className="border border-[#E5E5E3] rounded-lg overflow-hidden bg-white">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-[#F7F7F5] border-b border-[#E5E5E3]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#1A1A1A]">
+                      Table #{tIdx + 1}
+                    </span>
+                    <span className="text-[11px] font-mono text-[#6B6B6B] px-2 py-0.5 rounded bg-white border border-[#E5E5E3]">
+                      {table.num_rows} rows &times; {table.num_cols} cols
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCsv(table, tIdx)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white border border-[#E5E5E3] hover:bg-gray-50 text-xs font-medium text-[#1A1A1A] transition-colors"
+                    >
+                      {isCopiedCsv ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-[#16A34A]" />
+                          <span className="text-[#16A34A]">Copied CSV!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-[#6B6B6B]" />
+                          <span>Copy CSV</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopyTableJson(table, tIdx)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white border border-[#E5E5E3] hover:bg-gray-50 text-xs font-medium text-[#1A1A1A] transition-colors"
+                    >
+                      {isCopiedJson ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-[#16A34A]" />
+                          <span className="text-[#16A34A]">Copied JSON!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-[#6B6B6B]" />
+                          <span>Copy JSON</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    {table.headers && table.headers.length > 0 && (
+                      <thead className="bg-[#FAFAFA] border-b border-[#E5E5E3] text-[#1A1A1A] font-semibold">
+                        <tr>
+                          {table.headers.map((header, hIdx) => (
+                            <th key={hIdx} className="py-2.5 px-3 border-r border-[#E5E5E3] last:border-r-0 font-bold bg-[#F0F0EE]">
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                    )}
+                    <tbody className="divide-y divide-[#E5E5E3]">
+                      {table.rows && table.rows.length > 0 ? (
+                        table.rows.map((row, rIdx) => (
+                          <tr
+                            key={rIdx}
+                            className={`transition-colors hover:bg-blue-50/20 ${
+                              rIdx % 2 === 0 ? 'bg-white' : 'bg-[#F7F7F5]'
+                            }`}
+                          >
+                            {row.map((cell, cIdx) => (
+                              <td
+                                key={cIdx}
+                                className="py-2.5 px-3 border-r border-[#E5E5E3] last:border-r-0 text-[#1A1A1A]"
+                              >
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={Math.max(1, table.headers?.length || 1)}
+                            className="py-4 px-3 text-center text-[#6B6B6B] italic"
+                          >
+                            No data rows extracted for this table.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {data?.raw_text && (
+          <div className="pt-2 border-t border-[#E5E5E3]">
+            <span className="text-xs font-semibold text-[#1A1A1A] block mb-1.5">Raw Tabular Text</span>
+            <pre className="p-3 bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg text-xs font-mono text-[#1A1A1A] whitespace-pre-wrap max-h-40 overflow-y-auto">
+              {data.raw_text}
+            </pre>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

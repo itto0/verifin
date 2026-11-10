@@ -9,6 +9,7 @@ import {
   VoiceQAResult,
   GeneralOcrResult,
   HealthCheckResponse,
+  TableExtractionResult,
 } from '../../services/processingClient';
 
 describe('ProcessingLabView', () => {
@@ -349,5 +350,45 @@ describe('ProcessingLabView', () => {
     expect(html).toContain('TOTAL DITERIMA: RP 9.200.000');
     expect(html).toContain('Raw Response Envelope (JSON)');
     expect(html).toContain('Copy JSON');
+  });
+
+  it('renders Table subtab and sample loader prompt', () => {
+    const html = renderToStaticMarkup(<ProcessingLabView initialTab="table" />);
+    expect(html).toContain('Table');
+    expect(html).toContain('Table Detection');
+    expect(html).toContain('slip_gaji_normal.jfif');
+  });
+
+  it('renders extracted table view when initialResult contains tables', () => {
+    const tableEnvelope: ProcessEnvelope<TableExtractionResult> = {
+      status: 'success',
+      confidence: 90.0,
+      findings: [],
+      evidence_refs: [],
+      model_version: 'easyocr-1.7.2',
+      processed_at: new Date().toISOString(),
+      data: {
+        tables_found: 1,
+        tables: [
+          {
+            table_idx: 0,
+            headers: ['Komponen', 'Nominal'],
+            rows: [['Gaji Pokok', 'Rp 10.000.000']],
+            cells: [],
+            num_rows: 1,
+            num_cols: 2,
+          },
+        ],
+        raw_text: 'Komponen\tNominal',
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <ProcessingLabView initialTab="table" initialResult={tableEnvelope} />
+    );
+    expect(html).toContain('Komponen');
+    expect(html).toContain('Nominal');
+    expect(html).toContain('Rp 10.000.000');
+    expect(html).toContain('Copy CSV');
   });
 });

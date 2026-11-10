@@ -146,6 +146,31 @@ export interface VoiceQAResult {
   hesitation_count: number;
 }
 
+export interface TableCell {
+  row_idx: number;
+  col_idx: number;
+  text: string;
+  confidence: number;
+  bbox?: number[] | null;
+  is_header?: boolean;
+}
+
+export interface ExtractedTable {
+  table_idx: number;
+  headers: string[];
+  rows: string[][];
+  cells: TableCell[];
+  num_rows: number;
+  num_cols: number;
+  bbox?: number[] | null;
+}
+
+export interface TableExtractionResult {
+  tables_found: number;
+  tables: ExtractedTable[];
+  raw_text: string;
+}
+
 const API_BASE = '/api/v1';
 export const MAX_IMAGE_SIZE = 15 * 1024 * 1024; // 15MB
 export const MAX_AUDIO_SIZE = 50 * 1024 * 1024; // 50MB
@@ -239,4 +264,21 @@ export async function analyzeVoiceAudio(file: File | Blob): Promise<ProcessEnvel
     body: formData,
   });
   return handleResponse<ProcessEnvelope<VoiceQAResult>>(res);
+}
+
+export async function processTableImage(
+  file: File | Blob,
+  borderless: boolean = true
+): Promise<ProcessEnvelope<TableExtractionResult>> {
+  validateFileSize(file, MAX_IMAGE_SIZE, 'Image');
+  const formData = new FormData();
+  formData.append('file', file, file instanceof File ? file.name : 'table.png');
+
+  const query = borderless ? '?borderless=true' : '?borderless=false';
+  const response = await safeFetch(`${API_BASE}/ocr/table${query}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  return handleResponse<ProcessEnvelope<TableExtractionResult>>(response);
 }
