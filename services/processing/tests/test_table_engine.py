@@ -244,3 +244,26 @@ def test_table_engine_ocr_wrapper_kw_init(monkeypatch):
     img = np.zeros((100, 100, 3), dtype=np.uint8)
     result, findings = engine.extract_tables_from_image(img)
     assert result.tables_found == 0
+
+
+def test_table_engine_detect_rotation_enabled(monkeypatch):
+    captured_kwargs = {}
+
+    class FakeDoc:
+        def __init__(self, *args, **kwargs):
+            captured_kwargs.update(kwargs)
+
+        def extract_tables(self, *args, **kwargs):
+            return []
+
+    monkeypatch.setattr("img2table.document.Image", FakeDoc)
+    monkeypatch.setattr("img2table.ocr.EasyOCR", lambda *args, **kwargs: None)
+
+    engine = TableEngine()
+    monkeypatch.setattr(engine, "_get_reader", lambda: None)
+
+    img = np.zeros((100, 100, 3), dtype=np.uint8)
+    engine.extract_tables_from_image(img)
+
+    assert captured_kwargs.get("detect_rotation") is True
+

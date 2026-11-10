@@ -65,7 +65,7 @@ class TableEngine:
                 ocr_wrapper.lang = ["id", "en"]
                 ocr_wrapper.reader = reader
                 ocr_wrapper.kw = {}
-            doc = Img2TableImage(encoded_img.tobytes())
+            doc = Img2TableImage(encoded_img.tobytes(), detect_rotation=True)
 
             extracted = doc.extract_tables(
                 ocr=ocr_wrapper,
