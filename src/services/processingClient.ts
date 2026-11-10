@@ -58,8 +58,14 @@ export interface KTPValidationResult {
   province?: string | null;
   regency?: string | null;
   district?: string | null;
-  parsed_dob?: string | null;
+  province_code?: string | null;
+  regency_code?: string | null;
+  district_code?: string | null;
+  gender?: string | null;
   parsed_gender?: string | null;
+  birth_date_str?: string | null;
+  parsed_dob?: string | null;
+  sequence?: string | null;
   tamper_score: number;
   findings: Finding[];
 }
@@ -67,15 +73,18 @@ export interface KTPValidationResult {
 export interface ImageQualityResult {
   blur_score: number;
   is_blurred: boolean;
-  width: number;
-  height: number;
-  findings: Finding[];
+  quality_score?: number;
+  width?: number;
+  height?: number;
+  findings?: Finding[];
 }
 
 export interface KTPProcessResult {
   fields: KTPFieldExtraction;
   validation: KTPValidationResult;
-  image_quality: ImageQualityResult;
+  image_quality?: ImageQualityResult;
+  quality_score?: number;
+  is_blurred?: boolean;
 }
 
 export interface OCRLineResult {
@@ -87,7 +96,9 @@ export interface OCRLineResult {
 export interface GeneralOcrResult {
   lines: OCRLineResult[];
   full_text: string;
-  image_quality: ImageQualityResult;
+  image_quality?: ImageQualityResult;
+  total_lines?: number;
+  quality_score?: number;
 }
 
 export interface ICRField {

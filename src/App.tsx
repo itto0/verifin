@@ -16,6 +16,7 @@ import { IcrDocumentView } from './components/icr/IcrDocumentView';
 import { ReportsAuditView } from './components/reports/ReportsAuditView';
 import { MasterDataView } from './components/master/MasterDataView';
 import { RuleSettingsView } from './components/settings/RuleSettingsView';
+import { ProcessingLabView } from './components/lab/ProcessingLabView';
 import { LoginView, DEMO_USERS } from './components/auth/LoginView';
 import { mockCases } from './data/mockData';
 import {
@@ -25,20 +26,6 @@ import {
   rejectApplication,
 } from './services/apiService';
 import { FinancingCase, CaseStatus, CaseSubPage, AuthUser } from './types';
-
-// Temporary placeholder component for Processing Lab view until Task 3
-const ProcessingLabView: React.FC = () => {
- return (
-  <div data-testid="processing-lab-view" className="space-y-6">
-   <div className="bg-white border border-[#E5E5E3] rounded-xl p-6">
-    <h2 className="text-xl font-bold text-[#1A1A1A]">Processing Lab</h2>
-    <p className="text-sm text-[#6B6B6B] mt-1">
-     Python ML Service Testbed &amp; Playground for e-KTP OCR, Survey Form ICR, Voice QA, and Document OCR.
-    </p>
-   </div>
-  </div>
- );
-};
 
 export default function App() {
  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
