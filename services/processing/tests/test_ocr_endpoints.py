@@ -8,7 +8,12 @@ import numpy as np
 import pytest
 
 from app.routers.ocr import router
-from app.services.ktp_parser import cross_validate_ktp, extract_ktp_fields_from_ocr
+from app.services.ktp_parser import (
+    _OCRBox,
+    _normalize_ttl,
+    cross_validate_ktp,
+    extract_ktp_fields_from_ocr,
+)
 from app.services.ocr_engine import (
     OCREngine,
     OCRLineResult,
@@ -334,5 +339,107 @@ def test_real_ktp_demo_image_full_extraction():
 
     validation = cross_validate_ktp(fields)
     assert validation.is_valid is True
+
+
+def test_extract_ktp_fields_with_colon_delimiter_box():
+    # Spatial pairing case with separate delimiter ':' box
+    spatial_lines = [
+        OCRLineResult(text="NIK", confidence=0.99, bbox=[[100, 50], [200, 50], [200, 80], [100, 80]]),
+        OCRLineResult(text=":", confidence=0.95, bbox=[[210, 50], [220, 50], [220, 80], [210, 80]]),
+        OCRLineResult(text="3204051205900001", confidence=0.98, bbox=[[240, 50], [500, 50], [500, 80], [240, 80]]),
+        OCRLineResult(text="Nama", confidence=0.98, bbox=[[100, 100], [200, 100], [200, 130], [100, 130]]),
+        OCRLineResult(text=":", confidence=0.90, bbox=[[210, 100], [220, 100], [220, 130], [210, 130]]),
+        OCRLineResult(text="BUDI SANTOSO", confidence=0.95, bbox=[[240, 100], [450, 100], [450, 130], [240, 130]]),
+    ]
+    fields_spatial = extract_ktp_fields_from_ocr(spatial_lines)
+    assert fields_spatial.nik == "3204051205900001"
+    assert fields_spatial.nama == "BUDI SANTOSO"
+
+    # Sequential fallback case with separate delimiter ':' box
+    seq_lines = [
+        ("NIK", 0.99),
+        (":", 0.90),
+        ("3204051205900001", 0.98),
+        ("Nama", 0.98),
+        (":", 0.92),
+        ("BUDI SANTOSO", 0.96),
+    ]
+    fields_seq = extract_ktp_fields_from_ocr(seq_lines)
+    assert fields_seq.nik == "3204051205900001"
+    assert fields_seq.nama == "BUDI SANTOSO"
+
+
+def test_extract_ktp_fields_with_overlapping_boxes():
+    # Word boxes that overlap horizontally (gap < 0 within 50% height tolerance)
+    lines = [
+        OCRLineResult(text="Nama", confidence=0.98, bbox=[[100, 100], [200, 100], [200, 130], [100, 130]]),
+        # BUDI max_x = 350, height = 30
+        OCRLineResult(text="BUDI", confidence=0.96, bbox=[[250, 100], [350, 100], [350, 130], [250, 130]]),
+        # SANTOSO min_x = 340 (overlap of 10px, tolerance is 30 * 0.5 = 15px)
+        OCRLineResult(text="SANTOSO", confidence=0.94, bbox=[[340, 100], [450, 100], [450, 130], [340, 130]]),
+    ]
+    fields = extract_ktp_fields_from_ocr(lines)
+    assert fields.nama == "BUDI SANTOSO"
+    assert fields.field_confidences["nama"] == pytest.approx(0.95, abs=0.01)
+
+
+def test_normalize_ttl_city_only_and_date_normalization():
+    # City-only input without comma or date pattern
+    city, date = _normalize_ttl("JAKARTA")
+    assert city == "JAKARTA"
+    assert date is None
+
+    # City-only with delimiter artifacts
+    city, date = _normalize_ttl(": BANDUNG - ")
+    assert city == "BANDUNG"
+    assert date is None
+
+    # Comma-separated with dots normalized to hyphens
+    city, date = _normalize_ttl("BANDUNG, 12.05.1990")
+    assert city == "BANDUNG"
+    assert date == "12-05-1990"
+
+    # Comma-separated with slashes normalized to hyphens
+    city, date = _normalize_ttl("JAKARTA, 20/05/1985")
+    assert city == "JAKARTA"
+    assert date == "20-05-1985"
+
+    # No comma, date pattern with dots
+    city, date = _normalize_ttl("JAKARTA 20.05.1985")
+    assert city == "JAKARTA"
+    assert date == "20-05-1985"
+
+    # Full extraction with city-only TTL
+    lines = [
+        ("Nama", 0.98),
+        ("BUDI SANTOSO", 0.96),
+        ("Tempat/Tgl Lahir", 0.95),
+        ("JAKARTA", 0.92),
+    ]
+    fields = extract_ktp_fields_from_ocr(lines)
+    assert fields.tempat_lahir == "JAKARTA"
+    assert fields.tgl_lahir is None
+
+
+def test_ocr_box_confidence_none_safety():
+    # Safely handle confidence = None in _OCRBox and extract_ktp_fields_from_ocr
+    box = _OCRBox(text="BUDI", confidence=None)
+    assert box.confidence == 1.0
+
+    class DuckLine:
+        text = "Nama : BUDI SANTOSO"
+        confidence = None
+        bbox = None
+
+    lines = [
+        DuckLine(),
+        ("NIK : 3204051205900001", None),
+    ]
+    fields = extract_ktp_fields_from_ocr(lines)
+    assert fields.nama == "BUDI SANTOSO"
+    assert fields.nik == "3204051205900001"
+    assert fields.field_confidences["nama"] == 1.0
+    assert fields.field_confidences["nik"] == 1.0
+
 
 

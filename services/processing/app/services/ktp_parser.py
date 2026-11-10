@@ -210,9 +210,9 @@ def cross_validate_ktp(fields: KTPFieldExtraction) -> KTPValidationResult:
 class _OCRBox:
     """Internal geometric container for parsed OCR lines."""
 
-    def __init__(self, text: str, confidence: float, bbox: Optional[List[Any]] = None, index: int = 0):
+    def __init__(self, text: str, confidence: Optional[float] = 1.0, bbox: Optional[List[Any]] = None, index: int = 0):
         self.text = text.strip()
-        self.confidence = max(0.0, min(1.0, float(confidence)))
+        self.confidence = max(0.0, min(1.0, float(confidence or 1.0)))
         self.bbox = bbox
         self.index = index
         self.has_bbox = False
@@ -266,6 +266,7 @@ def _normalize_ttl(raw: str) -> Tuple[Optional[str], Optional[str]]:
         parts = val.split(",", 1)
         city = parts[0].strip(":;.- ")
         date_str = parts[1].strip(":;.- ")
+        date_str = re.sub(r"[./]", "-", date_str)
         return city or None, date_str or None
 
     m = re.search(r"(\d{2}[-/.]\d{2}[-/.]\d{4})", val)
@@ -274,7 +275,10 @@ def _normalize_ttl(raw: str) -> Tuple[Optional[str], Optional[str]]:
         city = val[: m.start()].strip(":;.,- ")
         return city or None, date_str or None
 
-    return None, val.strip(":;.- ") or None
+    cleaned_val = val.strip(":;.- ")
+    if not re.search(r"\d", cleaned_val):
+        return cleaned_val or None, None
+    return None, cleaned_val or None
 
 
 def _is_system_or_label(text: str) -> bool:
@@ -454,11 +458,11 @@ def extract_ktp_fields_from_ocr(lines: List[Any]) -> KTPFieldExtraction:
     for idx, line in enumerate(lines):
         if hasattr(line, "text"):
             txt = str(line.text).strip()
-            conf = float(getattr(line, "confidence", 1.0))
+            conf = float(getattr(line, "confidence", 1.0) or 1.0)
             bbox = getattr(line, "bbox", None)
         elif isinstance(line, (list, tuple)) and len(line) >= 2:
             txt = str(line[0]).strip()
-            conf = float(line[1])
+            conf = float(line[1] or 1.0)
             bbox = line[2] if len(line) >= 3 else None
         else:
             txt = str(line).strip()
@@ -520,12 +524,15 @@ def extract_ktp_fields_from_ocr(lines: List[Any]) -> KTPFieldExtraction:
             for c in boxes:
                 if c.index == label_box.index or not c.has_bbox:
                     continue
-                # Must be horizontally to the right of label
-                if c.min_x < label_box.min_x + 10:
+                # Discard delimiter-only boxes like ':' or ';'
+                if not _clean_val(c.text):
                     continue
-                # Vertical overlap check (same row: center_y difference typically < 0.5 * height)
+                # Must be horizontally to the right of label
+                if c.min_x < label_box.max_x - 15:
+                    continue
+                # Vertical overlap check (same row: center_y difference within tolerance)
                 y_diff = abs(c.center_y - label_box.center_y)
-                tolerance = min(label_box.height, c.height) * 0.5
+                tolerance = max(label_box.height, c.height) * 0.7
                 if y_diff > tolerance:
                     continue
                 # Filter out system headers and recognized labels
@@ -544,7 +551,8 @@ def extract_ktp_fields_from_ocr(lines: List[Any]) -> KTPFieldExtraction:
                 for next_box in candidate_boxes[1:]:
                     gap = next_box.min_x - clustered[-1].max_x
                     max_gap = max(label_box.height, clustered[-1].height) * 1.8
-                    if 0 <= gap <= max_gap:
+                    max_overlap = -max(clustered[-1].height, next_box.height) * 0.5
+                    if max_overlap <= gap <= max_gap:
                         clustered.append(next_box)
                     else:
                         break
@@ -559,13 +567,14 @@ def extract_ktp_fields_from_ocr(lines: List[Any]) -> KTPFieldExtraction:
 
         # Step C: Sequential Adjacency Fallback
         if label_box_idx >= 0:
-            for j in range(label_box_idx + 1, min(label_box_idx + 3, len(boxes))):
+            for j in range(label_box_idx + 1, min(label_box_idx + 4, len(boxes))):
                 cand_box = boxes[j]
-                if cand_box.text and not _is_system_or_label(cand_box.text):
-                    if _assign_field_value(fields, key, cand_box.text, cand_box.confidence):
-                        resolved = True
+                if _is_system_or_label(cand_box.text):
                     break
-                elif _is_system_or_label(cand_box.text):
+                if not _clean_val(cand_box.text):
+                    continue
+                if _assign_field_value(fields, key, cand_box.text, cand_box.confidence):
+                    resolved = True
                     break
 
     return fields
