@@ -26,6 +26,20 @@ import {
 } from './services/apiService';
 import { FinancingCase, CaseStatus, CaseSubPage, AuthUser } from './types';
 
+// Temporary placeholder component for Processing Lab view until Task 3
+const ProcessingLabView: React.FC = () => {
+ return (
+  <div data-testid="processing-lab-view" className="space-y-6">
+   <div className="bg-white border border-[#E5E5E3] rounded-xl p-6">
+    <h2 className="text-xl font-bold text-[#1A1A1A]">Processing Lab</h2>
+    <p className="text-sm text-[#6B6B6B] mt-1">
+     Python ML Service Testbed &amp; Playground for e-KTP OCR, Survey Form ICR, Voice QA, and Document OCR.
+    </p>
+   </div>
+  </div>
+ );
+};
+
 export default function App() {
  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
  try {
@@ -133,6 +147,7 @@ export default function App() {
  reports: 'Branch Compliance Reports & OJK Audit Trail',
  master: 'Master Data & Operational Configuration',
  settings: 'Risk Engine Rules & Parameters',
+ lab: 'Processing Lab — Python ML Service Testbed',
  };
 
  if (!currentUser) {
@@ -216,6 +231,8 @@ export default function App() {
  {currentTab === 'master' && <MasterDataView />}
 
  {currentTab === 'settings' && <RuleSettingsView />}
+
+ {currentTab === 'lab' && <ProcessingLabView />}
  </main>
  </div>
  </div>

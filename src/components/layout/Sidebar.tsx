@@ -8,7 +8,8 @@ import {
  Users,
  ScanLine,
  FileCheck,
- Database
+ Database,
+ FlaskConical
 } from 'lucide-react';
 export type NavTab =
  | 'dashboard'
@@ -20,7 +21,8 @@ export type NavTab =
  | 'icr'
  | 'reports'
  | 'master'
- | 'settings';
+ | 'settings'
+ | 'lab';
 
 interface SidebarProps {
  currentTab: NavTab;
@@ -94,6 +96,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
  label: 'Risk Rules & Weights',
  icon: Sliders,
  desc: 'Risk engine parameters'
+ },
+ {
+ id: 'lab' as NavTab,
+ label: 'Processing Lab',
+ icon: FlaskConical,
+ desc: 'ML Service Playground & Test'
  }
  ];
 
