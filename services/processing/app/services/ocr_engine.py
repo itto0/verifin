@@ -27,7 +27,17 @@ def assess_image_quality(image_np: np.ndarray) -> ImageQualityResult:
     h, w = image_np.shape[:2]
     findings: List[Finding] = []
 
-    gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY) if len(image_np.shape) == 3 else image_np
+    if len(image_np.shape) == 3:
+        if image_np.shape[2] == 4:
+            gray = cv2.cvtColor(image_np, cv2.COLOR_BGRA2GRAY)
+        elif image_np.shape[2] == 3:
+            gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+        elif image_np.shape[2] == 1:
+            gray = image_np[:, :, 0]
+        else:
+            gray = image_np
+    else:
+        gray = image_np
     variance = float(cv2.Laplacian(gray, cv2.CV_64F).var())
 
     is_blurred = variance < settings.blur_threshold

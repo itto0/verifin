@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from app.schemas.common import Finding
 from app.schemas.ocr import KTPFieldExtraction, KTPValidationResult
 
@@ -205,3 +205,122 @@ def cross_validate_ktp(fields: KTPFieldExtraction) -> KTPValidationResult:
     validation.findings = tamper_findings
     validation.is_valid = len(tamper_findings) == 0 and validation.tamper_score < 70.0
     return validation
+
+
+def extract_ktp_fields_from_ocr(lines: List[Any]) -> KTPFieldExtraction:
+    """Parses sequential OCR lines using regex rules for Indonesian e-KTP layout."""
+    fields = KTPFieldExtraction()
+
+    for line in lines:
+        if hasattr(line, "text"):
+            txt = str(line.text).strip()
+            conf = float(getattr(line, "confidence", 1.0))
+        elif isinstance(line, (list, tuple)) and len(line) >= 2:
+            txt = str(line[0]).strip()
+            conf = float(line[1])
+        else:
+            txt = str(line).strip()
+            conf = 1.0
+
+        # NIK detection
+        nik_match = re.search(r"\b(\d{16})\b", txt)
+        if not nik_match:
+            # Check for NIK : 3204...
+            nik_match = re.search(r"NIK\s*[:;.]?\s*([0-9Xx\s]{16,20})", txt, re.IGNORECASE)
+            if nik_match:
+                cleaned = re.sub(r"\D", "", nik_match.group(1))
+                if len(cleaned) == 16 and not fields.nik:
+                    fields.nik = cleaned
+                    fields.field_confidences["nik"] = conf
+        else:
+            if not fields.nik:
+                fields.nik = nik_match.group(1)
+                fields.field_confidences["nik"] = conf
+
+        # Nama
+        nama_match = re.search(r"Nama\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if nama_match and not fields.nama:
+            fields.nama = nama_match.group(1).strip()
+            fields.field_confidences["nama"] = conf
+
+        # Tempat / Tgl Lahir
+        ttl_match = re.search(r"Tempat.*Lahir\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if ttl_match and not fields.tgl_lahir:
+            ttl_val = ttl_match.group(1).strip()
+            if "," in ttl_val:
+                parts = ttl_val.split(",", 1)
+                fields.tempat_lahir = parts[0].strip()
+                fields.tgl_lahir = parts[1].strip()
+            else:
+                fields.tgl_lahir = ttl_val
+            fields.field_confidences["tgl_lahir"] = conf
+            if fields.tempat_lahir:
+                fields.field_confidences["tempat_lahir"] = conf
+
+        # Jenis Kelamin
+        jk_match = re.search(r"Jenis\s*Kelamin\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if jk_match and not fields.jenis_kelamin:
+            val = jk_match.group(1).strip()
+            if "LAKI" in val.upper():
+                fields.jenis_kelamin = "LAKI-LAKI"
+            elif "PEREMPUAN" in val.upper():
+                fields.jenis_kelamin = "PEREMPUAN"
+            else:
+                fields.jenis_kelamin = val
+            fields.field_confidences["jenis_kelamin"] = conf
+
+        # Alamat
+        alamat_match = re.search(r"Alamat\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if alamat_match and not fields.alamat:
+            fields.alamat = alamat_match.group(1).strip()
+            fields.field_confidences["alamat"] = conf
+
+        # RT/RW
+        rtrw_match = re.search(r"RT\s*/\s*RW\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if rtrw_match and not fields.rt_rw:
+            fields.rt_rw = rtrw_match.group(1).strip()
+            fields.field_confidences["rt_rw"] = conf
+
+        # Kel/Desa
+        kel_match = re.search(r"Kel\s*/\s*Desa\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if kel_match and not fields.kel_desa:
+            fields.kel_desa = kel_match.group(1).strip()
+            fields.field_confidences["kel_desa"] = conf
+
+        # Kecamatan
+        kec_match = re.search(r"Kecamatan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if kec_match and not fields.kecamatan:
+            fields.kecamatan = kec_match.group(1).strip()
+            fields.field_confidences["kecamatan"] = conf
+
+        # Agama
+        agama_match = re.search(r"Agama\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if agama_match and not fields.agama:
+            fields.agama = agama_match.group(1).strip()
+            fields.field_confidences["agama"] = conf
+
+        # Status Perkawinan
+        kawin_match = re.search(r"Status\s*Perkawinan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if kawin_match and not fields.status_perkawinan:
+            fields.status_perkawinan = kawin_match.group(1).strip()
+            fields.field_confidences["status_perkawinan"] = conf
+
+        # Pekerjaan
+        kerja_match = re.search(r"Pekerjaan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if kerja_match and not fields.pekerjaan:
+            fields.pekerjaan = kerja_match.group(1).strip()
+            fields.field_confidences["pekerjaan"] = conf
+
+        # Kewarganegaraan
+        wn_match = re.search(r"Kewarganegaraan\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if wn_match and not fields.kewarganegaraan:
+            fields.kewarganegaraan = wn_match.group(1).strip()
+            fields.field_confidences["kewarganegaraan"] = conf
+
+        # Berlaku Hingga
+        berlaku_match = re.search(r"Berlaku\s*Hingga\s*[:;.]?\s*(.+)$", txt, re.IGNORECASE)
+        if berlaku_match and not fields.berlaku_hingga:
+            fields.berlaku_hingga = berlaku_match.group(1).strip()
+            fields.field_confidences["berlaku_hingga"] = conf
+
+    return fields
