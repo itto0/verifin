@@ -187,23 +187,32 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
     }
   }, [initialHealth, initialHealthStatus, refreshHealth]);
 
-  // Clean up object URLs on unmount
+  // Clean up object URLs on previewUrl change
   useEffect(() => {
     return () => {
       if (previewUrl && previewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(previewUrl);
       }
+    };
+  }, [previewUrl]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
-  }, [previewUrl]);
+  }, []);
 
   // Handle Tab Switch
   const handleSelectTab = (tab: LabSubTab) => {
-    if (tab === activeTab) return;
+    if (tab === activeTab || isProcessing) return;
     setActiveTab(tab);
     setErrorMsg(null);
+    setResult(null);
+    setExecutionDuration(null);
+
     // If current file is not compatible with new tab type, reset
     const newIsAudio = tab === 'voice';
     const currentIsAudio = selectedFile ? selectedFile.type.startsWith('audio') : false;
@@ -213,8 +222,6 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
         URL.revokeObjectURL(previewUrl);
       }
       setPreviewUrl(null);
-      setResult(null);
-      setExecutionDuration(null);
     }
   };
 
@@ -542,10 +549,18 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
 
             {/* Drag & Drop Upload Zone */}
             <div
+              role="button"
+              tabIndex={0}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
               className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
                 isDragging
                   ? 'border-[#2563EB] bg-blue-50/40'
@@ -556,7 +571,7 @@ export const ProcessingLabView: React.FC<ProcessingLabViewProps> = ({
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept={isAudioTab ? 'audio/mp3,audio/wav,audio/m4a,audio/ogg,.mp3,.wav,.m4a' : 'image/*,.jfif,.jpg,.jpeg,.png,.webp'}
+                accept={isAudioTab ? 'audio/*,audio/mpeg,audio/mp3,audio/wav,audio/m4a,audio/ogg,.mp3,.wav,.m4a' : 'image/*,.jfif,.jpg,.jpeg,.png,.webp'}
                 onChange={handleFileChange}
                 aria-label="Upload document or audio file"
               />
@@ -1120,7 +1135,7 @@ const VoiceDomainCard: React.FC<{ data: VoiceQAResult }> = ({ data }) => {
           </div>
 
           <div className="flex flex-wrap sm:flex-col sm:items-end gap-2 text-xs text-[#6B6B6B]">
-            <span>Call Duration: <strong className="text-[#1A1A1A] font-semibold">{transcription.duration}s</strong></span>
+            <span>Call Duration: <strong className="text-[#1A1A1A] font-semibold">{typeof transcription.duration === 'number' ? transcription.duration.toFixed(1) : transcription.duration}s</strong></span>
             <span>Acoustic Pauses: <strong className="text-[#D97706] font-semibold">{data.hesitation_count || 0} hesitation pause{data.hesitation_count !== 1 ? 's' : ''}</strong></span>
           </div>
         </div>
@@ -1218,6 +1233,7 @@ const GeneralDomainCard: React.FC<{
   copiedText: boolean;
 }> = ({ data, onCopyText, copiedText }) => {
   const lines = data?.lines || [];
+  const fullText = data?.full_text || lines.map((l) => l.text).join('\n');
 
   return (
     <div className="bg-white border border-[#E5E5E3] rounded-xl p-5 shadow-xs space-y-4">
@@ -1228,10 +1244,10 @@ const GeneralDomainCard: React.FC<{
             Total Lines Detected: <strong className="text-[#1A1A1A] font-semibold">{data?.total_lines ?? lines.length}</strong>
           </span>
         </div>
-        {data?.full_text && (
+        {fullText && (
           <button
             type="button"
-            onClick={() => onCopyText(data.full_text)}
+            onClick={() => onCopyText(fullText)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E5E3] bg-white hover:bg-[#F7F7F5] text-xs font-medium text-[#1A1A1A]"
           >
             {copiedText ? (
@@ -1274,11 +1290,11 @@ const GeneralDomainCard: React.FC<{
         })}
       </div>
 
-      {data?.full_text && (
+      {fullText && (
         <div className="pt-2 border-t border-[#E5E5E3]">
           <span className="text-xs font-semibold text-[#1A1A1A] block mb-1">Full Extracted Text Buffer</span>
           <pre className="p-3 bg-[#F7F7F5] border border-[#E5E5E3] rounded-lg text-xs font-mono text-[#1A1A1A] whitespace-pre-wrap max-h-36 overflow-y-auto">
-            {data.full_text}
+            {fullText}
           </pre>
         </div>
       )}

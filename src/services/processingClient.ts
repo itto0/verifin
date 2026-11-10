@@ -7,9 +7,12 @@ export interface Finding {
 }
 
 export interface EvidenceRef {
-  id: string;
-  type: string;
+  ref_id?: string;
+  label?: string;
   uri?: string | null;
+  content_type?: string;
+  id?: string;
+  type?: string;
   bbox?: number[][] | null;
 }
 
