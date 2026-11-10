@@ -173,3 +173,19 @@ def test_voice_schemas_validation():
     # Invalid speaker literal
     with pytest.raises(ValidationError):
         AudioSegment(id=0, start=0.0, end=1.0, text="test", speaker="robot")
+
+
+def test_pyav_metadata_errors_compat():
+    """Verify av.open compatibility patch strips metadata_errors without TypeError."""
+    import av
+    # Calling av.open with metadata_errors should not raise TypeError
+    try:
+        # Pass a nonexistent or mock path; it may fail with FileNotFoundError or av.FFmpegError,
+        # but MUST NOT fail with TypeError: open() got an unexpected keyword argument 'metadata_errors'
+        av.open("nonexistent_test_audio.wav", mode="r", metadata_errors="ignore")
+    except TypeError as exc:
+        pytest.fail(f"av.open raised TypeError due to metadata_errors: {exc}")
+    except Exception:
+        # FileNotFoundError or av.FFmpegError is expected for nonexistent file
+        pass
+

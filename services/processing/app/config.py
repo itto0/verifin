@@ -1,6 +1,11 @@
+import os
 from functools import lru_cache
 from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Suppress noisy symlink warnings on Windows platforms without developer mode / admin privileges
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
 
 
 class AppConfig(BaseSettings):

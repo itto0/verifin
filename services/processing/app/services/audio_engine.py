@@ -5,6 +5,23 @@ from app.config import get_settings
 from app.schemas.common import Finding
 from app.schemas.voice import AudioSegment, TranscriptionResult
 
+# PyAV >= 14.0.0 removed the deprecated `metadata_errors` keyword argument from `av.open()`,
+# but faster-whisper 1.x still passes `metadata_errors="ignore"` to `av.open()`.
+# Safely patch `av.open` to strip `metadata_errors` when present.
+try:
+    import av
+
+    _orig_av_open = av.open
+
+    def _safe_av_open(*args, **kwargs):
+        kwargs.pop("metadata_errors", None)
+        return _orig_av_open(*args, **kwargs)
+
+    av.open = _safe_av_open
+except ImportError:
+    pass
+
+
 HESITATION_KEYWORDS = [
     r"\bee+\b",
     r"\banu+\b",
