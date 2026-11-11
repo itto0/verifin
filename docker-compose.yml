@@ -1,0 +1,54 @@
+services:
+  processing:
+    build:
+      context: ./services/processing
+      dockerfile: Dockerfile
+    expose:
+      - "8000"
+    restart: unless-stopped
+    environment:
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-small}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
+      BLUR_THRESHOLD: ${BLUR_THRESHOLD:-100.0}
+      MIN_IMAGE_WIDTH: ${MIN_IMAGE_WIDTH:-600}
+      HESITATION_SILENCE_THRESHOLD: ${HESITATION_SILENCE_THRESHOLD:-1.5}
+      CORS_ORIGINS: '${CORS_ORIGINS:-["*"]}'
+    volumes:
+      - easyocr_models:/root/.EasyOCR
+      - hf_cache:/root/.cache/huggingface
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_AI_BASE_URL: ${VITE_AI_BASE_URL:-/api/ai}
+        VITE_AI_API_KEY: ${VITE_AI_API_KEY:-}
+        VITE_AI_MODEL: ${VITE_AI_MODEL:-antigravity/gemini-3-flash-preview}
+    ports:
+      - "${APP_PORT:-80}:80"
+    restart: unless-stopped
+    environment:
+      PROCESSING_UPSTREAM_URL: ${PROCESSING_UPSTREAM_URL:-http://processing:8000}
+      AI_UPSTREAM_URL: ${AI_UPSTREAM_URL:-https://or.flux.id/v1/}
+      NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
+    depends_on:
+      processing:
+        condition: service_healthy
+
+volumes:
+  easyocr_models:
+  hf_cache:
