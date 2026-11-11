@@ -6,14 +6,26 @@ WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
+ARG VITE_AI_BASE_URL=/api/ai
+ARG VITE_AI_API_KEY=
+ARG VITE_AI_MODEL=antigravity/gemini-3-flash-preview
+ENV VITE_AI_BASE_URL=${VITE_AI_BASE_URL} \
+    VITE_AI_API_KEY=${VITE_AI_API_KEY} \
+    VITE_AI_MODEL=${VITE_AI_MODEL}
+
 COPY . .
 RUN bun run build
 
-# Stage 2: Serve with Nginx and AI Gateway Reverse Proxy
+# Stage 2: Serve with Nginx, Processing Service Proxy, and AI Gateway Reverse Proxy
 FROM nginx:1.27-alpine AS runtime
 
+ENV PROCESSING_UPSTREAM_URL=http://processing:8000 \
+    AI_UPSTREAM_URL=https://or.flux.id/v1/ \
+    NGINX_RESOLVER=127.0.0.11 \
+    NGINX_ENVSUBST_FILTER="^(PROCESSING_UPSTREAM_URL|AI_UPSTREAM_URL|NGINX_RESOLVER)$"
+
 COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
 
