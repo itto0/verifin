@@ -32,7 +32,7 @@
 
 - [ ] **Step 1: Configure Linux CPU-only PyTorch source in `services/processing/pyproject.toml`**
 
-Edit `services/processing/pyproject.toml` to append the explicit `pytorch-cpu` index and platform-scoped `[tool.uv.sources]` mapping for `torch` and `torchvision`:
+Edit `services/processing/pyproject.toml` to declare `"torch"` and `"torchvision"` directly in `[project].dependencies` (required by `uv` so `[tool.uv.sources]` applies during resolution) and append the explicit `pytorch-cpu` index and platform-scoped `[tool.uv.sources]` mapping:
 
 ```toml
 [project]
@@ -53,6 +53,8 @@ dependencies = [
     "faster-whisper>=1.0.0",
     "pydantic-settings>=2.0.0",
     "img2table>=1.2.0",
+    "torch",
+    "torchvision",
 ]
 
 [project.optional-dependencies]
