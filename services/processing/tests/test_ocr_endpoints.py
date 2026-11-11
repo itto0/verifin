@@ -324,7 +324,7 @@ def test_real_ktp_demo_image_full_extraction():
     assert fields.tempat_lahir == "JAKARTA"
     assert fields.tgl_lahir == "20-05-1985"
     assert fields.jenis_kelamin == "LAKI-LAKI"
-    assert fields.alamat == "JL TEBET BARAT DALAM NO. 12"
+    assert fields.alamat in ("JL TEBET BARAT DALAM NO. 12", "JL. TEBET BARAT DALAM NO. 12")
     assert fields.rt_rw == "004/002"
     assert fields.kel_desa == "TEBET BARAT"
     assert fields.kecamatan == "TEBET"

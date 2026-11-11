@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Suppress noisy symlink warnings on Windows platforms without developer mode / admin privileges
@@ -18,6 +18,7 @@ class AppConfig(BaseSettings):
     app_name: str = "VeriFin Processing Service"
     version: str = "0.1.0"
     ocr_model_version: str = "easyocr-id-en-v1"
+    ocr_quantize: Optional[bool] = None
     voice_model_version: str = "faster-whisper-small-id-v1"
     whisper_model_size: str = "small"
     whisper_device: str = "cpu"

@@ -2,9 +2,10 @@ name: ${COMPOSE_PROJECT_NAME:-verifin}
 
 services:
   processing:
-    build:
-      context: ./services/processing
-      dockerfile: Dockerfile
+    image: ${PROCESSING_IMAGE:-ghcr.io/itto0/verifin-processing:latest}
+    pull_policy: ${COMPOSE_PULL_POLICY:-missing}
+    security_opt:
+      - apparmor=unconfined
     expose:
       - "8000"
     restart: unless-stopped
@@ -33,13 +34,10 @@ services:
       start_period: 30s
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_AI_BASE_URL: ${VITE_AI_BASE_URL:-/api/ai}
-        VITE_AI_API_KEY: ${VITE_AI_API_KEY:-}
-        VITE_AI_MODEL: ${VITE_AI_MODEL:-antigravity/gemini-3-flash-preview}
+    image: ${FRONTEND_IMAGE:-ghcr.io/itto0/verifin-frontend:latest}
+    pull_policy: ${COMPOSE_PULL_POLICY:-missing}
+    security_opt:
+      - apparmor=unconfined
     ports:
       - "${APP_PORT:-80}:80"
     restart: unless-stopped

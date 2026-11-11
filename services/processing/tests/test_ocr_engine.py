@@ -86,8 +86,8 @@ def test_ocr_engine_reader_gpu_flag(monkeypatch):
 
     class MockEasyOCRModule:
         class Reader:
-            def __init__(self, languages, gpu=False):
-                calls.append({"languages": languages, "gpu": gpu})
+            def __init__(self, languages, gpu=False, quantize=True):
+                calls.append({"languages": languages, "gpu": gpu, "quantize": quantize})
 
     monkeypatch.setitem(sys.modules, "easyocr", MockEasyOCRModule)
 
@@ -107,3 +107,67 @@ def test_ocr_engine_reader_gpu_flag(monkeypatch):
     engine_cuda._get_reader()
     assert len(calls) == 2
     assert calls[1]["gpu"] is True
+
+
+def test_supports_cpu_quantized_ocr_engines(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    from app.services.ocr_engine import _supports_cpu_quantized_ocr
+
+    fake_torch = SimpleNamespace(backends=SimpleNamespace(quantized=SimpleNamespace(engine="x86")))
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setattr("app.services.ocr_engine.platform.system", lambda: "Linux")
+    monkeypatch.setattr("app.services.ocr_engine.platform.machine", lambda: "x86_64")
+    assert _supports_cpu_quantized_ocr() is True
+
+    fake_torch.backends.quantized.engine = "fbgemm"
+    assert _supports_cpu_quantized_ocr() is True
+
+    # Non-AVX2 x86_64 Linux (e.g., Xeon X5675 / Westmere) falls back to onednn -> disable quantize
+    fake_torch.backends.quantized.engine = "onednn"
+    assert _supports_cpu_quantized_ocr() is False
+
+    fake_torch.backends.quantized.engine = "qnnpack"
+    assert _supports_cpu_quantized_ocr() is False
+
+    monkeypatch.setattr("app.services.ocr_engine.platform.machine", lambda: "aarch64")
+    assert _supports_cpu_quantized_ocr() is True
+
+    # Non-Linux platforms (e.g., Windows) retain default quantized behavior
+    monkeypatch.setattr("app.services.ocr_engine.platform.system", lambda: "Windows")
+    monkeypatch.setattr("app.services.ocr_engine.platform.machine", lambda: "AMD64")
+    fake_torch.backends.quantized.engine = "onednn"
+    assert _supports_cpu_quantized_ocr() is True
+
+
+def test_ocr_engine_reader_quantize_auto_and_override(monkeypatch):
+    import sys
+    calls = []
+
+    class MockEasyOCRModule:
+        class Reader:
+            def __init__(self, languages, gpu=False, quantize=True):
+                calls.append({"languages": languages, "gpu": gpu, "quantize": quantize})
+
+    monkeypatch.setitem(sys.modules, "easyocr", MockEasyOCRModule)
+
+    from app.config import AppConfig
+
+    monkeypatch.setattr("app.services.ocr_engine._supports_cpu_quantized_ocr", lambda: False)
+    monkeypatch.setattr("app.services.ocr_engine.get_settings", lambda: AppConfig(whisper_device="cpu", ocr_quantize=None))
+    OCREngine()._get_reader()
+    assert calls[-1]["quantize"] is False
+
+    monkeypatch.setattr("app.services.ocr_engine._supports_cpu_quantized_ocr", lambda: True)
+    OCREngine()._get_reader()
+    assert calls[-1]["quantize"] is True
+
+    monkeypatch.setattr("app.services.ocr_engine._supports_cpu_quantized_ocr", lambda: False)
+    monkeypatch.setattr("app.services.ocr_engine.get_settings", lambda: AppConfig(whisper_device="cpu", ocr_quantize=True))
+    OCREngine()._get_reader()
+    assert calls[-1]["quantize"] is True
+
+    monkeypatch.setattr("app.services.ocr_engine._supports_cpu_quantized_ocr", lambda: True)
+    monkeypatch.setattr("app.services.ocr_engine.get_settings", lambda: AppConfig(whisper_device="cpu", ocr_quantize=False))
+    OCREngine()._get_reader()
+    assert calls[-1]["quantize"] is False

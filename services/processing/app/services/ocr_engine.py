@@ -1,3 +1,4 @@
+import platform
 from typing import Any, List, Optional, Tuple
 import cv2
 import numpy as np
@@ -70,6 +71,24 @@ def assess_image_quality(image_np: np.ndarray) -> ImageQualityResult:
     )
 
 
+def _supports_cpu_quantized_ocr() -> bool:
+    """Return True when PyTorch exposes a stable CPU quantized backend for EasyOCR."""
+    try:
+        import torch
+
+        quantized = getattr(torch.backends, "quantized", None)
+        engine = getattr(quantized, "engine", None)
+        if engine in ("x86", "fbgemm"):
+            return True
+        if platform.system().lower() != "linux":
+            return True
+        if engine == "qnnpack" and platform.machine().lower() in ("arm64", "aarch64"):
+            return True
+        return False
+    except Exception:
+        return False
+
+
 class OCREngine:
     def __init__(self, reader: Optional[Any] = None):
         self._reader = reader
@@ -77,9 +96,17 @@ class OCREngine:
     def _get_reader(self):
         if self._reader is None:
             import easyocr
+
+            settings = get_settings()
+            quantize = (
+                settings.ocr_quantize
+                if settings.ocr_quantize is not None
+                else _supports_cpu_quantized_ocr()
+            )
             self._reader = easyocr.Reader(
                 ["id", "en"],
-                gpu=(get_settings().whisper_device == "cuda"),
+                gpu=(settings.whisper_device == "cuda"),
+                quantize=quantize,
             )
         return self._reader
 

@@ -24,8 +24,7 @@ ENV PROCESSING_UPSTREAM_URL=http://processing:8000 \
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY docker/16-verifin-env.envsh /docker-entrypoint.d/16-verifin-env.envsh
-RUN sed -i 's/\r$//' /docker-entrypoint.d/16-verifin-env.envsh && chmod +x /docker-entrypoint.d/16-verifin-env.envsh
+COPY --chmod=0755 docker/16-verifin-env.envsh /docker-entrypoint.d/16-verifin-env.envsh
 
 EXPOSE 80
 

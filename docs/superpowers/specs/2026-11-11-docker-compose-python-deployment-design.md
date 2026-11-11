@@ -11,7 +11,7 @@
 Currently, VeriFin's container deployment (`Dockerfile` and `nginx.conf`) only builds the Vite/React frontend and proxies `/api/ai/` to an external AI gateway (`https://or.flux.id/v1/`). The frontend's `src/services/processingClient.ts` expects same-origin `/health` and `/api/v1/*` routes served by the Python FastAPI service in `services/processing/` (OCR, table extraction, ICR, and faster-whisper voice analytics).
 
 ### Key Goals
-1. **Multi-Container Docker Compose Topology**: Orchestrate `frontend` (Nginx) and `processing` (Python/FastAPI) together on an internal bridge network with service health checks and a single `docker compose up -d --build` workflow.
+1. **Multi-Container Docker Compose Topology (LXC-Compatible Prebuilt Images)**: Orchestrate `frontend` (Nginx) and `processing` (Python/FastAPI) together on an internal bridge network using prebuilt GHCR/tarball images (`image:` + `pull_policy: missing`, with local builds isolated in `docker-compose.build.yml`) and `security_opt: ["apparmor=unconfined"]` so LXC hosts never invoke `runc` AppArmor profile writes or `docker build` `RUN` steps.
 2. **Same-Origin Reverse Proxy with Standalone Safety**: Proxy `/api/v1/` and `/health` from Nginx to `processing` with 300s inference timeouts and 52MB upload headroom (above FastAPI's 50MB audio limit), while preserving standalone `Dockerfile` boot safety when `processing` or `/api/ai/` upstreams are unavailable.
 3. **Lean CPU-Only Python Container**: Avoid downloading ~3+ GB of unused NVIDIA CUDA wheels on Linux builds by directing `uv` to PyTorch's CPU wheel index on Linux (`sys_platform == 'linux'`) without disrupting macOS/Windows local development.
 4. **Non-Root Runtime & Persistent ML Model Weights**: Run the Python service as non-root `appuser` (`uid=10001`, `gid=10001`) and persist EasyOCR (`/var/cache/verifin/easyocr` via `EASYOCR_MODULE_PATH`) and HuggingFace/Faster-Whisper (`/var/cache/verifin/huggingface` via `HF_HOME`) caches in named Docker volumes so model weights download once and survive container restarts and image rebuilds.
@@ -36,11 +36,12 @@ Browser ──▶ [frontend: Nginx :80] (host port ${APP_PORT:-80}:80)
                                       └── volume: hf_cache       ──▶ /var/cache/verifin/huggingface
 ```
 
-### Root `docker-compose.yml`
-Defines a stable Compose project name (`name: ${COMPOSE_PROJECT_NAME:-verifin}`), two services on a shared Compose network, and two named volumes:
+### Root `docker-compose.yml` & `docker-compose.build.yml`
+Defines a stable Compose project name (`name: ${COMPOSE_PROJECT_NAME:-verifin}`), two prebuilt-image services on a shared Compose network, and two named volumes (with `build:` definitions separated into `docker-compose.build.yml` so `docker compose up -d` never falls back to building on LXC hosts):
 
 - **`processing` service**:
-  - `build`: context `./services/processing`, `dockerfile: Dockerfile`.
+  - `image`: `${PROCESSING_IMAGE:-ghcr.io/itto0/verifin-processing:latest}` with `pull_policy: ${COMPOSE_PULL_POLICY:-missing}` (build config in `docker-compose.build.yml`: context `./services/processing`, `dockerfile: Dockerfile`).
+  - `security_opt`: `["apparmor=unconfined"]` (required on LXC hosts where kernel AppArmor blocks `docker-default` profile loading).
   - `expose`: `["8000"]` (internal network only; no host `ports` published).
   - `restart: unless-stopped`.
   - `environment`: forwards configurable `AppConfig` values with defaults:
@@ -56,10 +57,8 @@ Defines a stable Compose project name (`name: ${COMPOSE_PROJECT_NAME:-verifin}`)
     - `hf_cache:/var/cache/verifin/huggingface`
   - `healthcheck`: probes `http://127.0.0.1:8000/health` via Python `urllib.request` every `15s` (`timeout: 5s`, `retries: 5`, `start_period: 30s`).
 - **`frontend` service**:
-  - `build`: context `.`, `dockerfile: Dockerfile`, with optional `args`:
-    - `VITE_AI_BASE_URL=${VITE_AI_BASE_URL:-/api/ai}`
-    - `VITE_AI_API_KEY=${VITE_AI_API_KEY:-}`
-    - `VITE_AI_MODEL=${VITE_AI_MODEL:-antigravity/gemini-3-flash-preview}`
+  - `image`: `${FRONTEND_IMAGE:-ghcr.io/itto0/verifin-frontend:latest}` with `pull_policy: ${COMPOSE_PULL_POLICY:-missing}` (build config in `docker-compose.build.yml`: context `.`, `dockerfile: Dockerfile`, optional `VITE_AI_*` args).
+  - `security_opt`: `["apparmor=unconfined"]`.
   - `ports`: `["${APP_PORT:-80}:80"]`.
   - `restart: unless-stopped`.
   - `environment`:
@@ -71,10 +70,13 @@ Defines a stable Compose project name (`name: ${COMPOSE_PROJECT_NAME:-verifin}`)
   - `easyocr_models:`
   - `hf_cache:`
 
+### CI Image Publishing (`.github/workflows/docker-images.yml`)
+Automatically builds and pushes `linux/amd64` images for `verifin-frontend` and `verifin-processing` to GHCR (`ghcr.io/<owner>/verifin-{frontend,processing}:latest` + `:sha-<short>`) on pushes to `main` (ignoring `docs/**`) or manual `workflow_dispatch`.
+
 ### Root `.env.example`
 Expand `.env.example` to document:
 - Frontend build-time variables (`VITE_AI_BASE_URL="/api/ai"`, `VITE_AI_API_KEY=""` optional override, `VITE_AI_MODEL="antigravity/gemini-3-flash-preview"`).
-- Compose & Nginx runtime variables (`COMPOSE_PROJECT_NAME=verifin`, `APP_PORT=80`, `PROCESSING_UPSTREAM_URL=http://processing:8000` with trailing slashes stripped on startup, `AI_UPSTREAM_URL=https://or.flux.id/v1/` normalized with a trailing slash on startup to strip `/api/ai/` prefix cleanly, `NGINX_RESOLVER=auto` where `auto` reads `/etc/resolv.conf` — `127.0.0.11` inside Compose — or accepts an explicit DNS IP).
+- Compose & Nginx runtime variables (`COMPOSE_PROJECT_NAME=verifin`, `FRONTEND_IMAGE=ghcr.io/itto0/verifin-frontend:latest`, `PROCESSING_IMAGE=ghcr.io/itto0/verifin-processing:latest`, `COMPOSE_PULL_POLICY=missing`, `APP_PORT=80`, `PROCESSING_UPSTREAM_URL=http://processing:8000` with trailing slashes stripped on startup, `AI_UPSTREAM_URL=https://or.flux.id/v1/` normalized with a trailing slash on startup to strip `/api/ai/` prefix cleanly, `NGINX_RESOLVER=auto` where `auto` reads `/etc/resolv.conf` — `127.0.0.11` inside Compose — or accepts an explicit DNS IP).
 - Python processing runtime variables (`WHISPER_MODEL_SIZE=small`, `WHISPER_DEVICE=cpu`, `WHISPER_COMPUTE_TYPE=int8`, `BLUR_THRESHOLD=100.0`, `MIN_IMAGE_WIDTH=600`, `HESITATION_SILENCE_THRESHOLD=1.5`, `CORS_ORIGINS='["*"]'`).
 
 ---
@@ -84,7 +86,7 @@ Expand `.env.example` to document:
 ### Root `.dockerignore`
 Prevent Python virtual environments, caches, and local env overrides from bloating the frontend Docker build context:
 - Keep existing entries: `node_modules`, `dist`, `.git`, `.env`, `.cache`.
-- Add: `services/`, `.env.*`, `!.env.example`, `**/__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.DS_Store`.
+- Add: `services/`, `.github/`, `.superpowers/`, `docs/`, `.env.*`, `!.env.example`, `**/__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.DS_Store`.
 
 ### Root `Dockerfile`
 - **Builder stage (`oven/bun:1.4.3-alpine AS builder`)**:
@@ -96,7 +98,7 @@ Prevent Python virtual environments, caches, and local env overrides from bloati
     - `NGINX_RESOLVER=auto`
     - `NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1`
     - `NGINX_ENVSUBST_FILTER=^(PROCESSING_UPSTREAM_URL|AI_UPSTREAM_URL|NGINX_RESOLVER)$`
-  - Copy `nginx.conf.template` to `/etc/nginx/templates/default.conf.template` and `docker/16-verifin-env.envsh` to `/docker-entrypoint.d/16-verifin-env.envsh` (with `+x`) so `16-verifin-env.envsh` runs right after built-in `15-local-resolvers.envsh` and before `20-envsubst-on-templates.sh`:
+  - Copy `nginx.conf.template` to `/etc/nginx/templates/default.conf.template` and `docker/16-verifin-env.envsh` using `COPY --chmod=0755` to `/docker-entrypoint.d/16-verifin-env.envsh` (with LF line endings enforced via `.gitattributes`, eliminating any `RUN` step in Stage 2) so `16-verifin-env.envsh` runs right after built-in `15-local-resolvers.envsh` and before `20-envsubst-on-templates.sh`:
     - Strips any trailing `/` from `PROCESSING_UPSTREAM_URL`.
     - Normalizes `AI_UPSTREAM_URL` to end with a single `/` if non-empty.
     - Resolves `NGINX_RESOLVER` to `${NGINX_LOCAL_RESOLVERS:-127.0.0.11}` when empty or `auto` (preserving explicit IP overrides).
@@ -183,10 +185,10 @@ After implementation, validate both unit checks and live Compose integration:
 1. **Compose & lockfile validation**:
    - `uv lock --check` (or `uv sync --extra dev` / `pytest` inside `services/processing/`).
    - `docker compose config` validates syntax and variable interpolation without errors.
-2. **Image builds**:
-   - `docker compose build` builds both `frontend` and `processing` cleanly (verifying CPU-only PyTorch wheels are installed in `processing`).
-3. **Runtime & reverse proxy verification**:
-   - `docker compose up -d` brings both `processing` and `frontend` to `healthy` status.
+2. **Image builds (off-host / CI)**:
+   - `docker compose -f docker-compose.yml -f docker-compose.build.yml build` builds both `frontend` and `processing` cleanly (verifying CPU-only PyTorch wheels in `processing` and zero `RUN` steps in `frontend` Stage 2).
+3. **Runtime & reverse proxy verification (without building on runtime host)**:
+   - `docker compose up -d` starts prebuilt images with `apparmor=unconfined` and brings both `processing` and `frontend` to `healthy` status without triggering `docker build`.
    - `GET http://localhost:${APP_PORT:-80}/` serves the React SPA (`200 OK`).
    - `GET http://localhost:${APP_PORT:-80}/health` proxies to `processing` and returns `{"status":"healthy",...}` (`200 OK`).
    - `POST http://localhost:${APP_PORT:-80}/api/v1/...` proxies cleanly to `processing` (verifying invalid/sample multipart upload reaches FastAPI and returns expected status/validation rather than `404`/`502`/`405`).
