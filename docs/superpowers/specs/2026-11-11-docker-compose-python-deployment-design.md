@@ -12,9 +12,9 @@ Currently, VeriFin's container deployment (`Dockerfile` and `nginx.conf`) only b
 
 ### Key Goals
 1. **Multi-Container Docker Compose Topology**: Orchestrate `frontend` (Nginx) and `processing` (Python/FastAPI) together on an internal bridge network with service health checks and a single `docker compose up -d --build` workflow.
-2. **Same-Origin Reverse Proxy with Standalone Safety**: Proxy `/api/v1/` and `/health` from Nginx to `processing` with 300s inference timeouts and 50MB upload limits, while preserving standalone `Dockerfile` boot safety when `processing` is not present.
+2. **Same-Origin Reverse Proxy with Standalone Safety**: Proxy `/api/v1/` and `/health` from Nginx to `processing` with 300s inference timeouts and 52MB upload headroom (above FastAPI's 50MB audio limit), while preserving standalone `Dockerfile` boot safety when `processing` or `/api/ai/` upstreams are unavailable.
 3. **Lean CPU-Only Python Container**: Avoid downloading ~3+ GB of unused NVIDIA CUDA wheels on Linux builds by directing `uv` to PyTorch's CPU wheel index on Linux (`sys_platform == 'linux'`) without disrupting macOS/Windows local development.
-4. **Persistent ML Model Weights**: Persist EasyOCR (`/root/.EasyOCR`) and HuggingFace/Faster-Whisper (`/root/.cache/huggingface`) caches in named Docker volumes so model weights download once and survive container restarts and image rebuilds.
+4. **Non-Root Runtime & Persistent ML Model Weights**: Run the Python service as non-root `appuser` (`uid=10001`, `gid=10001`) and persist EasyOCR (`/var/cache/verifin/easyocr` via `EASYOCR_MODULE_PATH`) and HuggingFace/Faster-Whisper (`/var/cache/verifin/huggingface` via `HF_HOME`) caches in named Docker volumes so model weights download once and survive container restarts and image rebuilds.
 5. **Configurable Host Exposure & Environment**: Expose only `frontend` on `${APP_PORT:-80}:80`, keeping `processing` internal on the Docker network, and document all build/runtime environment variables in `.env.example`.
 
 ### Out of Scope
@@ -32,12 +32,12 @@ Browser ──▶ [frontend: Nginx :80] (host port ${APP_PORT:-80}:80)
                ├── /api/ai/   ──▶ External AI Gateway (${AI_UPSTREAM_URL}, default https://or.flux.id/v1/)
                ├── /api/v1/*  ──▶ [processing: FastAPI :8000] (internal network only)
                └── /health    ──▶ [processing: FastAPI :8000] /health
-                                      ├── volume: easyocr_models ──▶ /root/.EasyOCR
-                                      └── volume: hf_cache       ──▶ /root/.cache/huggingface
+                                      ├── volume: easyocr_models ──▶ /var/cache/verifin/easyocr
+                                      └── volume: hf_cache       ──▶ /var/cache/verifin/huggingface
 ```
 
 ### Root `docker-compose.yml`
-Defines two services on a shared Compose network and two named volumes:
+Defines a stable Compose project name (`name: ${COMPOSE_PROJECT_NAME:-verifin}`), two services on a shared Compose network, and two named volumes:
 
 - **`processing` service**:
   - `build`: context `./services/processing`, `dockerfile: Dockerfile`.
@@ -52,8 +52,8 @@ Defines two services on a shared Compose network and two named volumes:
     - `HESITATION_SILENCE_THRESHOLD=${HESITATION_SILENCE_THRESHOLD:-1.5}`
     - `CORS_ORIGINS='${CORS_ORIGINS:-["*"]}'` (single-quoted in YAML so Pydantic's JSON `List[str]` parser always receives valid JSON even if unset or empty)
   - `volumes`:
-    - `easyocr_models:/root/.EasyOCR`
-    - `hf_cache:/root/.cache/huggingface`
+    - `easyocr_models:/var/cache/verifin/easyocr`
+    - `hf_cache:/var/cache/verifin/huggingface`
   - `healthcheck`: probes `http://127.0.0.1:8000/health` via Python `urllib.request` every `15s` (`timeout: 5s`, `retries: 5`, `start_period: 30s`).
 - **`frontend` service**:
   - `build`: context `.`, `dockerfile: Dockerfile`, with optional `args`:
@@ -65,7 +65,7 @@ Defines two services on a shared Compose network and two named volumes:
   - `environment`:
     - `PROCESSING_UPSTREAM_URL=${PROCESSING_UPSTREAM_URL:-http://processing:8000}`
     - `AI_UPSTREAM_URL=${AI_UPSTREAM_URL:-https://or.flux.id/v1/}`
-    - `NGINX_RESOLVER=${NGINX_RESOLVER:-127.0.0.11}`
+    - `NGINX_RESOLVER=${NGINX_RESOLVER:-auto}`
   - `depends_on`: `processing: condition: service_healthy`.
 - **Named Volumes**:
   - `easyocr_models:`
@@ -74,7 +74,7 @@ Defines two services on a shared Compose network and two named volumes:
 ### Root `.env.example`
 Expand `.env.example` to document:
 - Frontend build-time variables (`VITE_AI_BASE_URL="/api/ai"`, `VITE_AI_API_KEY=""` optional override, `VITE_AI_MODEL="antigravity/gemini-3-flash-preview"`).
-- Compose & Nginx runtime variables (`APP_PORT=80`, `PROCESSING_UPSTREAM_URL=http://processing:8000` with **no** trailing slash, `AI_UPSTREAM_URL=https://or.flux.id/v1/` **with** trailing slash to strip `/api/ai/` prefix cleanly, `NGINX_RESOLVER=127.0.0.11`).
+- Compose & Nginx runtime variables (`COMPOSE_PROJECT_NAME=verifin`, `APP_PORT=80`, `PROCESSING_UPSTREAM_URL=http://processing:8000` with trailing slashes stripped on startup, `AI_UPSTREAM_URL=https://or.flux.id/v1/` normalized with a trailing slash on startup to strip `/api/ai/` prefix cleanly, `NGINX_RESOLVER=auto` where `auto` reads `/etc/resolv.conf` — `127.0.0.11` inside Compose — or accepts an explicit DNS IP).
 - Python processing runtime variables (`WHISPER_MODEL_SIZE=small`, `WHISPER_DEVICE=cpu`, `WHISPER_COMPUTE_TYPE=int8`, `BLUR_THRESHOLD=100.0`, `MIN_IMAGE_WIDTH=600`, `HESITATION_SILENCE_THRESHOLD=1.5`, `CORS_ORIGINS='["*"]'`).
 
 ---
@@ -84,24 +84,32 @@ Expand `.env.example` to document:
 ### Root `.dockerignore`
 Prevent Python virtual environments, caches, and local env overrides from bloating the frontend Docker build context:
 - Keep existing entries: `node_modules`, `dist`, `.git`, `.env`, `.cache`.
-- Add: `services/`, `.env.*`, `!.env.example`, `__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.DS_Store`.
+- Add: `services/`, `.env.*`, `!.env.example`, `**/__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.DS_Store`.
 
 ### Root `Dockerfile`
-- **Builder stage (`oven/bun:1-alpine AS builder`)**:
-  - Accept build arguments `VITE_AI_BASE_URL`, `VITE_AI_API_KEY`, `VITE_AI_MODEL` and pass them as `ENV` during `bun run build` only when non-empty (preserving `src/services/aiService.ts` fallback behavior if unset; specifically, leave default empty in `.env.example` or pass non-empty values so existing defaults work cleanly without baking `"sk-your-ai-api-key"` placeholder accidentally if `.env` is absent).
-- **Runtime stage (`nginx:1.27-alpine AS runtime`)**:
+- **Builder stage (`oven/bun:1.4.3-alpine AS builder`)**:
+  - Copy application sources first (`COPY . .`), then declare `ARG VITE_AI_BASE_URL=/api/ai`, `ARG VITE_AI_API_KEY=`, `ARG VITE_AI_MODEL=antigravity/gemini-3-flash-preview` straight before `RUN bun run build` (without redundant `ENV VITE_AI_*` declarations, preserving `src/services/aiService.ts` fallback behavior if unset and avoiding baking `"sk-your-ai-api-key"` placeholder accidentally if `.env` is absent).
+- **Runtime stage (`nginx:1.27.5-alpine AS runtime`)**:
   - Set default `ENV` values:
     - `PROCESSING_UPSTREAM_URL=http://processing:8000`
     - `AI_UPSTREAM_URL=https://or.flux.id/v1/`
-    - `NGINX_RESOLVER=127.0.0.11`
+    - `NGINX_RESOLVER=auto`
+    - `NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1`
     - `NGINX_ENVSUBST_FILTER=^(PROCESSING_UPSTREAM_URL|AI_UPSTREAM_URL|NGINX_RESOLVER)$`
-  - Copy `nginx.conf.template` to `/etc/nginx/templates/default.conf.template` so Nginx's official entrypoint (`20-envsubst-on-templates.sh`) renders `/etc/nginx/conf.d/default.conf` on startup.
+  - Copy `nginx.conf.template` to `/etc/nginx/templates/default.conf.template` and `docker/16-verifin-env.envsh` to `/docker-entrypoint.d/16-verifin-env.envsh` (with `+x`) so `16-verifin-env.envsh` runs right after built-in `15-local-resolvers.envsh` and before `20-envsubst-on-templates.sh`:
+    - Strips any trailing `/` from `PROCESSING_UPSTREAM_URL`.
+    - Normalizes `AI_UPSTREAM_URL` to end with a single `/` if non-empty.
+    - Resolves `NGINX_RESOLVER` to `${NGINX_LOCAL_RESOLVERS:-127.0.0.11}` when empty or `auto` (preserving explicit IP overrides).
   - Keep `HEALTHCHECK` hitting `http://127.0.0.1:80/` so the frontend container health check remains independent of backend availability.
 
 ### Nginx Template (`nginx.conf.template`, replacing `nginx.conf`)
 Replace `nginx.conf` with `nginx.conf.template` so there is a single source of truth:
-- Retain `listen 80;`, `server_name _;`, `client_max_body_size 50M;`, `server_tokens off;`, security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`), gzip, `index.html` `no-cache`, `/assets/` 1-year immutable cache, and SPA fallback (`location / { try_files $uri $uri/ /index.html; }`).
-- Retain `/api/ai/` reverse proxy using `${AI_UPSTREAM_URL}`, `proxy_ssl_server_name on;`, `proxy_set_header Host $proxy_host;`, and `proxy_set_header Accept-Encoding "";`.
+- Retain `listen 80;`, `server_name _;`, `server_tokens off;`, security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`), gzip, `index.html` `no-cache`, `/assets/` 1-year immutable cache, and SPA fallback (`location / { try_files $uri $uri/ /index.html; }`).
+- Set `client_max_body_size 52M;` to give multipart boundary overhead headroom above FastAPI's `50MB` audio limit.
+- Configure `/api/ai/` reverse proxy with deferred variable resolution via `location ~ ^/api/ai/(.*)$`:
+  - `set $ai_upstream "${AI_UPSTREAM_URL}";`
+  - `proxy_pass $ai_upstream$1$is_args$args;`
+  - `proxy_ssl_server_name on;`, `proxy_ssl_name $proxy_host;`, `proxy_http_version 1.1;`, `proxy_set_header Host $proxy_host;`, forwarding headers, and `proxy_set_header Accept-Encoding "";`.
 - Add `resolver ${NGINX_RESOLVER} valid=30s ipv6=off;` and proxy blocks for the Python service:
   - `location = /health`:
     - `set $processing_upstream "${PROCESSING_UPSTREAM_URL}";`
@@ -111,7 +119,7 @@ Replace `nginx.conf` with `nginx.conf.template` so there is a single source of t
     - `set $processing_upstream "${PROCESSING_UPSTREAM_URL}";`
     - `proxy_pass $processing_upstream;`
     - Standard forwarding headers (`Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`), `proxy_http_version 1.1;`, `proxy_connect_timeout 10s;`, `proxy_send_timeout 300s;`, `proxy_read_timeout 300s;`.
-- Note on variable-based `proxy_pass`: using `set $processing_upstream` with `resolver` defers DNS lookup to request time, preventing standalone `docker run` deployments (without `processing` on the network) from failing on Nginx boot. `PROCESSING_UPSTREAM_URL` must be an origin without a trailing path or slash (e.g., `http://processing:8000`) so Nginx forwards the original URI (`/health`, `/api/v1/...`) intact.
+- Note on variable-based `proxy_pass`: using `set $processing_upstream` and `set $ai_upstream` with `resolver` defers DNS lookup to request time across all upstream proxy routes, preventing standalone `docker run` deployments (or unreachable upstream hostnames) from failing on Nginx boot. Entrypoint script `16-verifin-env.envsh` ensures `PROCESSING_UPSTREAM_URL` has no trailing slash (so `/health` and `/api/v1/...` forward intact) and `AI_UPSTREAM_URL` ends with a single `/` (so `$ai_upstream$1$is_args$args` strips `/api/ai/` cleanly).
 
 ---
 
@@ -137,21 +145,23 @@ Replace `nginx.conf` with `nginx.conf.template` so there is a single source of t
 
 ### `services/processing/.dockerignore`
 Exclude local development artifacts and test assets from the Python build context:
-- `.venv/`, `__pycache__/`, `*.py[cod]`, `.pytest_cache/`, `.ruff_cache/`, `*.egg-info/`, `.env`, `.env.*`, `.git/`, `tests/`.
+- `.venv/`, `**/__pycache__/`, `**/*.py[cod]`, `.pytest_cache/`, `.ruff_cache/`, `**/*.egg-info/`, `.env`, `.env.*`, `.git/`, `tests/`.
 
 ### `services/processing/Dockerfile`
-Use a multi-stage `uv` build on `python:3.11-slim`:
-1. **Builder stage (`python:3.11-slim AS builder`)**:
-   - Copy `uv` binary from `ghcr.io/astral-sh/uv:latest` (`COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/`).
+Use a multi-stage `uv` build on pinned `python:3.11.18-slim`:
+1. **Builder stage (`python:3.11.18-slim AS builder`)**:
+   - Copy `uv` binary from pinned `ghcr.io/astral-sh/uv:0.11.21` (`COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /uvx /bin/`).
    - Set `UV_COMPILE_BYTECODE=1`, `UV_LINK_MODE=copy`, `UV_NO_DEV=1`, `UV_PYTHON_DOWNLOADS=0`.
    - `WORKDIR /app`.
    - Install dependencies first using bind/cache mounts for layer caching:
      `RUN --mount=type=cache,target=/root/.cache/uv --mount=type=bind,source=uv.lock,target=uv.lock --mount=type=bind,source=pyproject.toml,target=pyproject.toml uv sync --locked --no-install-project`
    - Copy `pyproject.toml`, `uv.lock`, `README.md`, and `app/` into `/app`, then run `uv sync --locked --no-editable` to install `verifin-processing`.
-2. **Runtime stage (`python:3.11-slim AS runtime`)**:
+2. **Runtime stage (`python:3.11.18-slim AS runtime`)**:
    - Install minimal shared runtime libraries required by OpenCV, EasyOCR, and CTranslate2 (`libgomp1`, `libglib2.0-0`, `libgl1`) and clean apt lists (`rm -rf /var/lib/apt/lists/*`).
-   - Copy `/app/.venv` and `/app/app` from `builder`.
-   - Set `PATH="/app/.venv/bin:$PATH"`, `PYTHONUNBUFFERED=1`, `HF_HUB_DISABLE_SYMLINKS_WARNING=1`.
+   - Create non-root group/user `appuser` (`--gid 10001`, `--uid 10001`, `--system --create-home --home-dir /home/appuser`), create `/var/cache/verifin/easyocr` and `/var/cache/verifin/huggingface`, and `chown -R appuser:appuser /app /var/cache/verifin`.
+   - Copy `/app/.venv` from `builder` with `--chown=appuser:appuser` (without duplicating `/app/app` or copying up `.venv` layers, so Uvicorn imports directly from the precompiled non-editable wheel in `/app/.venv`).
+   - Set `PATH="/app/.venv/bin:$PATH"`, `PYTHONUNBUFFERED=1`, `HF_HUB_DISABLE_SYMLINKS_WARNING=1`, `EASYOCR_MODULE_PATH=/var/cache/verifin/easyocr`, `HF_HOME=/var/cache/verifin/huggingface`.
+   - Switch to `USER appuser`.
    - `EXPOSE 8000`.
    - `HEALTHCHECK --interval=15s --timeout=5s --retries=5 --start-period=30s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)" || exit 1`.
    - `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]` (single worker so lazy-loaded EasyOCR and Faster-Whisper models are not duplicated across worker processes in RAM).
@@ -160,9 +170,9 @@ Use a multi-stage `uv` build on `python:3.11-slim`:
 
 ## 5. Error Handling & Edge Cases
 
-1. **Cold-start model downloads**: First OCR or Voice request triggers EasyOCR (`~/.EasyOCR`) or HuggingFace Faster-Whisper (`~/.cache/huggingface`) downloads into mounted named volumes. Nginx's `300s` `proxy_read_timeout`/`proxy_send_timeout` prevents premature `504 Gateway Timeout` during initial weight download or slower CPU inference, and named volumes preserve weights across restarts and rebuilds.
-2. **Oversized uploads**: Both Nginx (`client_max_body_size 50M`) and FastAPI routers (`15MB` images, `50MB` audio) enforce limits cleanly.
-3. **Standalone frontend container compatibility**: Because Nginx uses variable-based `proxy_pass` + `resolver` on `/health` and `/api/v1/` and checks `/` in its own `HEALTHCHECK`, building and running the root `Dockerfile` alone continues serving the SPA and `/api/ai/` without startup crashes.
+1. **Cold-start model downloads**: First OCR or Voice request triggers EasyOCR (`/var/cache/verifin/easyocr`) or HuggingFace Faster-Whisper (`/var/cache/verifin/huggingface`) downloads into mounted named volumes owned by `appuser`. Nginx's `300s` `proxy_read_timeout`/`proxy_send_timeout` prevents premature `504 Gateway Timeout` during initial weight download or slower CPU inference, and named volumes preserve weights across restarts and rebuilds.
+2. **Oversized uploads**: Nginx (`client_max_body_size 52M`) provides multipart overhead headroom above FastAPI router limits (`15MB` images, `50MB` audio).
+3. **Standalone frontend container compatibility**: Because Nginx uses variable-based `proxy_pass` + `resolver` on `/health`, `/api/v1/`, and `/api/ai/`, auto-detects `/etc/resolv.conf` via `NGINX_RESOLVER=auto` (`15-local-resolvers.envsh` + `16-verifin-env.envsh`), and checks `/` in its own `HEALTHCHECK`, building and running the root `Dockerfile` alone continues serving the SPA without startup crashes even when upstream DNS names are absent.
 4. **Build-arg safety**: `Dockerfile` must avoid overriding `src/services/aiService.ts` defaults with empty strings (`VITE_AI_API_KEY=""` would be truthy-check safe via `||`, whereas placeholder text like `"sk-your-ai-api-key"` must not be passed into production builds by Compose). In `docker-compose.yml`, only pass `VITE_AI_*` build args when set or default `VITE_AI_BASE_URL` to `/api/ai` and `VITE_AI_MODEL` to `antigravity/gemini-3-flash-preview` while leaving `VITE_AI_API_KEY` empty by default so `aiService.ts` falls back cleanly unless overridden.
 
 ---

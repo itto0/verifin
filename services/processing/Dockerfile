@@ -1,7 +1,7 @@
 # Stage 1: Install Python dependencies and application into /app/.venv using uv
-FROM python:3.11-slim AS builder
+FROM python:3.11.18-slim AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-editable
 
 # Stage 2: Minimal runtime image
-FROM python:3.11-slim AS runtime
+FROM python:3.11.18-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
@@ -32,12 +32,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/app /app/app
+RUN groupadd --gid 10001 --system appuser \
+    && useradd --uid 10001 --gid appuser --system --create-home --home-dir /home/appuser appuser \
+    && mkdir -p /var/cache/verifin/easyocr /var/cache/verifin/huggingface \
+    && chown -R appuser:appuser /app /var/cache/verifin
+
+COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    HF_HUB_DISABLE_SYMLINKS_WARNING=1
+    HF_HUB_DISABLE_SYMLINKS_WARNING=1 \
+    EASYOCR_MODULE_PATH=/var/cache/verifin/easyocr \
+    HF_HOME=/var/cache/verifin/huggingface
+
+USER appuser
 
 EXPOSE 8000
 

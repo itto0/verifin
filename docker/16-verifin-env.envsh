@@ -1,0 +1,23 @@
+#!/bin/sh
+# Normalize upstream URLs and resolve NGINX_RESOLVER before 20-envsubst-on-templates.sh.
+
+PROCESSING_UPSTREAM_URL="${PROCESSING_UPSTREAM_URL:-}"
+while [ "${PROCESSING_UPSTREAM_URL%/}" != "$PROCESSING_UPSTREAM_URL" ]; do
+  PROCESSING_UPSTREAM_URL="${PROCESSING_UPSTREAM_URL%/}"
+done
+
+AI_UPSTREAM_URL="${AI_UPSTREAM_URL:-}"
+if [ -n "$AI_UPSTREAM_URL" ]; then
+  while [ "${AI_UPSTREAM_URL%/}" != "$AI_UPSTREAM_URL" ]; do
+    AI_UPSTREAM_URL="${AI_UPSTREAM_URL%/}"
+  done
+  AI_UPSTREAM_URL="${AI_UPSTREAM_URL}/"
+fi
+
+case "${NGINX_RESOLVER:-}" in
+  ""|auto)
+    NGINX_RESOLVER="${NGINX_LOCAL_RESOLVERS:-127.0.0.11}"
+    ;;
+esac
+
+export PROCESSING_UPSTREAM_URL AI_UPSTREAM_URL NGINX_RESOLVER

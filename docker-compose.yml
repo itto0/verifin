@@ -1,3 +1,5 @@
+name: ${COMPOSE_PROJECT_NAME:-verifin}
+
 services:
   processing:
     build:
@@ -15,8 +17,8 @@ services:
       HESITATION_SILENCE_THRESHOLD: ${HESITATION_SILENCE_THRESHOLD:-1.5}
       CORS_ORIGINS: '${CORS_ORIGINS:-["*"]}'
     volumes:
-      - easyocr_models:/root/.EasyOCR
-      - hf_cache:/root/.cache/huggingface
+      - easyocr_models:/var/cache/verifin/easyocr
+      - hf_cache:/var/cache/verifin/huggingface
     healthcheck:
       test:
         [
@@ -44,7 +46,7 @@ services:
     environment:
       PROCESSING_UPSTREAM_URL: ${PROCESSING_UPSTREAM_URL:-http://processing:8000}
       AI_UPSTREAM_URL: ${AI_UPSTREAM_URL:-https://or.flux.id/v1/}
-      NGINX_RESOLVER: ${NGINX_RESOLVER:-127.0.0.11}
+      NGINX_RESOLVER: ${NGINX_RESOLVER:-auto}
     depends_on:
       processing:
         condition: service_healthy
