@@ -187,3 +187,39 @@ def test_table_endpoint_dynamic_cell_confidence_blurred_capped():
         assert payload["status"] == "partial"
     finally:
         app.dependency_overrides.clear()
+
+
+def test_table_endpoint_ignores_empty_cells_for_confidence():
+    from app.schemas.table import TableCell
+
+    c_header = TableCell(row_idx=0, col_idx=0, text="Penghasilan", confidence=0.80, is_header=True, colspan=2)
+    c_empty_placeholder = TableCell(row_idx=0, col_idx=1, text="", confidence=1.0, is_header=True)
+    c_val = TableCell(row_idx=1, col_idx=0, text="Gaji", confidence=0.84)
+    mock_table = ExtractedTable(
+        table_idx=0,
+        headers=["Penghasilan", ""],
+        rows=[["Gaji", ""]],
+        cells=[c_header, c_empty_placeholder, c_val],
+        num_rows=1,
+        num_cols=2,
+    )
+
+    class MockTableEngine:
+        def extract_tables_from_image(self, image_np, borderless=True, mock_tables=None):
+            return TableExtractionResult(tables_found=1, tables=[mock_table], raw_text=""), []
+
+    app.dependency_overrides[get_table_engine] = lambda: MockTableEngine()
+
+    try:
+        img_bytes = _make_dummy_image_bytes()
+        response = client.post(
+            "/api/v1/ocr/table",
+            files={"file": ("slip.png", io.BytesIO(img_bytes), "image/png")},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        # Mean of non-empty cells: (80 + 84) / 2 = 82.0 (empty placeholder 100% must not inflate!)
+        assert payload["confidence"] == 82.0
+    finally:
+        app.dependency_overrides.clear()
+

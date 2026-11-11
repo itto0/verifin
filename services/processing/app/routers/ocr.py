@@ -120,7 +120,13 @@ def process_table(
 
     all_findings = quality.findings + table_findings
 
-    cell_confidences = [
+    non_empty_confidences = [
+        c.confidence * 100.0
+        for t in table_result.tables
+        for c in t.cells
+        if c.text.strip()
+    ]
+    cell_confidences = non_empty_confidences or [
         c.confidence * 100.0
         for t in table_result.tables
         for c in t.cells

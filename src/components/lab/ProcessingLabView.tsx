@@ -48,6 +48,7 @@ import {
   GeneralOcrResult,
   TableExtractionResult,
   ExtractedTable,
+  TableCell,
   MAX_IMAGE_SIZE,
   MAX_AUDIO_SIZE,
 } from '../../services/processingClient';
@@ -1475,17 +1476,43 @@ const TableDomainCard: React.FC<{ data: TableExtractionResult }> = ({ data }) =>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
-                    {table.headers && table.headers.length > 0 && (
-                      <thead className="bg-[#FAFAFA] border-b border-[#E5E5E3] text-[#1A1A1A] font-semibold">
-                        <tr>
-                          {table.headers.map((header, hIdx) => (
-                            <th key={hIdx} className="py-2.5 px-3 border-r border-[#E5E5E3] last:border-r-0 font-bold bg-[#F0F0EE]">
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                    )}
+                    {table.headers && table.headers.length > 0 && (() => {
+                      const headerCellsByCol = new Map<number, TableCell>();
+                      if (table.cells) {
+                        for (const c of table.cells) {
+                          if (c.row_idx === 0 && c.is_header) {
+                            headerCellsByCol.set(c.col_idx, c);
+                          }
+                        }
+                      }
+                      const renderedHeaders: React.ReactNode[] = [];
+                      let skipCols = 0;
+                      table.headers.forEach((header, hIdx) => {
+                        if (skipCols > 0) {
+                          skipCols--;
+                          return;
+                        }
+                        const cellMeta = headerCellsByCol.get(hIdx);
+                        const span = Math.max(1, Math.min(table.headers.length - hIdx, cellMeta?.colspan ?? 1));
+                        if (span > 1) {
+                          skipCols = span - 1;
+                        }
+                        renderedHeaders.push(
+                          <th
+                            key={hIdx}
+                            colSpan={span > 1 ? span : undefined}
+                            className="py-2.5 px-3 border-r border-[#E5E5E3] last:border-r-0 font-bold bg-[#F0F0EE] whitespace-pre-line"
+                          >
+                            {header}
+                          </th>
+                        );
+                      });
+                      return (
+                        <thead className="bg-[#FAFAFA] border-b border-[#E5E5E3] text-[#1A1A1A] font-semibold">
+                          <tr>{renderedHeaders}</tr>
+                        </thead>
+                      );
+                    })()}
                     <tbody className="divide-y divide-[#E5E5E3]">
                       {table.rows && table.rows.length > 0 ? (
                         table.rows.map((row, rIdx) => (
@@ -1498,7 +1525,7 @@ const TableDomainCard: React.FC<{ data: TableExtractionResult }> = ({ data }) =>
                             {row.map((cell, cIdx) => (
                               <td
                                 key={cIdx}
-                                className="py-2.5 px-3 border-r border-[#E5E5E3] last:border-r-0 text-[#1A1A1A]"
+                                className="py-2.5 px-3 border-r border-[#E5E5E3] last:border-r-0 text-[#1A1A1A] whitespace-pre-line"
                               >
                                 {cell}
                               </td>

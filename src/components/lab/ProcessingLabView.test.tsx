@@ -414,6 +414,81 @@ describe('ProcessingLabView', () => {
     expect(html).toContain('The table detection model could not identify any tabular structures or grid cells');
   });
 
+  it('renders merged header cells with colSpan and omits covered placeholder headers', () => {
+    const mergedEnvelope: ProcessEnvelope<TableExtractionResult> = {
+      status: 'success',
+      confidence: 94.8,
+      findings: [],
+      evidence_refs: [],
+      model_version: 'easyocr-1.7.2',
+      processed_at: new Date().toISOString(),
+      data: {
+        tables_found: 1,
+        tables: [
+          {
+            table_idx: 0,
+            headers: ['Penghasilan', '', 'Potongan', ''],
+            rows: [['Gaji Pokok', 'Rp 7.500.000', 'BPJS', 'Rp 150.000']],
+            cells: [
+              { row_idx: 0, col_idx: 0, text: 'Penghasilan', confidence: 0.95, is_header: true, colspan: 2, rowspan: 1 },
+              { row_idx: 0, col_idx: 1, text: '', confidence: 0.95, is_header: true, colspan: 1, rowspan: 1 },
+              { row_idx: 0, col_idx: 2, text: 'Potongan', confidence: 0.94, is_header: true, colspan: 2, rowspan: 1 },
+              { row_idx: 0, col_idx: 3, text: '', confidence: 0.94, is_header: true, colspan: 1, rowspan: 1 },
+            ],
+            num_rows: 1,
+            num_cols: 4,
+          },
+        ],
+        raw_text: 'Penghasilan\tPotongan',
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <ProcessingLabView initialTab="table" initialResult={mergedEnvelope} />
+    );
+    expect(html).toContain('colSpan="2"');
+    const thMatches = html.match(/<th\b/g) || [];
+    expect(thMatches.length).toBe(2);
+    expect(html).toContain('Penghasilan');
+    expect(html).toContain('Potongan');
+    expect(html).toContain('Rp 7.500.000');
+  });
+
+  it('renders headerless key-value tables without an empty thead row', () => {
+    const kvEnvelope: ProcessEnvelope<TableExtractionResult> = {
+      status: 'success',
+      confidence: 93.0,
+      findings: [],
+      evidence_refs: [],
+      model_version: 'easyocr-1.7.2',
+      processed_at: new Date().toISOString(),
+      data: {
+        tables_found: 1,
+        tables: [
+          {
+            table_idx: 0,
+            headers: [],
+            rows: [
+              ['Nama Karyawan', 'AHMAD FAUZI'],
+              ['Departemen', 'Operasional'],
+            ],
+            cells: [],
+            num_rows: 2,
+            num_cols: 2,
+          },
+        ],
+        raw_text: 'Nama Karyawan\tAHMAD FAUZI',
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <ProcessingLabView initialTab="table" initialResult={kvEnvelope} />
+    );
+    expect(html).not.toContain('<thead');
+    expect(html).toContain('Nama Karyawan');
+    expect(html).toContain('AHMAD FAUZI');
+  });
+
   describe('escapeCsv formula injection mitigation', () => {
     it('prepends single quote to values starting with formula indicators (=, +, -, @)', () => {
       expect(escapeCsv('=SUM(A1:B1)')).toBe("'=SUM(A1:B1)");

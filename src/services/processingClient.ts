@@ -153,6 +153,8 @@ export interface TableCell {
   confidence: number;
   bbox?: number[] | null;
   is_header?: boolean;
+  colspan?: number;
+  rowspan?: number;
 }
 
 export interface ExtractedTable {

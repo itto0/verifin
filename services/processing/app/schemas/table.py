@@ -9,6 +9,8 @@ class TableCell(BaseModel):
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     bbox: Optional[List[int]] = None  # [x1, y1, x2, y2]
     is_header: bool = False
+    colspan: int = Field(default=1, ge=1)
+    rowspan: int = Field(default=1, ge=1)
 
 
 class ExtractedTable(BaseModel):
